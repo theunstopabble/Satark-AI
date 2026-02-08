@@ -17,9 +17,11 @@ app.get("/", (c) => {
 app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
   const data = c.req.valid("json");
 
+  const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
+
   try {
     // Forward to Python AI Engine
-    const response = await fetch("http://127.0.0.1:8000/scan", {
+    const response = await fetch(`${engineUrl}/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -67,8 +69,10 @@ app.post("/scan-upload", async (c) => {
     formData.append("file", file, file.name);
     formData.append("userId", userId as string);
 
+    const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
+
     // Forward to Python Engine
-    const response = await fetch("http://127.0.0.1:8000/scan-upload", {
+    const response = await fetch(`${engineUrl}/scan-upload`, {
       method: "POST",
       body: formData,
     });
