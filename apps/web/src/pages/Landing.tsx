@@ -4,29 +4,7 @@ import { Shield, Sparkles, Activity, FileAudio } from "lucide-react";
 
 export function Landing() {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Navbar */}
-      <header className="p-6 flex justify-between items-center max-w-7xl mx-auto w-full">
-        <div className="flex items-center gap-2 font-bold text-2xl">
-          <Shield className="text-primary" size={32} />
-          <span>Satark AI</span>
-        </div>
-        <div className="flex gap-4">
-          <Link
-            to="/sign-in"
-            className="px-4 py-2 hover:text-primary transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            to="/dashboard"
-            className="px-5 py-2 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all shadow-lg shadow-primary/20"
-          >
-            Get Started
-          </Link>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-background text-foreground flex flex-col pt-16">
       {/* Hero Section */}
       <main className="flex-1 flex flex-col items-center justify-center text-center p-6 relative overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />

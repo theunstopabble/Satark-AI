@@ -4,19 +4,18 @@ import {
   SignedIn,
   SignedOut,
   RedirectToSignIn,
-  UserButton,
 } from "@clerk/clerk-react";
 import {
   BrowserRouter,
   Route,
   Routes,
   useNavigate,
-  Link,
   Navigate,
 } from "react-router-dom";
 import { AudioUpload } from "@/components/AudioUpload";
 import { ScanHistory } from "@/components/ScanHistory";
 import { Landing } from "./pages/Landing";
+import { Navbar } from "@/components/Navbar";
 
 // TODO: Move to env
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -29,21 +28,7 @@ const queryClient = new QueryClient();
 
 function Dashboard() {
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-2">
-          <Link
-            to="/"
-            className="text-2xl font-bold hover:opacity-80 transition-opacity"
-          >
-            Satark AI
-          </Link>
-          <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full border border-primary/20">
-            Beta
-          </span>
-        </div>
-        <UserButton />
-      </div>
+    <div className="p-8 max-w-7xl mx-auto pt-24">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <AudioUpload />
         <ScanHistory />
@@ -75,6 +60,7 @@ function ClerkProviderWithRoutes() {
       publishableKey={PUBLISHABLE_KEY}
       navigate={(to) => navigate(to)}
     >
+      <Navbar />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route
