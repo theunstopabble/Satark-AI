@@ -3,11 +3,12 @@ import { useAuth } from "@clerk/clerk-react";
 
 export const useApiClient = () => {
   const { getToken } = useAuth();
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   const scanAudio = async (data: AudioUploadType): Promise<ScanResultType> => {
     const token = await getToken();
 
-    const response = await fetch("/api/scan", {
+    const response = await fetch(`${API_URL}/scan`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -32,7 +33,7 @@ export const useApiClient = () => {
     formData.append("file", file);
     formData.append("userId", userId);
 
-    const response = await fetch("/api/scan-upload", {
+    const response = await fetch(`${API_URL}/scan-upload`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -50,7 +51,7 @@ export const useApiClient = () => {
 
   const getHistory = async (userId: string): Promise<ScanResultType[]> => {
     const token = await getToken();
-    const response = await fetch(`/api/scans?userId=${userId}`, {
+    const response = await fetch(`${API_URL}/scans?userId=${userId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
