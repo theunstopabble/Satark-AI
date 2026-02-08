@@ -76,8 +76,14 @@ function ClerkProviderWithRoutes() {
     >
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/sign-in/*" element={<RedirectToSignIn />} />
-        <Route path="/sign-up/*" element={<RedirectToSignIn />} />
+        <Route
+          path="/sign-in/*"
+          element={<RedirectToSignIn signInForceRedirectUrl="/dashboard" />}
+        />
+        <Route
+          path="/sign-up/*"
+          element={<RedirectToSignIn signUpForceRedirectUrl="/dashboard" />}
+        />
         <Route
           path="/dashboard"
           element={
