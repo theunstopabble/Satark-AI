@@ -12,6 +12,7 @@ import {
   Routes,
   useNavigate,
   Link,
+  Navigate,
 } from "react-router-dom";
 import { AudioUpload } from "@/components/AudioUpload";
 import { ScanHistory } from "@/components/ScanHistory";
@@ -78,11 +79,29 @@ function ClerkProviderWithRoutes() {
         <Route path="/" element={<Landing />} />
         <Route
           path="/sign-in/*"
-          element={<RedirectToSignIn signInForceRedirectUrl="/dashboard" />}
+          element={
+            <>
+              <SignedIn>
+                <Navigate to="/dashboard" replace />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn afterSignInUrl="/dashboard" />
+              </SignedOut>
+            </>
+          }
         />
         <Route
           path="/sign-up/*"
-          element={<RedirectToSignIn signUpForceRedirectUrl="/dashboard" />}
+          element={
+            <>
+              <SignedIn>
+                <Navigate to="/dashboard" replace />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn afterSignInUrl="/dashboard" />
+              </SignedOut>
+            </>
+          }
         />
         <Route
           path="/dashboard"
