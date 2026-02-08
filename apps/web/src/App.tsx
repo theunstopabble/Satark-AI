@@ -4,7 +4,6 @@ import {
   SignedIn,
   SignedOut,
   RedirectToSignIn,
-  UserButton,
 } from "@clerk/clerk-react";
 import {
   BrowserRouter,
