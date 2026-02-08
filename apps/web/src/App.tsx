@@ -5,7 +5,10 @@ import {
   SignedOut,
   RedirectToSignIn,
   UserButton,
+  SignIn,
+  SignUp,
 } from "@clerk/clerk-react";
+import { dark } from "@clerk/themes";
 import {
   BrowserRouter,
   Route,
@@ -73,11 +76,31 @@ function ClerkProviderWithRoutes() {
     <ClerkProvider
       publishableKey={PUBLISHABLE_KEY}
       navigate={(to) => navigate(to)}
+      appearance={{
+        baseTheme: dark,
+        variables: {
+          colorPrimary: "#7c3aed",
+        },
+      }}
     >
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/sign-in/*" element={<RedirectToSignIn />} />
-        <Route path="/sign-up/*" element={<RedirectToSignIn />} />
+        <Route
+          path="/sign-in/*"
+          element={
+            <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a]">
+              <SignIn routing="path" path="/sign-in" />
+            </div>
+          }
+        />
+        <Route
+          path="/sign-up/*"
+          element={
+            <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a]">
+              <SignUp routing="path" path="/sign-up" />
+            </div>
+          }
+        />
         <Route
           path="/dashboard"
           element={
