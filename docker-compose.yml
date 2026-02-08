@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  # Python AI Engine
+  engine:
+    build:
+      context: ./apps/engine
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/engine:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  # Hono Backend (Running via Bun)
+  api:
+    image: oven/bun:latest
+    working_dir: /app/apps/api
+    command: bun run dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    depends_on:
+      - engine
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+
+  # Frontend (Vite)
+  web:
+    image: node:20-alpine
+    working_dir: /app/apps/web
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+    environment:
+      - VITE_CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}

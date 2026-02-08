@@ -1,0 +1,110 @@
+# ============================================
+# 🔒 SECURITY - Never commit these!
+# ============================================
+
+# Environment files (contain secrets!)
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.env
+
+# Project-specific ignores
+SKILL.md
+sample_upload.mp3
+.agent/
+.env.*.local
+.env.production
+.env.development
+*.env
+
+# ============================================
+# 📦 Dependencies
+# ============================================
+node_modules/
+.pnpm-store/
+
+# ============================================
+# 🏗️ Build outputs
+# ============================================
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# ============================================
+# 🐍 Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+*.egg
+venv/
+.venv/
+ENV/
+env/
+
+# ============================================
+# 🔧 IDE & Editor
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================
+# 📊 Logs & Debug
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ============================================
+# 🧪 Testing
+# ============================================
+coverage/
+.nyc_output/
+*.lcov
+
+# ============================================
+# 🚀 Turborepo
+# ============================================
+.turbo/
+
+# ============================================
+# 🔐 Certificates & Keys
+# ============================================
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# ============================================
+# 📁 Temporary & Cache
+# ============================================
+.cache/
+*.tmp
+*.temp
+.parcel-cache/
+
+# ============================================
+# 🎵 Audio test files (optional - large files)
+# ============================================
+*.mp3
+*.wav
+*.flac
+*.ogg
+!apps/engine/test_samples/
