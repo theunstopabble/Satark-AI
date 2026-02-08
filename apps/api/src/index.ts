@@ -14,6 +14,19 @@ app.get("/", (c) => {
   return c.text("Satark-AI API is Running! 🚀");
 });
 
+app.get("/health-db", async (c) => {
+  try {
+    const result = await db.execute(sql`SELECT 1`);
+    return c.json({ status: "ok", db: "connected" });
+  } catch (error) {
+    console.error("Health Check DB Error:", error);
+    return c.json(
+      { status: "error", db: "disconnected", error: String(error) },
+      500,
+    );
+  }
+});
+
 app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
   const data = c.req.valid("json");
 
@@ -107,7 +120,7 @@ app.post("/scan-upload", async (c) => {
   }
 });
 
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 app.get("/scans", async (c) => {
   const userId = c.req.query("userId");
