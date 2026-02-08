@@ -37,7 +37,8 @@ async def download_audio(url: str) -> str:
 def extract_features(path: str):
     """Extracts basic audio features using Librosa."""
     try:
-        y, sr = librosa.load(path, sr=None)
+        # Optimize: resample to 22050Hz (standard) to speed up processing
+        y, sr = librosa.load(path, sr=22050)
         
         zcr_val = np.mean(librosa.feature.zero_crossing_rate(y))
         rolloff_val = np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr))
