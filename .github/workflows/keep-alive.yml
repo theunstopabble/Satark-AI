@@ -1,0 +1,20 @@
+name: Keep Alive Services
+
+on:
+  schedule:
+    - cron: "*/14 * * * *" # Run every 14 minutes
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping_services:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API Service
+        run: |
+          echo "Pinging API..."
+          curl -I https://satark-ai-f5t7.onrender.com/
+
+      - name: Ping Python Engine
+        run: |
+          echo "Pinging Engine..."
+          curl -I https://satark-ai-engine.onrender.com/
