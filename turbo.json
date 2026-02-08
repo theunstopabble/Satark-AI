@@ -1,5 +1,12 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "VITE_CLERK_PUBLISHABLE_KEY",
+    "VITE_API_URL",
+    "DATABASE_URL",
+    "CLERK_SECRET_KEY",
+    "ENGINE_URL"
+  ],
   "tasks": {
     "build": {
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
