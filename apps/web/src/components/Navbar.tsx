@@ -42,14 +42,18 @@ export function Navbar() {
 
           <SignedIn>
             <div className="flex items-center gap-4">
-              {!isDashboard && (
-                <Link
-                  to="/dashboard"
-                  className="text-sm font-medium hover:text-primary transition-colors"
-                >
-                  Dashboard
-                </Link>
-              )}
+              <Link
+                to="/dashboard"
+                className={`text-sm font-medium transition-colors ${isDashboard && !location.pathname.includes("/history") ? "text-primary font-bold" : "hover:text-primary"}`}
+              >
+                New Scan
+              </Link>
+              <Link
+                to="/dashboard/history"
+                className={`text-sm font-medium transition-colors ${location.pathname.includes("/history") ? "text-primary font-bold" : "hover:text-primary"}`}
+              >
+                History
+              </Link>
               <UserButton afterSignOutUrl="/" />
             </div>
           </SignedIn>

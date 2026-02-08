@@ -4,6 +4,7 @@ import {
   SignedIn,
   SignedOut,
   RedirectToSignIn,
+  UserButton,
 } from "@clerk/clerk-react";
 import {
   BrowserRouter,
@@ -13,9 +14,9 @@ import {
   Navigate,
 } from "react-router-dom";
 import { AudioUpload } from "@/components/AudioUpload";
-import { ScanHistory } from "@/components/ScanHistory";
 import { Landing } from "./pages/Landing";
 import { Navbar } from "@/components/Navbar";
+import { History } from "./pages/History";
 
 // TODO: Move to env
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -29,9 +30,8 @@ const queryClient = new QueryClient();
 function Dashboard() {
   return (
     <div className="p-8 max-w-7xl mx-auto pt-24">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="max-w-4xl mx-auto">
         <AudioUpload />
-        <ScanHistory />
       </div>
     </div>
   );
@@ -95,6 +95,19 @@ function ClerkProviderWithRoutes() {
             <>
               <SignedIn>
                 <Dashboard />
+              </SignedIn>
+              <SignedOut>
+                <RedirectToSignIn />
+              </SignedOut>
+            </>
+          }
+        />
+        <Route
+          path="/dashboard/history"
+          element={
+            <>
+              <SignedIn>
+                <History />
               </SignedIn>
               <SignedOut>
                 <RedirectToSignIn />
