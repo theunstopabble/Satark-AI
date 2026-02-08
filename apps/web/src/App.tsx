@@ -5,6 +5,8 @@ import {
   SignedOut,
   RedirectToSignIn,
   UserButton,
+  SignIn,
+  SignUp,
 } from "@clerk/clerk-react";
 import {
   BrowserRouter,
@@ -76,6 +78,22 @@ function ClerkProviderWithRoutes() {
     >
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route
+          path="/sign-in/*"
+          element={
+            <div className="flex items-center justify-center min-h-screen bg-background">
+              <SignIn routing="path" path="/sign-in" />
+            </div>
+          }
+        />
+        <Route
+          path="/sign-up/*"
+          element={
+            <div className="flex items-center justify-center min-h-screen bg-background">
+              <SignUp routing="path" path="/sign-up" />
+            </div>
+          }
+        />
         <Route
           path="/dashboard"
           element={
