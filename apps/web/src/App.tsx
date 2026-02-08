@@ -8,7 +8,6 @@ import {
   SignIn,
   SignUp,
 } from "@clerk/clerk-react";
-import { dark } from "@clerk/themes";
 import {
   BrowserRouter,
   Route,
@@ -76,19 +75,13 @@ function ClerkProviderWithRoutes() {
     <ClerkProvider
       publishableKey={PUBLISHABLE_KEY}
       navigate={(to) => navigate(to)}
-      appearance={{
-        baseTheme: dark,
-        variables: {
-          colorPrimary: "#7c3aed",
-        },
-      }}
     >
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route
           path="/sign-in/*"
           element={
-            <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a]">
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
               <SignIn routing="path" path="/sign-in" />
             </div>
           }
@@ -96,7 +89,7 @@ function ClerkProviderWithRoutes() {
         <Route
           path="/sign-up/*"
           element={
-            <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a]">
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
               <SignUp routing="path" path="/sign-up" />
             </div>
           }
