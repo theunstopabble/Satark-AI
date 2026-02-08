@@ -28,9 +28,6 @@ export function Navbar() {
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
             Satark AI
           </span>
-          <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full border border-primary/20 font-medium">
-            Beta
-          </span>
         </Link>
 
         {/* Desktop Navigation */}
