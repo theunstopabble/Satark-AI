@@ -12,11 +12,20 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 
 async def download_audio(url: str) -> str:
     """Downloads audio from URL and saves to a temp file."""
-    filename = f"{uuid.uuid4()}.mp3"
+    # Try to get extension from URL, default to .mp3
+    ext = os.path.splitext(url)[1].split("?")[0]
+    if not ext or len(ext) > 5:
+        ext = ".mp3"
+        
+    filename = f"{uuid.uuid4()}{ext}"
     path = os.path.join(TEMP_DIR, filename)
     
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, follow_redirects=True)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
+    async with httpx.AsyncClient(verify=False) as client:
+        response = await client.get(url, follow_redirects=True, headers=headers)
         if response.status_code != 200:
             raise Exception(f"Failed to download audio: {response.status_code}")
         
