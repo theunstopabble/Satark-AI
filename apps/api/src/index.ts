@@ -143,6 +143,22 @@ app.get("/scans", async (c) => {
   }
 });
 
+app.post("/scans/:id/feedback", async (c) => {
+  const id = c.req.param("id");
+  const { feedback } = await c.req.json();
+
+  try {
+    await db
+      .update(scans)
+      .set({ feedback })
+      .where(eq(scans.id, Number(id)));
+    return c.json({ success: true });
+  } catch (error) {
+    console.error("Feedback Error:", error);
+    return c.json({ error: "Failed to submit feedback" }, 500);
+  }
+});
+
 import { serve } from "@hono/node-server";
 
 const port = 3000;

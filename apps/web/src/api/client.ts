@@ -59,5 +59,20 @@ export const useApiClient = () => {
     return response.json();
   };
 
-  return { scanAudio, scanUpload, getHistory };
+  const submitFeedback = async (
+    scanId: string,
+    feedback: "thumbs_up" | "thumbs_down",
+  ) => {
+    const token = await getToken();
+    await fetch(`${API_URL}/scans/${scanId}/feedback`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ feedback }),
+    });
+  };
+
+  return { scanAudio, scanUpload, getHistory, submitFeedback };
 };

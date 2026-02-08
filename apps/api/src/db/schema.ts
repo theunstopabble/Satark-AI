@@ -15,4 +15,5 @@ export const scans = pgTable("scans", {
   confidenceScore: doublePrecision("confidence_score"),
   analysisDetails: text("analysis_details"),
   createdAt: timestamp("created_at").defaultNow(),
+  feedback: text("feedback"),
 });

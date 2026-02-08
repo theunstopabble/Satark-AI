@@ -22,6 +22,8 @@ import {
 import { AudioVisualizer } from "./AudioVisualizer";
 import { FeatureChart } from "./FeatureChart";
 import { ConfidenceMeter } from "./ConfidenceMeter";
+import { FeedbackWidget } from "./FeedbackWidget";
+import { generateScanReport } from "@/utils/pdfGenerator";
 
 export function AudioUpload() {
   const { user } = useUser();
@@ -266,6 +268,10 @@ export function AudioUpload() {
                   </div>
                 ))}
               </div>
+
+              <div className="mt-6 pt-6 border-t border-border/50">
+                <FeedbackWidget scanId={mutation.data.id} />
+              </div>
             </div>
           </div>
 
@@ -318,7 +324,15 @@ export function AudioUpload() {
               }}
               className="px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2 text-muted-foreground"
             >
-              <Download size={16} /> Export Data
+              <Download size={16} /> JSON
+            </button>
+            <button
+              onClick={() =>
+                generateScanReport(mutation.data, user?.fullName || "Guest")
+              }
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all flex items-center gap-2"
+            >
+              <Printer size={16} /> PDF Report
             </button>
             <button
               onClick={() => window.print()}
