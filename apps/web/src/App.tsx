@@ -14,7 +14,8 @@ import {
 } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
-import { ThreatGlobe } from "@/components/ThreatGlobe";
+// ThreatGlobe import removed as per user request
+// import { ThreatGlobe } from "@/components/ThreatGlobe";
 import { AudioUpload } from "@/components/AudioUpload";
 import { LiveMonitor } from "@/components/LiveMonitor";
 import { DeepfakeGame } from "@/components/DeepfakeGame";
@@ -49,13 +50,8 @@ function Dashboard() {
 
   return (
     <div className="p-4 md:p-8 max-w-full min-h-screen relative overflow-x-hidden font-sans selection:bg-primary/20">
-      {/* THREAT GLOBE - Widget Style (Not cut off) */}
-      {/* Fixed: Fully visible, smaller, clear of navbar, not touching right edge */}
-      <div className="fixed top-36 right-4 lg:right-10 w-[250px] h-[250px] lg:w-[350px] lg:h-[350px] z-0 hidden md:block animate-in fade-in duration-1000">
-        {/* Subtle Glow behind it */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent blur-[50px] rounded-full"></div>
-        <ThreatGlobe />
-      </div>
+      {/* Background Gradient for subtle depth without Globe */}
+      <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <div className="relative z-10 w-full max-w-6xl mx-auto pt-20 lg:pt-24 space-y-8">
         {/* Feature Toggles (Left Aligned & Sticky) */}
@@ -89,7 +85,7 @@ function Dashboard() {
         </div>
 
         {/* Main Content Area */}
-        <div className="w-full lg:max-w-3xl animate-in slide-in-from-bottom-8 duration-700 ease-out">
+        <div className="w-full lg:max-w-4xl animate-in slide-in-from-bottom-8 duration-700 ease-out">
           {mode === "analysis" && (
             <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-[2rem] p-1 shadow-xl">
               <AudioUpload />
