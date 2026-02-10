@@ -49,9 +49,9 @@ function Dashboard() {
 
   return (
     <div className="p-4 md:p-8 max-w-full min-h-screen relative overflow-x-hidden font-sans selection:bg-primary/20">
-      {/* AMBIENT GLOBE - Fixed Background Element - Ambient & Subtle */}
-      {/* Adjusted positioning to be 'thoda thoda side' - peeking from right */}
-      <div className="fixed top-1/2 -translate-y-1/2 right-[-250px] lg:right-[-150px] w-[500px] h-[500px] lg:w-[700px] lg:h-[700px] z-0 pointer-events-none opacity-20 lg:opacity-40 hidden md:block transition-all duration-1000 ease-in-out">
+      {/* AMBIENT GLOBE - Fixed Background Element */}
+      {/* Fixed: Moved down (top-28) to avoid Navbar overlap and adjusted visual size */}
+      <div className="fixed top-28 right-[-180px] lg:right-[-120px] w-[500px] h-[500px] lg:w-[700px] lg:h-[700px] z-0 pointer-events-none opacity-20 lg:opacity-40 hidden md:block transition-all duration-1000 ease-in-out">
         <div className="absolute inset-0 bg-gradient-to-l from-primary/10 to-transparent blur-[80px] rounded-full"></div>
         <ThreatGlobe />
       </div>
@@ -90,7 +90,6 @@ function Dashboard() {
         {/* Main Content Area */}
         <div className="w-full lg:max-w-4xl animate-in slide-in-from-bottom-8 duration-700 ease-out">
           {mode === "analysis" && (
-            // Added distinct visual container for the tool
             <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-[2rem] p-1 shadow-xl">
               <AudioUpload />
             </div>
