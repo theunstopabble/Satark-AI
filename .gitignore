@@ -108,3 +108,5 @@ coverage/
 *.flac
 *.ogg
 !apps/engine/test_samples/
+
+cmd.txt

@@ -34,6 +34,37 @@ async def download_audio(url: str) -> str:
             
     return path
 
+def analyze_segments(y, sr, chunk_duration=0.5):
+    """Analyzes audio in chunks to find fake segments."""
+    segments = []
+    chunk_samples = int(chunk_duration * sr)
+    total_samples = len(y)
+    
+    for start in range(0, total_samples, chunk_samples):
+        end = min(start + chunk_samples, total_samples)
+        if (end - start) < chunk_samples / 2: continue
+        
+        chunk = y[start:end]
+        
+        # Simplified analysis per chunk
+        try:
+            zcr = np.mean(librosa.feature.zero_crossing_rate(chunk))
+            rolloff = np.mean(librosa.feature.spectral_rolloff(y=chunk, sr=sr))
+            
+            score = 0.0
+            # Heuristics for fake audio artifacts
+            if zcr > 0.08: score += 0.4 # Lower threshold for chunk
+            if rolloff < 3000: score += 0.4
+            
+            segments.append({
+                "start": float(start / sr),
+                "end": float(end / sr),
+                "score": min(score, 1.0)
+            })
+        except:
+             pass
+    return segments
+
 def extract_features(path: str):
     """Extracts basic audio features using Librosa."""
     try:
@@ -54,13 +85,17 @@ def extract_features(path: str):
         total_duration = librosa.get_duration(y=y, sr=sr)
         silence_ratio = 1 - (non_silent_duration / total_duration) if total_duration > 0 else 0
 
+        # Run Segment Analysis
+        segments = analyze_segments(y, sr)
+
         return {
             "zcr": float(zcr_val),
             "rolloff": float(rolloff_val),
             "mfcc_mean": float(mfcc_mean_val),
             "silence_ratio": float(silence_ratio),
             "duration": float(total_duration),
-            "mfcc_plot": mfcc_plot # List of floats
+            "mfcc_plot": mfcc_plot, # List of floats
+            "segments": segments # List of {start, end, score}
         }
     except Exception as e:
         print(f"Error extracting features: {e}")
@@ -118,7 +153,10 @@ def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
 async def analyze_audio(data: AudioUpload) -> ScanResult:
     path = await download_audio(data.audioUrl)
     try:
-        return analyze_file_path(path, data.userId, data.audioUrl)
+        import asyncio
+        loop = asyncio.get_running_loop()
+        # Run CPU-bound analysis in a separate thread to avoid blocking the event loop
+        return await loop.run_in_executor(None, analyze_file_path, path, data.userId, data.audioUrl)
     finally:
         if os.path.exists(path):
             os.remove(path)

@@ -17,12 +17,14 @@ import {
   CheckCircle2,
   Download,
   Printer,
+  Video,
 } from "lucide-react";
 
 import { AudioVisualizer } from "./AudioVisualizer";
 import { FeatureChart } from "./FeatureChart";
 import { ConfidenceMeter } from "./ConfidenceMeter";
 import { FeedbackWidget } from "./FeedbackWidget";
+import { FakeHeatmap } from "./FakeHeatmap";
 import { generateScanReport } from "@/utils/pdfGenerator";
 
 export function AudioUpload() {
@@ -41,6 +43,10 @@ export function AudioUpload() {
     resolver: zodResolver(AudioUploadSchema),
     defaultValues: {
       userId: user?.id || "",
+    },
+    accept: {
+      "audio/*": [".mp3", ".wav"],
+      "video/*": [".mp4", ".mov", ".avi", ".mkv"],
     },
   });
 
@@ -180,13 +186,16 @@ export function AudioUpload() {
                             {selectedFile.name}
                           </span>
                         ) : (
-                          <span className="font-medium text-foreground text-lg block mb-1">
-                            Click to upload or drag and drop
-                          </span>
+                          <div className="space-y-2">
+                            <p className="text-gray-300 font-medium">
+                              Drag & drop audio or video here, or click to
+                              select
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Supports MP3, WAV, MP4, MOV, AVI (Max 50MB)
+                            </p>
+                          </div>
                         )}
-                        <span className="text-muted-foreground">
-                          MP3, WAV, or OGG (Max 10MB)
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -281,19 +290,44 @@ export function AudioUpload() {
               (mode === "file" && selectedFile)) && (
               <div className="bg-card rounded-2xl border shadow-sm p-6">
                 <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Music size={18} /> Waveform
+                  {selectedFile?.type.startsWith("video/") ? (
+                    <>
+                      <Video size={18} /> Video Preview
+                    </>
+                  ) : (
+                    <>
+                      <Music size={18} /> Waveform
+                    </>
+                  )}
                 </h4>
-                <AudioVisualizer
-                  audioUrl={
-                    mode === "url"
-                      ? watchedUrl
-                      : selectedFile
-                        ? URL.createObjectURL(selectedFile)
-                        : ""
-                  }
-                />
+                {selectedFile?.type.startsWith("video/") ? (
+                  <video
+                    controls
+                    className="w-full rounded-lg max-h-[400px] bg-black"
+                    src={URL.createObjectURL(selectedFile)}
+                  />
+                ) : (
+                  <AudioVisualizer
+                    audioUrl={
+                      mode === "url"
+                        ? watchedUrl
+                        : selectedFile
+                          ? URL.createObjectURL(selectedFile)
+                          : ""
+                    }
+                  />
+                )}
               </div>
             )}
+
+            {/* XAI Heatmap Integration */}
+            {mutation.data?.features?.segments &&
+              mutation.data.features.duration && (
+                <FakeHeatmap
+                  segments={mutation.data.features.segments}
+                  duration={mutation.data.features.duration}
+                />
+              )}
 
             {mutation.data.features?.mfcc_plot && (
               <div className="bg-card rounded-2xl border shadow-sm p-6">

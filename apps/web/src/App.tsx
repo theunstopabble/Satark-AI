@@ -15,7 +15,19 @@ import {
 import { AudioUpload } from "@/components/AudioUpload";
 import { Landing } from "./pages/Landing";
 import { Navbar } from "@/components/Navbar";
-import { History } from "./pages/History";
+import { useState, lazy, Suspense } from "react";
+
+const History = lazy(() =>
+  import("./pages/History").then((module) => ({ default: module.History })),
+);
+// Note: If History is default export, use: lazy(() => import("./pages/History"))
+// I'll assume they are named exports based on current import { History }
+
+const SpeakerIdentity = lazy(() =>
+  import("@/components/SpeakerIdentity").then((module) => ({
+    default: module.SpeakerIdentity,
+  })),
+);
 
 // TODO: Move to env
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -27,10 +39,42 @@ if (!PUBLISHABLE_KEY) {
 const queryClient = new QueryClient();
 
 function Dashboard() {
+  const [mode, setMode] = useState<"analysis" | "identity">("analysis");
+
   return (
-    <div className="p-8 max-w-7xl mx-auto pt-24">
-      <div className="max-w-4xl mx-auto">
-        <AudioUpload />
+    <div className="p-8 max-w-7xl mx-auto pt-24 space-y-8 animate-in fade-in duration-500">
+      {/* Feature Toggle */}
+      <div className="flex justify-center">
+        <div className="bg-secondary/50 backdrop-blur-sm p-1.5 rounded-full flex gap-2 border border-border/50">
+          <button
+            onClick={() => setMode("analysis")}
+            className={`px-8 py-2.5 rounded-full font-medium transition-all duration-300 ${mode === "analysis" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            🛡️ Deepfake Detector
+          </button>
+          <button
+            onClick={() => setMode("identity")}
+            className={`px-8 py-2.5 rounded-full font-medium transition-all duration-300 ${mode === "identity" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            🆔 Speaker Identity
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto min-h-[600px]">
+        {mode === "analysis" ? (
+          <AudioUpload />
+        ) : (
+          <Suspense
+            fallback={
+              <div className="text-center py-20">
+                Loading Identity Module...
+              </div>
+            }
+          >
+            <SpeakerIdentity />
+          </Suspense>
+        )}
       </div>
     </div>
   );
@@ -60,61 +104,69 @@ function ClerkProviderWithRoutes() {
       navigate={(to) => navigate(to)}
     >
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route
-          path="/sign-in/*"
-          element={
-            <>
-              <SignedIn>
-                <Navigate to="/dashboard" replace />
-              </SignedIn>
-              <SignedOut>
-                <RedirectToSignIn afterSignInUrl="/dashboard" />
-              </SignedOut>
-            </>
-          }
-        />
-        <Route
-          path="/sign-up/*"
-          element={
-            <>
-              <SignedIn>
-                <Navigate to="/dashboard" replace />
-              </SignedIn>
-              <SignedOut>
-                <RedirectToSignIn afterSignInUrl="/dashboard" />
-              </SignedOut>
-            </>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <>
-              <SignedIn>
-                <Dashboard />
-              </SignedIn>
-              <SignedOut>
-                <RedirectToSignIn />
-              </SignedOut>
-            </>
-          }
-        />
-        <Route
-          path="/dashboard/history"
-          element={
-            <>
-              <SignedIn>
-                <History />
-              </SignedIn>
-              <SignedOut>
-                <RedirectToSignIn />
-              </SignedOut>
-            </>
-          }
-        />
-      </Routes>
+      <Suspense
+        fallback={
+          <div className="flex justify-center items-center h-screen">
+            Loading...
+          </div>
+        }
+      >
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route
+            path="/sign-in/*"
+            element={
+              <>
+                <SignedIn>
+                  <Navigate to="/dashboard" replace />
+                </SignedIn>
+                <SignedOut>
+                  <RedirectToSignIn afterSignInUrl="/dashboard" />
+                </SignedOut>
+              </>
+            }
+          />
+          <Route
+            path="/sign-up/*"
+            element={
+              <>
+                <SignedIn>
+                  <Navigate to="/dashboard" replace />
+                </SignedIn>
+                <SignedOut>
+                  <RedirectToSignIn afterSignInUrl="/dashboard" />
+                </SignedOut>
+              </>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <>
+                <SignedIn>
+                  <Dashboard />
+                </SignedIn>
+                <SignedOut>
+                  <RedirectToSignIn />
+                </SignedOut>
+              </>
+            }
+          />
+          <Route
+            path="/dashboard/history"
+            element={
+              <>
+                <SignedIn>
+                  <History />
+                </SignedIn>
+                <SignedOut>
+                  <RedirectToSignIn />
+                </SignedOut>
+              </>
+            }
+          />
+        </Routes>
+      </Suspense>
     </ClerkProvider>
   );
 }

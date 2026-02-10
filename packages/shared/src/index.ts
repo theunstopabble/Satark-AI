@@ -1,7 +1,16 @@
 import { z } from "zod";
 
 export const AudioUploadSchema = z.object({
-  audioUrl: z.string().url(),
+  file: z.instanceof(File).refine((file) => {
+    return (
+      file.type.startsWith("audio/") ||
+      file.type.startsWith("video/") ||
+      file.name.endsWith(".mp3") ||
+      file.name.endsWith(".wav") ||
+      file.name.endsWith(".mp4") ||
+      file.name.endsWith(".mov")
+    );
+  }, "File must be an audio or video file"),
   userId: z.string().min(1),
   fileName: z.string().optional(),
 });
@@ -23,6 +32,15 @@ export const ScanResultSchema = z.object({
       silence_ratio: z.number(),
       duration: z.number(),
       mfcc_plot: z.array(z.number()),
+      segments: z
+        .array(
+          z.object({
+            start: z.number(),
+            end: z.number(),
+            score: z.number(),
+          }),
+        )
+        .optional(),
     })
     .optional(),
   createdAt: z.string().or(z.date()), // API returns string, Date object in DB

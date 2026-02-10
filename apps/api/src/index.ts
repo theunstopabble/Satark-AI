@@ -5,10 +5,12 @@ import { zValidator } from "@hono/zod-validator";
 import { AudioUploadSchema } from "@repo/shared";
 import { db } from "./db";
 import { scans } from "./db/schema";
+import speakerRouter from "./routes/speaker";
 
 const app = new Hono();
-
 app.use("/*", cors());
+
+app.route("/api/speaker", speakerRouter);
 
 app.get("/", (c) => {
   return c.text("Satark-AI API is Running! 🚀");
@@ -161,7 +163,7 @@ app.post("/scans/:id/feedback", async (c) => {
 
 import { serve } from "@hono/node-server";
 
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
 console.log(`Server is running on port ${port}`);
 
 serve({

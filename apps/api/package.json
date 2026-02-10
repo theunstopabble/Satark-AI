@@ -5,7 +5,7 @@
     "build": "npx tsc",
     "start": "node dist/index.js",
     "db:generate": "drizzle-kit generate:pg",
-    "db:push": "drizzle-kit push:pg"
+    "db:push": "drizzle-kit push"
   },
   "dependencies": {
     "@hono/clerk-auth": "^3.1.0",
