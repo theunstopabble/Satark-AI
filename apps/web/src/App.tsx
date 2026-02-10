@@ -25,8 +25,6 @@ import { useState, lazy, Suspense } from "react";
 const History = lazy(() =>
   import("./pages/History").then((module) => ({ default: module.History })),
 );
-// Note: If History is default export, use: lazy(() => import("./pages/History"))
-// I'll assume they are named exports based on current import { History }
 
 const SpeakerIdentity = lazy(() =>
   import("@/components/SpeakerIdentity").then((module) => ({
@@ -50,60 +48,51 @@ function Dashboard() {
   const { t } = useLanguage();
 
   return (
-    <div className="p-4 md:p-8 max-w-full mx-auto pt-24 min-h-screen relative overflow-x-hidden">
-      {/* Feature Toggles (Sticky Top) */}
-      <div className="flex justify-center w-full sticky top-4 z-50 mb-8 md:mb-12">
-        <div className="bg-secondary/80 backdrop-blur-xl p-1.5 rounded-full flex flex-wrap justify-center gap-2 border border-border/50 shadow-2xl transition-all hover:scale-[1.01]">
-          <button
-            onClick={() => setMode("analysis")}
-            className={`px-4 py-2 md:px-6 md:py-2.5 rounded-full font-medium text-sm md:text-base transition-all duration-300 flex items-center gap-2 ${mode === "analysis" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            {t("toggle.detector")}
-          </button>
-          <button
-            onClick={() => setMode("identity")}
-            className={`px-4 py-2 md:px-6 md:py-2.5 rounded-full font-medium text-sm md:text-base transition-all duration-300 flex items-center gap-2 ${mode === "identity" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            {t("toggle.identity")}
-          </button>
-          <button
-            onClick={() => setMode("monitor")}
-            className={`px-4 py-2 md:px-6 md:py-2.5 rounded-full font-medium text-sm md:text-base transition-all duration-300 flex items-center gap-2 ${mode === "monitor" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            🎙️ Live Monitor
-          </button>
-          <button
-            onClick={() => setMode("game")}
-            className={`px-4 py-2 md:px-6 md:py-2.5 rounded-full font-medium text-sm md:text-base transition-all duration-300 flex items-center gap-2 ${mode === "game" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            🎮 Challenge
-          </button>
-        </div>
-      </div>
-
-      {/* AMBIENT GLOBE - Fixed to Right Side (Hidden on mobile, visible on lg) */}
-      <div className="fixed top-20 right-[-150px] lg:right-[-50px] w-[500px] h-[500px] lg:w-[600px] lg:h-[600px] z-0 pointer-events-none opacity-30 lg:opacity-60 hidden md:block">
+    <div className="p-4 md:p-8 max-w-full min-h-screen relative overflow-x-hidden font-sans selection:bg-primary/20">
+      {/* AMBIENT GLOBE - Fixed Background Element - Ambient & Subtle */}
+      {/* Adjusted positioning to be 'thoda thoda side' - peeking from right */}
+      <div className="fixed top-1/2 -translate-y-1/2 right-[-250px] lg:right-[-150px] w-[500px] h-[500px] lg:w-[700px] lg:h-[700px] z-0 pointer-events-none opacity-20 lg:opacity-40 hidden md:block transition-all duration-1000 ease-in-out">
         <div className="absolute inset-0 bg-gradient-to-l from-primary/10 to-transparent blur-[80px] rounded-full"></div>
         <ThreatGlobe />
       </div>
 
-      {/* Main Content Area */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto lg:pr-[300px]">
-        <div className="animate-in slide-in-from-bottom-8 duration-700 ease-out">
-          {mode === "analysis" && (
-            <div className="space-y-8">
-              <div className="text-left space-y-2">
-                <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">
-                  New Analysis
-                </h2>
-                <p className="text-lg text-muted-foreground max-w-2xl">
-                  Detect deepfakes with advanced spectral processing.
-                </p>
-              </div>
+      <div className="relative z-10 w-full max-w-6xl mx-auto pt-20 lg:pt-24 space-y-8">
+        {/* Feature Toggles (Left Aligned & Sticky) */}
+        <div className="flex justify-start w-full sticky top-4 z-50 pl-2">
+          <div className="bg-background/80 backdrop-blur-xl p-1.5 rounded-full flex flex-wrap justify-start gap-2 border border-border/50 shadow-sm ring-1 ring-border/20 transition-all hover:shadow-md">
+            <button
+              onClick={() => setMode("analysis")}
+              className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "analysis" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+            >
+              {t("toggle.detector")}
+            </button>
+            <button
+              onClick={() => setMode("identity")}
+              className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "identity" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+            >
+              {t("toggle.identity")}
+            </button>
+            <button
+              onClick={() => setMode("monitor")}
+              className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "monitor" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+            >
+              🎙️ Live Monitor
+            </button>
+            <button
+              onClick={() => setMode("game")}
+              className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "game" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+            >
+              🎮 Challenge
+            </button>
+          </div>
+        </div>
 
-              <div className="bg-card/50 backdrop-blur-sm border rounded-3xl p-1 shadow-xl">
-                <AudioUpload />
-              </div>
+        {/* Main Content Area */}
+        <div className="w-full lg:max-w-4xl animate-in slide-in-from-bottom-8 duration-700 ease-out">
+          {mode === "analysis" && (
+            // Added distinct visual container for the tool
+            <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-[2rem] p-1 shadow-xl">
+              <AudioUpload />
             </div>
           )}
 
