@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { db } from "../db";
-import { speakers } from "../db/schema";
+import { speakers, scans } from "../db/schema";
 import { cosineDistance, desc, eq } from "drizzle-orm"; // wait, drizzle doesn't have cosineDistance helper easily for JSON
 // I'll implement in-memory cosine similarity
 import { stream } from "hono/streaming";
@@ -109,14 +109,29 @@ app.post("/verify", async (c) => {
     // Threshold
     const MATCH_THRESHOLD = 0.75; // Tunable
     const isMatch = bestMatch.score > MATCH_THRESHOLD;
+    const details = isMatch
+      ? `Matched with ${bestMatch.name} (${(bestMatch.score * 100).toFixed(1)}%)`
+      : "No matching speaker found.";
+
+    // Log to History
+    const userId = (body["userId"] as string) || "guest";
+    try {
+      await db.insert(scans).values({
+        userId,
+        audioUrl: "Speaker Verification (File Upload)",
+        isDeepfake: !isMatch, // No match = potential fake/impersonator
+        confidenceScore: bestMatch.score * 100,
+        analysisDetails: `Identity: ${details}`,
+      });
+    } catch (dbErr) {
+      console.error("Values logging failed", dbErr);
+    }
 
     return c.json({
       isMatch,
       name: isMatch ? bestMatch.name : "Unknown",
       score: bestMatch.score,
-      details: isMatch
-        ? `Matched with ${bestMatch.name} (${(bestMatch.score * 100).toFixed(1)}%)`
-        : "No matching speaker found.",
+      details,
     });
   } catch (e) {
     console.error(e);
