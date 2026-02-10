@@ -165,6 +165,7 @@ export function AudioUpload() {
                     <input
                       type="file"
                       accept="audio/*"
+                      title="Upload Audio File"
                       onChange={handleFileChange}
                       className="absolute inset-0 opacity-0 cursor-pointer z-10"
                     />
