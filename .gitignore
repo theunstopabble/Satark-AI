@@ -110,3 +110,6 @@ coverage/
 !apps/engine/test_samples/
 
 cmd.txt
+apps/engine/tmp_model/
+apps/engine/temp_embed_*.mp3
+apps/engine/temp_audio_*.wav

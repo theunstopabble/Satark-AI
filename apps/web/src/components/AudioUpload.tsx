@@ -44,10 +44,6 @@ export function AudioUpload() {
     defaultValues: {
       userId: user?.id || "",
     },
-    accept: {
-      "audio/*": [".mp3", ".wav"],
-      "video/*": [".mp4", ".mov", ".avi", ".mkv"],
-    },
   });
 
   const watchedUrl = watch("audioUrl");
@@ -310,7 +306,7 @@ export function AudioUpload() {
                   <AudioVisualizer
                     audioUrl={
                       mode === "url"
-                        ? watchedUrl
+                        ? watchedUrl || ""
                         : selectedFile
                           ? URL.createObjectURL(selectedFile)
                           : ""

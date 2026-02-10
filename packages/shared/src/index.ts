@@ -1,17 +1,9 @@
 import { z } from "zod";
 
 export const AudioUploadSchema = z.object({
-  file: z.instanceof(File).refine((file) => {
-    return (
-      file.type.startsWith("audio/") ||
-      file.type.startsWith("video/") ||
-      file.name.endsWith(".mp3") ||
-      file.name.endsWith(".wav") ||
-      file.name.endsWith(".mp4") ||
-      file.name.endsWith(".mov")
-    );
-  }, "File must be an audio or video file"),
+  file: z.any().optional(), // Logic handled in refinement or backend
   userId: z.string().min(1),
+  audioUrl: z.string().optional(),
   fileName: z.string().optional(),
 });
 

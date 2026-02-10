@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import {
-  Upload,
-  Mic,
   CheckCircle2,
   AlertTriangle,
   UserPlus,
