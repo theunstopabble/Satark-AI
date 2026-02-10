@@ -6,6 +6,8 @@ import { AudioUploadSchema } from "@repo/shared";
 import { db } from "./db";
 import { scans } from "./db/schema";
 import speakerRouter from "./routes/speaker";
+import { serve } from "@hono/node-server";
+import { desc, eq, sql } from "drizzle-orm";
 
 const app = new Hono();
 app.use("/*", cors());
@@ -29,13 +31,26 @@ app.get("/health-db", async (c) => {
   }
 });
 
+// Helper to save scan results
+async function saveScanResult(result: any) {
+  try {
+    await db.insert(scans).values({
+      userId: result.userId,
+      audioUrl: result.audioUrl,
+      isDeepfake: result.isDeepfake,
+      confidenceScore: result.confidenceScore,
+      analysisDetails: result.analysisDetails,
+    });
+  } catch (dbError) {
+    console.error("❌ Failed to save scan to DB:", dbError);
+  }
+}
+
 app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
   const data = c.req.valid("json");
-
   const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
 
   try {
-    // Forward to Python AI Engine
     const response = await fetch(`${engineUrl}/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -49,19 +64,7 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
     }
 
     const result = await response.json();
-
-    // Save to Database
-    try {
-      await db.insert(scans).values({
-        userId: result.userId, // Assuming AI engine returns userId
-        audioUrl: result.audioUrl, // Assuming AI engine returns audioUrl
-        isDeepfake: result.isDeepfake,
-        confidenceScore: result.confidenceScore,
-        analysisDetails: result.analysisDetails,
-      });
-    } catch (dbError) {
-      console.error("❌ Failed to save scan to DB:", dbError);
-    }
+    await saveScanResult(result);
 
     return c.json(result);
   } catch (error) {
@@ -86,7 +89,6 @@ app.post("/scan-upload", async (c) => {
 
     const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
 
-    // Forward to Python Engine
     const response = await fetch(`${engineUrl}/scan-upload`, {
       method: "POST",
       body: formData,
@@ -101,19 +103,7 @@ app.post("/scan-upload", async (c) => {
     }
 
     const result = await response.json();
-
-    // Save to Database
-    try {
-      await db.insert(scans).values({
-        userId: result.userId,
-        audioUrl: result.audioUrl,
-        isDeepfake: result.isDeepfake,
-        confidenceScore: result.confidenceScore,
-        analysisDetails: result.analysisDetails,
-      });
-    } catch (dbError) {
-      console.error("❌ Failed to save upload scan to DB:", dbError);
-    }
+    await saveScanResult(result);
 
     return c.json(result);
   } catch (error) {
@@ -121,8 +111,6 @@ app.post("/scan-upload", async (c) => {
     return c.json({ error: "Failed to process upload" }, 500);
   }
 });
-
-import { desc, eq, sql } from "drizzle-orm";
 
 app.get("/scans", async (c) => {
   const userId = c.req.query("userId");
@@ -160,8 +148,6 @@ app.post("/scans/:id/feedback", async (c) => {
     return c.json({ error: "Failed to submit feedback" }, 500);
   }
 });
-
-import { serve } from "@hono/node-server";
 
 const port = Number(process.env.PORT) || 3000;
 console.log(`Server is running on port ${port}`);

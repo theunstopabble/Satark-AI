@@ -4,8 +4,14 @@ import httpx
 import librosa
 import numpy as np
 import soundfile as sf
+import asyncio
+import logging
 from datetime import datetime
 from schemas import AudioUpload, ScanResult
+
+# Configure Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 TEMP_DIR = "temp_audio"
 os.makedirs(TEMP_DIR, exist_ok=True)
@@ -61,7 +67,7 @@ def analyze_segments(y, sr, chunk_duration=0.5):
                 "end": float(end / sr),
                 "score": min(score, 1.0)
             })
-        except:
+        except Exception:
              pass
     return segments
 
@@ -98,7 +104,7 @@ def extract_features(path: str):
             "segments": segments # List of {start, end, score}
         }
     except Exception as e:
-        print(f"Error extracting features: {e}")
+        logger.error(f"Error extracting features: {e}")
         return None
 
 def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
@@ -153,7 +159,6 @@ def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
 async def analyze_audio(data: AudioUpload) -> ScanResult:
     path = await download_audio(data.audioUrl)
     try:
-        import asyncio
         loop = asyncio.get_running_loop()
         # Run CPU-bound analysis in a separate thread to avoid blocking the event loop
         return await loop.run_in_executor(None, analyze_file_path, path, data.userId, data.audioUrl)
