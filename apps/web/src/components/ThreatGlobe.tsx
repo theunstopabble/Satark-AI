@@ -57,7 +57,7 @@ export function ThreatGlobe() {
     <div className="relative w-full max-w-[600px] h-[600px] mx-auto opacity-90 hover:opacity-100 transition-opacity">
       <canvas
         ref={canvasRef}
-        style={{ width: 600, height: 600, maxWidth: "100%", aspectRatio: 1 }}
+        className="w-[600px] h-[600px] max-w-full aspect-square"
       />
 
       {location && (

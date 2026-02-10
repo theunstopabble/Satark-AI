@@ -13,7 +13,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
-import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { ThreatGlobe } from "@/components/ThreatGlobe";
 import { AudioUpload } from "@/components/AudioUpload";
 import { Landing } from "./pages/Landing";
@@ -43,7 +43,6 @@ const queryClient = new QueryClient();
 
 function Dashboard() {
   const [mode, setMode] = useState<"analysis" | "identity">("analysis");
-  const { t } = useLanguage();
 
   return (
     <div className="p-8 max-w-7xl mx-auto pt-24 space-y-8 animate-in fade-in duration-500">
