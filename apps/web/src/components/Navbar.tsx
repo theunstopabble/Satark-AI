@@ -4,9 +4,12 @@ import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ModeToggle } from "./mode-toggle";
+import { LanguageToggle } from "./language-toggle";
+import { useLanguage } from "../context/LanguageContext";
 
 export function Navbar() {
   const location = useLocation();
+  const { t } = useLanguage();
   const isDashboard = location.pathname.includes("/dashboard");
   const [isOpen, setIsOpen] = useState(false);
 
@@ -27,7 +30,7 @@ export function Navbar() {
             <Shield className="text-primary" size={26} />
           </div>
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
-            Satark AI
+            {t("brand.name")}
           </span>
         </Link>
 
@@ -39,13 +42,13 @@ export function Navbar() {
                 to="/sign-in"
                 className="text-sm font-medium hover:text-primary transition-colors"
               >
-                Sign In
+                {t("nav.signin")}
               </Link>
               <Link
                 to="/sign-up"
                 className="px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95"
               >
-                Get Started
+                {t("nav.getstarted")}
               </Link>
             </div>
           </SignedOut>
@@ -61,7 +64,7 @@ export function Navbar() {
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
                 >
-                  New Scan
+                  {t("nav.newscan")}
                 </Link>
                 <Link
                   to="/dashboard/history"
@@ -71,7 +74,7 @@ export function Navbar() {
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
                 >
-                  History
+                  {t("nav.history")}
                 </Link>
               </nav>
               <div className="pl-4 border-l flex items-center gap-4">
@@ -80,13 +83,15 @@ export function Navbar() {
             </div>
           </SignedIn>
 
-          <div className="pl-2">
+          <div className="pl-2 flex gap-2">
+            <LanguageToggle />
             <ModeToggle />
           </div>
         </div>
 
         {/* Mobile Menu Button */}
         <div className="flex items-center gap-4 md:hidden">
+          <LanguageToggle />
           <ModeToggle />
           <button
             className="p-2 text-foreground hover:bg-muted rounded-lg transition-colors"
@@ -117,7 +122,7 @@ export function Navbar() {
                         : "hover:bg-muted"
                     }`}
                   >
-                    <span>New Scan</span> <ChevronRight size={16} />
+                    <span>{t("nav.newscan")}</span> <ChevronRight size={16} />
                   </Link>
                   <Link
                     to="/dashboard/history"
@@ -127,11 +132,11 @@ export function Navbar() {
                         : "hover:bg-muted"
                     }`}
                   >
-                    <span>History</span> <ChevronRight size={16} />
+                    <span>{t("nav.history")}</span> <ChevronRight size={16} />
                   </Link>
                   <div className="pt-4 mt-2 border-t flex justify-between items-center px-2">
                     <span className="text-sm text-muted-foreground">
-                      Profile
+                      {t("nav.profile")}
                     </span>
                     <UserButton afterSignOutUrl="/" />
                   </div>
@@ -143,13 +148,13 @@ export function Navbar() {
                     to="/sign-in"
                     className="w-full text-center py-3 rounded-xl hover:bg-muted transition-colors font-medium"
                   >
-                    Sign In
+                    {t("nav.signin")}
                   </Link>
                   <Link
                     to="/sign-up"
                     className="w-full text-center py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:shadow-lg transition-all"
                   >
-                    Get Started
+                    {t("nav.getstarted")}
                   </Link>
                 </div>
               </SignedOut>
