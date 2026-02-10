@@ -6,3 +6,7 @@ pydantic==2.5.3
 numpy==1.26.3
 httpx==0.26.0
 python-multipart==0.0.6
+torch
+torchaudio
+huggingface-hub
+speechbrain
