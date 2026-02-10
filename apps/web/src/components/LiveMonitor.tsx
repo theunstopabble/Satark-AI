@@ -155,6 +155,8 @@ export function LiveMonitor() {
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-20">
             <button
               onClick={startListening}
+              aria-label="Start Microphone"
+              title="Start Microphone"
               className="group relative flex items-center justify-center w-24 h-24 bg-primary rounded-full shadow-lg hover:scale-110 transition-all duration-300"
             >
               <div className="absolute animate-ping inline-flex h-full w-full rounded-full bg-primary opacity-20"></div>
