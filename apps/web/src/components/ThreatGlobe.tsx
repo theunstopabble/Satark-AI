@@ -54,10 +54,10 @@ export function ThreatGlobe() {
   }, [location]);
 
   return (
-    <div className="relative w-full max-w-[600px] h-[600px] mx-auto opacity-90 hover:opacity-100 transition-opacity">
+    <div className="relative w-full max-w-[500px] h-[500px] mx-auto transition-opacity pointer-events-none md:pointer-events-auto">
       <canvas
         ref={canvasRef}
-        className="w-[600px] h-[600px] max-w-full aspect-square"
+        className="w-[500px] h-[500px] max-w-full aspect-square"
       />
 
       {location && (

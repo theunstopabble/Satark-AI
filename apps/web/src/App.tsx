@@ -17,6 +17,7 @@ import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
 import { ThreatGlobe } from "@/components/ThreatGlobe";
 import { AudioUpload } from "@/components/AudioUpload";
 import { LiveMonitor } from "@/components/LiveMonitor";
+import { DeepfakeGame } from "@/components/DeepfakeGame";
 import { Landing } from "./pages/Landing";
 import { Navbar } from "@/components/Navbar";
 import { useState, lazy, Suspense } from "react";
@@ -51,27 +52,39 @@ function Dashboard() {
   return (
     <div className="p-8 max-w-7xl mx-auto pt-24 space-y-8 animate-in fade-in duration-500">
       {/* Feature Toggle */}
-      <div className="flex justify-center flex-col items-center gap-8">
-        <ThreatGlobe />
+      <div className="flex flex-col items-center gap-8 relative">
+        {/* Globe as Background/Hero Element */}
+        <div className="md:absolute top-[-50px] z-0 opacity-60 hover:opacity-100 transition-opacity duration-1000">
+          <ThreatGlobe />
+        </div>
 
-        <div className="bg-secondary/50 backdrop-blur-sm p-1.5 rounded-full flex gap-2 border border-border/50 relative z-10">
+        {/* Spacing for Globe */}
+        <div className="hidden md:block h-[350px]"></div>
+
+        <div className="bg-secondary/80 backdrop-blur-md p-1.5 rounded-full flex flex-wrap justify-center gap-2 border border-border/50 shadow-2xl relative z-10 w-full max-w-fit mx-auto">
           <button
             onClick={() => setMode("analysis")}
-            className={`px-8 py-2.5 rounded-full font-medium transition-all duration-300 ${mode === "analysis" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+            className={`px-6 py-2.5 rounded-full font-medium transition-all duration-300 flex items-center gap-2 ${mode === "analysis" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
           >
-            🛡️ Deepfake Detector
+            {t("toggle.detector")}
           </button>
           <button
             onClick={() => setMode("identity")}
-            className={`px-8 py-2.5 rounded-full font-medium transition-all duration-300 ${mode === "identity" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+            className={`px-6 py-2.5 rounded-full font-medium transition-all duration-300 flex items-center gap-2 ${mode === "identity" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
           >
             {t("toggle.identity")}
           </button>
           <button
             onClick={() => setMode("monitor")}
-            className={`px-8 py-2.5 rounded-full font-medium transition-all duration-300 ${mode === "monitor" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+            className={`px-6 py-2.5 rounded-full font-medium transition-all duration-300 flex items-center gap-2 ${mode === "monitor" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
           >
             🎙️ Live Monitor
+          </button>
+          <button
+            onClick={() => setMode("game")}
+            className={`px-6 py-2.5 rounded-full font-medium transition-all duration-300 flex items-center gap-2 ${mode === "game" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            🎮 Challenge
           </button>
         </div>
       </div>
@@ -92,6 +105,8 @@ function Dashboard() {
         )}
 
         {mode === "monitor" && <LiveMonitor />}
+
+        {mode === "game" && <DeepfakeGame />}
       </div>
     </div>
   );
