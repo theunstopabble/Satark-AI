@@ -14,8 +14,7 @@ import {
 } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
-// ThreatGlobe import removed as per user request
-// import { ThreatGlobe } from "@/components/ThreatGlobe";
+// ThreatGlobe removed
 import { AudioUpload } from "@/components/AudioUpload";
 import { LiveMonitor } from "@/components/LiveMonitor";
 import { DeepfakeGame } from "@/components/DeepfakeGame";
@@ -54,9 +53,10 @@ function Dashboard() {
       <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <div className="relative z-10 w-full max-w-6xl mx-auto pt-20 lg:pt-24 space-y-8">
-        {/* Feature Toggles (Left Aligned & Sticky) */}
-        <div className="flex justify-start w-full sticky top-4 z-50 pl-2">
-          <div className="bg-background/80 backdrop-blur-xl p-1.5 rounded-full flex flex-wrap justify-start gap-2 border border-border/50 shadow-sm ring-1 ring-border/20 transition-all hover:shadow-md">
+        {/* Feature Toggles (Centered & Sticky) */}
+        {/* Changed justify-start to justify-center as requested */}
+        <div className="flex justify-center w-full sticky top-4 z-50">
+          <div className="bg-background/80 backdrop-blur-xl p-1.5 rounded-full flex flex-wrap justify-center gap-2 border border-border/50 shadow-sm ring-1 ring-border/20 transition-all hover:shadow-md">
             <button
               onClick={() => setMode("analysis")}
               className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "analysis" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
@@ -85,7 +85,8 @@ function Dashboard() {
         </div>
 
         {/* Main Content Area */}
-        <div className="w-full lg:max-w-4xl animate-in slide-in-from-bottom-8 duration-700 ease-out">
+        {/* Added mx-auto to center the content block */}
+        <div className="w-full max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-700 ease-out">
           {mode === "analysis" && (
             <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-[2rem] p-1 shadow-xl">
               <AudioUpload />
