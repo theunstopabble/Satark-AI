@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 import {
   Play,
   Pause,
@@ -9,7 +9,6 @@ import {
   RefreshCw,
   Volume2,
 } from "lucide-react";
-import { useLanguage } from "../context/LanguageContext";
 
 // Sample Game Data (Simulated)
 const GAME_ROUNDS = [

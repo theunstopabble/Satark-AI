@@ -44,9 +44,9 @@ if (!PUBLISHABLE_KEY) {
 const queryClient = new QueryClient();
 
 function Dashboard() {
-  const [mode, setMode] = useState<"analysis" | "identity" | "monitor">(
-    "analysis",
-  );
+  const [mode, setMode] = useState<
+    "analysis" | "identity" | "monitor" | "game"
+  >("analysis");
   const { t } = useLanguage();
 
   return (
