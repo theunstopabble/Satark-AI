@@ -35,6 +35,7 @@ export function FakeHeatmap({ segments, duration }: FakeHeatmapProps) {
             <div
               key={i}
               className="absolute h-full top-0 bg-red-600 transition-all hover:bg-red-500 cursor-help group"
+              // eslint-disable-next-line react-dom/no-unsafe-styles
               style={{
                 left: `${leftPct}%`,
                 width: `${widthPct}%`,

@@ -13,9 +13,10 @@ import {
   Navigate,
 } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
-import { LanguageProvider } from "@/context/LanguageContext";
+import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
 import { ThreatGlobe } from "@/components/ThreatGlobe";
 import { AudioUpload } from "@/components/AudioUpload";
+import { LiveMonitor } from "@/components/LiveMonitor";
 import { Landing } from "./pages/Landing";
 import { Navbar } from "@/components/Navbar";
 import { useState, lazy, Suspense } from "react";
@@ -42,7 +43,10 @@ if (!PUBLISHABLE_KEY) {
 const queryClient = new QueryClient();
 
 function Dashboard() {
-  const [mode, setMode] = useState<"analysis" | "identity">("analysis");
+  const [mode, setMode] = useState<"analysis" | "identity" | "monitor">(
+    "analysis",
+  );
+  const { t } = useLanguage();
 
   return (
     <div className="p-8 max-w-7xl mx-auto pt-24 space-y-8 animate-in fade-in duration-500">
@@ -61,7 +65,13 @@ function Dashboard() {
             onClick={() => setMode("identity")}
             className={`px-8 py-2.5 rounded-full font-medium transition-all duration-300 ${mode === "identity" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
           >
-            🆔 Speaker Identity
+            {t("toggle.identity")}
+          </button>
+          <button
+            onClick={() => setMode("monitor")}
+            className={`px-8 py-2.5 rounded-full font-medium transition-all duration-300 ${mode === "monitor" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            🎙️ Live Monitor
           </button>
         </div>
       </div>
