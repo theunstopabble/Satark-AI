@@ -50,63 +50,79 @@ function Dashboard() {
   const { t } = useLanguage();
 
   return (
-    <div className="p-8 max-w-7xl mx-auto pt-24 space-y-8 animate-in fade-in duration-500">
-      {/* Feature Toggle */}
-      <div className="flex flex-col items-center gap-8 relative">
-        {/* Globe as Background/Hero Element */}
-        <div className="md:absolute top-[-50px] z-0 opacity-60 hover:opacity-100 transition-opacity duration-1000">
-          <ThreatGlobe />
-        </div>
-
-        {/* Spacing for Globe */}
-        <div className="hidden md:block h-[350px]"></div>
-
-        <div className="bg-secondary/80 backdrop-blur-md p-1.5 rounded-full flex flex-wrap justify-center gap-2 border border-border/50 shadow-2xl relative z-10 w-full max-w-fit mx-auto">
+    <div className="p-4 md:p-8 max-w-full mx-auto pt-24 min-h-screen relative overflow-x-hidden">
+      {/* Feature Toggles (Sticky Top) */}
+      <div className="flex justify-center w-full sticky top-4 z-50 mb-8 md:mb-12">
+        <div className="bg-secondary/80 backdrop-blur-xl p-1.5 rounded-full flex flex-wrap justify-center gap-2 border border-border/50 shadow-2xl transition-all hover:scale-[1.01]">
           <button
             onClick={() => setMode("analysis")}
-            className={`px-6 py-2.5 rounded-full font-medium transition-all duration-300 flex items-center gap-2 ${mode === "analysis" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+            className={`px-4 py-2 md:px-6 md:py-2.5 rounded-full font-medium text-sm md:text-base transition-all duration-300 flex items-center gap-2 ${mode === "analysis" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
           >
             {t("toggle.detector")}
           </button>
           <button
             onClick={() => setMode("identity")}
-            className={`px-6 py-2.5 rounded-full font-medium transition-all duration-300 flex items-center gap-2 ${mode === "identity" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+            className={`px-4 py-2 md:px-6 md:py-2.5 rounded-full font-medium text-sm md:text-base transition-all duration-300 flex items-center gap-2 ${mode === "identity" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
           >
             {t("toggle.identity")}
           </button>
           <button
             onClick={() => setMode("monitor")}
-            className={`px-6 py-2.5 rounded-full font-medium transition-all duration-300 flex items-center gap-2 ${mode === "monitor" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+            className={`px-4 py-2 md:px-6 md:py-2.5 rounded-full font-medium text-sm md:text-base transition-all duration-300 flex items-center gap-2 ${mode === "monitor" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
           >
             🎙️ Live Monitor
           </button>
           <button
             onClick={() => setMode("game")}
-            className={`px-6 py-2.5 rounded-full font-medium transition-all duration-300 flex items-center gap-2 ${mode === "game" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
+            className={`px-4 py-2 md:px-6 md:py-2.5 rounded-full font-medium text-sm md:text-base transition-all duration-300 flex items-center gap-2 ${mode === "game" ? "bg-background shadow-sm text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"}`}
           >
             🎮 Challenge
           </button>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto min-h-[600px]">
-        {mode === "analysis" && <AudioUpload />}
+      {/* AMBIENT GLOBE - Fixed to Right Side (Hidden on mobile, visible on lg) */}
+      <div className="fixed top-20 right-[-150px] lg:right-[-50px] w-[500px] h-[500px] lg:w-[600px] lg:h-[600px] z-0 pointer-events-none opacity-30 lg:opacity-60 hidden md:block">
+        <div className="absolute inset-0 bg-gradient-to-l from-primary/10 to-transparent blur-[80px] rounded-full"></div>
+        <ThreatGlobe />
+      </div>
 
-        {mode === "identity" && (
-          <Suspense
-            fallback={
-              <div className="text-center py-20">
-                Loading Identity Module...
+      {/* Main Content Area */}
+      <div className="relative z-10 w-full max-w-5xl mx-auto lg:pr-[300px]">
+        <div className="animate-in slide-in-from-bottom-8 duration-700 ease-out">
+          {mode === "analysis" && (
+            <div className="space-y-8">
+              <div className="text-left space-y-2">
+                <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+                  New Analysis
+                </h2>
+                <p className="text-lg text-muted-foreground max-w-2xl">
+                  Detect deepfakes with advanced spectral processing.
+                </p>
               </div>
-            }
-          >
-            <SpeakerIdentity />
-          </Suspense>
-        )}
 
-        {mode === "monitor" && <LiveMonitor />}
+              <div className="bg-card/50 backdrop-blur-sm border rounded-3xl p-1 shadow-xl">
+                <AudioUpload />
+              </div>
+            </div>
+          )}
 
-        {mode === "game" && <DeepfakeGame />}
+          {mode === "identity" && (
+            <Suspense
+              fallback={
+                <div className="p-12 text-center text-xl text-muted-foreground">
+                  Initializing Identity Neural Net...
+                </div>
+              }
+            >
+              <SpeakerIdentity />
+            </Suspense>
+          )}
+
+          {mode === "monitor" && <LiveMonitor />}
+
+          {mode === "game" && <DeepfakeGame />}
+        </div>
       </div>
     </div>
   );
