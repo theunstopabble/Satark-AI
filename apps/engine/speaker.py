@@ -4,9 +4,6 @@ import pathlib
 import logging
 import torch
 import torchaudio
-import soundfile as sf
-import huggingface_hub
-from speechbrain.inference.speaker import EncoderClassifier
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -15,6 +12,10 @@ logger = logging.getLogger(__name__)
 # Monkey patch for torchaudio < 2.1 compatibility if needed by speechbrain
 if not hasattr(torchaudio, "list_audio_backends"):
     torchaudio.list_audio_backends = lambda: ["soundfile"]  # Mock backend
+
+import soundfile as sf
+import huggingface_hub
+from speechbrain.inference.speaker import EncoderClassifier
 
 # Patch HuggingFace Download
 _original_hf_download = huggingface_hub.hf_hub_download
