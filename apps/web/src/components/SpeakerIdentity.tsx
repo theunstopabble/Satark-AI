@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Loader2,
 } from "lucide-react";
+import { useApiClient } from "@/api/client";
 
 export function SpeakerIdentity() {
   const { user } = useUser();
@@ -16,6 +17,8 @@ export function SpeakerIdentity() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
+
+  const { enrollSpeaker, verifySpeaker } = useApiClient();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) setFile(e.target.files[0]);
@@ -28,17 +31,7 @@ export function SpeakerIdentity() {
     setResult(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("name", name);
-      formData.append("userId", user?.id || "guest");
-
-      const res = await fetch("http://localhost:3000/api/speaker/enroll", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Enrollment failed");
+      await enrollSpeaker(file, name, user?.id || "guest");
 
       setResult({
         success: true,
@@ -60,16 +53,7 @@ export function SpeakerIdentity() {
     setResult(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("http://localhost:3000/api/speaker/verify", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Verification failed");
-
+      const data = await verifySpeaker(file, user?.id || "guest");
       setResult(data);
     } catch (err) {
       setError(String(err));

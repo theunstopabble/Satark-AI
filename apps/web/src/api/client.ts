@@ -74,5 +74,51 @@ export const useApiClient = () => {
     });
   };
 
-  return { scanAudio, scanUpload, getHistory, submitFeedback };
+  const enrollSpeaker = async (file: File, name: string, userId: string) => {
+    const token = await getToken();
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("name", name);
+    formData.append("userId", userId);
+
+    const response = await fetch(`${API_URL}/api/speaker/enroll`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Enrollment failed");
+    }
+    return response.json();
+  };
+
+  const verifySpeaker = async (file: File, userId: string) => {
+    const token = await getToken();
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("userId", userId);
+
+    const response = await fetch(`${API_URL}/api/speaker/verify`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Verification failed");
+    }
+    return response.json();
+  };
+
+  return {
+    scanAudio,
+    scanUpload,
+    getHistory,
+    submitFeedback,
+    enrollSpeaker,
+    verifySpeaker,
+  };
 };
