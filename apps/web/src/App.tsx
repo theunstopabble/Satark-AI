@@ -77,9 +77,9 @@ function Dashboard() {
       </div>
 
       <div className="max-w-4xl mx-auto min-h-[600px]">
-        {mode === "analysis" ? (
-          <AudioUpload />
-        ) : (
+        {mode === "analysis" && <AudioUpload />}
+
+        {mode === "identity" && (
           <Suspense
             fallback={
               <div className="text-center py-20">
@@ -90,6 +90,8 @@ function Dashboard() {
             <SpeakerIdentity />
           </Suspense>
         )}
+
+        {mode === "monitor" && <LiveMonitor />}
       </div>
     </div>
   );
