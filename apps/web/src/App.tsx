@@ -175,7 +175,7 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="satark-ui-theme">
+      <ThemeProvider defaultTheme="light" storageKey="satark-ui-theme">
         <BrowserRouter>
           <ClerkProviderWithRoutes />
         </BrowserRouter>
