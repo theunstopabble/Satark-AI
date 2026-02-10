@@ -3,6 +3,7 @@ import { Shield, Menu, X, ChevronRight } from "lucide-react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ModeToggle } from "./mode-toggle";
 
 export function Navbar() {
   const location = useLocation();
@@ -31,7 +32,7 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-6">
           <SignedOut>
             <div className="flex items-center gap-6">
               <Link
@@ -73,20 +74,27 @@ export function Navbar() {
                   History
                 </Link>
               </nav>
-              <div className="pl-4 border-l">
+              <div className="pl-4 border-l flex items-center gap-4">
                 <UserButton afterSignOutUrl="/" />
               </div>
             </div>
           </SignedIn>
+
+          <div className="pl-2">
+            <ModeToggle />
+          </div>
         </div>
 
         {/* Mobile Menu Button */}
-        <button
-          className="md:hidden p-2 text-foreground hover:bg-muted rounded-lg transition-colors"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-4 md:hidden">
+          <ModeToggle />
+          <button
+            className="p-2 text-foreground hover:bg-muted rounded-lg transition-colors"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Dropdown */}

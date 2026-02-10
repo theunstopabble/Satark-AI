@@ -12,6 +12,7 @@ import {
   useNavigate,
   Navigate,
 } from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider";
 import { AudioUpload } from "@/components/AudioUpload";
 import { Landing } from "./pages/Landing";
 import { Navbar } from "@/components/Navbar";
@@ -174,9 +175,11 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ClerkProviderWithRoutes />
-      </BrowserRouter>
+      <ThemeProvider defaultTheme="dark" storageKey="satark-ui-theme">
+        <BrowserRouter>
+          <ClerkProviderWithRoutes />
+        </BrowserRouter>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
