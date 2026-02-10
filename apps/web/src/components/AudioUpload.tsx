@@ -76,7 +76,7 @@ export function AudioUpload() {
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="text-left space-y-2">
+      <div className="text-center space-y-2">
         <h1 className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
           New Analysis
         </h1>
