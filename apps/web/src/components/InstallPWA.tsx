@@ -34,7 +34,7 @@ export function InstallPWA() {
       className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary text-xs font-semibold rounded-full hover:bg-primary/20 transition-all border border-primary/20"
       title="Install App"
     >
-      <Download size={14} /> Install
+      <Download size={14} /> <span className="hidden sm:inline">Install</span>
     </button>
   );
 }
