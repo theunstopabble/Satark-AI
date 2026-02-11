@@ -78,7 +78,14 @@ export function Footer() {
           <p>© {currentYear} Satark AI. All rights reserved.</p>
           <div className="flex items-center gap-1">
             <span>Developed by</span>
-            <span className="font-semibold text-primary">Gautam Kumar</span>
+            <a
+              href="https://www.linkedin.com/in/gautamkr62/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-primary hover:underline hover:text-primary/80 transition-colors"
+            >
+              Gautam Kumar
+            </a>
           </div>
         </div>
       </div>
