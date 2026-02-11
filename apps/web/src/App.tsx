@@ -20,6 +20,7 @@ import { LiveMonitor } from "@/components/LiveMonitor";
 import { DeepfakeGame } from "@/components/DeepfakeGame";
 import { Landing } from "./pages/Landing";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { useState, lazy, Suspense } from "react";
 
 const History = lazy(() =>
@@ -201,6 +202,7 @@ function ClerkProviderWithRoutes() {
           />
         </Routes>
       </Suspense>
+      <Footer />
     </ClerkProvider>
   );
 }

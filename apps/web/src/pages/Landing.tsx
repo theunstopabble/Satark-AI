@@ -106,10 +106,7 @@ export function Landing() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 border-t text-center text-muted-foreground text-sm">
-        <p>&copy; 2026 Satark AI. Built for Social Good.</p>
-      </footer>
+      {/* Footer removed - Using global Footer */}
     </div>
   );
 }
