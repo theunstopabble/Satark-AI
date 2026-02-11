@@ -60,6 +60,7 @@ export function AudioUpload() {
     },
     onSuccess: (data) => {
       // Success handled via UI state
+      console.log("Scan Complete:", data.id);
     },
     onError: (error) => {
       console.error(error);

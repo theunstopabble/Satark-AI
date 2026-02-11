@@ -36,6 +36,9 @@ export const ScanResultSchema = z.object({
     })
     .optional(),
   createdAt: z.string().or(z.date()), // API returns string, Date object in DB
+  isDuplicate: z.boolean().optional(),
+  fileHash: z.string().optional(),
+  audioData: z.string().optional(),
 });
 
 export type ScanResultType = z.infer<typeof ScanResultSchema>;
