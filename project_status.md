@@ -41,6 +41,12 @@ The project is deployed and active at the following URLs:
 
 ## 4. Current Features ✅
 
+### 📱 PWA Support (New)
+
+- **Installable**: Can be installed as a native app on Mobile/Desktop.
+- **Offline Ready**: Caches assets for offline access.
+- **Responsive**: Fully optimized for all screen sizes.
+
 ### A. Deepfake Detection 🕵️‍♂️
 
 - **Audio**: MFCC & Spectral analysis to detect synthetic speech artifacts.

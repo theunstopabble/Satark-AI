@@ -30,6 +30,7 @@
     "recharts": "^3.7.0",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
+    "vite-plugin-pwa": "^1.2.0",
     "wavesurfer.js": "^7.12.1",
     "zod": "^3.22.4"
   },

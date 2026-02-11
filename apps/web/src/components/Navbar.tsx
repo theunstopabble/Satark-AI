@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ModeToggle } from "./mode-toggle";
 import { LanguageToggle } from "./language-toggle";
 import { useLanguage } from "../context/LanguageContext";
+import { InstallPWA } from "./InstallPWA";
 
 export function Navbar() {
   const location = useLocation();
@@ -84,7 +85,8 @@ export function Navbar() {
             </div>
           </SignedIn>
 
-          <div className="pl-2 flex gap-2">
+          <div className="pl-2 flex gap-2 items-center">
+            <InstallPWA />
             <LanguageToggle />
             <ModeToggle />
           </div>
