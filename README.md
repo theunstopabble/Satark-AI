@@ -1,6 +1,10 @@
 # Satark-AI: Defending Truth in the Age of Generative AI 🛡️
 
-![Satark-AI Banner](apps/web/public/satark-banner.png)
+<div align="center">
+  <img src="apps/web/public/satark-banner.png" alt="Satark-AI Banner" width="400" />
+</div>
+
+<div align="center">
 
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-blue?style=for-the-badge&logo=pwa)](https://satark-ai.vercel.app)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
@@ -8,11 +12,25 @@
 [![SpeechBrain](https://img.shields.io/badge/SpeechBrain-Powered-FFD700?style=for-the-badge)](https://speechbrain.github.io)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
+</div>
+
 ## 🌐 Live Demo
 
 👉 **[Click Here to Open App](https://satark-deepfake.vercel.app/)**
 
 **Satark-AI** is a cutting-edge deepfake detection and speaker verification platform. It leverages advanced audio analysis techniques (MFCC, Spectral Analysis) and Deep Learning models to identify synthetic media and verify speaker identities in real-time.
+
+---
+
+## 📸 Screenshots
+
+|                     Dashboard                      |                   Mobile View                    |
+| :------------------------------------------------: | :----------------------------------------------: |
+| ![Dashboard Layout](apps/web/public/dashboard.png) | ![Mobile Responsive](apps/web/public/mobile.png) |
+
+|                 Live Monitor                 |              Speaker Identity               |
+| :------------------------------------------: | :-----------------------------------------: |
+| ![Live Monitor](apps/web/public/monitor.png) | ![Speaker ID](apps/web/public/identity.png) |
 
 ---
 
@@ -104,20 +122,6 @@ Open 3 terminals to start the microservices:
     # Activate venv if used
     python -m uvicorn main:app --reload --port 5500
     ```
-
----
-
-## 📸 Screenshots
-
-|                     Dashboard                      |                   Mobile View                    |
-| :------------------------------------------------: | :----------------------------------------------: |
-| ![Dashboard Layout](apps/web/public/dashboard.png) | ![Mobile Responsive](apps/web/public/mobile.png) |
-
-|                 Live Monitor                 |              Speaker Identity               |
-| :------------------------------------------: | :-----------------------------------------: |
-| ![Live Monitor](apps/web/public/monitor.png) | ![Speaker ID](apps/web/public/identity.png) |
-
-_(Note: Capture screenshots and replace the paths above)_
 
 ---
 
