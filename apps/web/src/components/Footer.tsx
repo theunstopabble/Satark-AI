@@ -77,9 +77,8 @@ export function Footer() {
         <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>© {currentYear} Satark AI. All rights reserved.</p>
           <div className="flex items-center gap-1">
-            <span>Made with</span>
-            <Heart size={14} className="text-red-500 fill-red-500" />
-            <span>in India 🇮🇳</span>
+            <span>Developed by</span>
+            <span className="font-semibold text-primary">Gautam Kumar</span>
           </div>
         </div>
       </div>
