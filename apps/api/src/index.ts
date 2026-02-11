@@ -34,15 +34,21 @@ app.get("/health-db", async (c) => {
 // Helper to save scan results
 async function saveScanResult(result: any) {
   try {
-    await db.insert(scans).values({
-      userId: result.userId,
-      audioUrl: result.audioUrl,
-      isDeepfake: result.isDeepfake,
-      confidenceScore: result.confidenceScore,
-      analysisDetails: result.analysisDetails,
-    });
+    const [inserted] = await db
+      .insert(scans)
+      .values({
+        userId: result.userId,
+        audioUrl: result.audioUrl,
+        isDeepfake: result.isDeepfake,
+        confidenceScore: result.confidenceScore,
+        analysisDetails: result.analysisDetails,
+      })
+      .returning({ id: scans.id });
+
+    return inserted?.id;
   } catch (dbError) {
     console.error("❌ Failed to save scan to DB:", dbError);
+    return null;
   }
 }
 
@@ -64,9 +70,9 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
     }
 
     const result = await response.json();
-    await saveScanResult(result);
+    const scanId = await saveScanResult(result);
 
-    return c.json(result);
+    return c.json({ ...result, id: scanId });
   } catch (error) {
     console.error("API Error:", error);
     return c.json({ error: "Failed to connect to AI Engine" }, 503);
@@ -103,9 +109,9 @@ app.post("/scan-upload", async (c) => {
     }
 
     const result = await response.json();
-    await saveScanResult(result);
+    const scanId = await saveScanResult(result);
 
-    return c.json(result);
+    return c.json({ ...result, id: scanId });
   } catch (error) {
     console.error("Upload API Error:", error);
     return c.json({ error: "Failed to process upload" }, 500);

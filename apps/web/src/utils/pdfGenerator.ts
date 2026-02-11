@@ -1,4 +1,4 @@
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { ScanResultType } from "@repo/shared";
 
@@ -98,5 +98,5 @@ export const generateScanReport = (
   );
   doc.text("Satark AI © 2024", 180, pageHeight - 10, { align: "right" });
 
-  doc.save(`Satark_Report_${scan.id.slice(0, 8)}.pdf`);
+  doc.save(`Satark_Report_${String(scan.id).slice(0, 8)}.pdf`);
 };
