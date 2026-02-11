@@ -15,6 +15,7 @@ import {
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
 // ThreatGlobe removed
+import { AudioUpload } from "@/components/AudioUpload";
 import { LiveMonitor } from "@/components/LiveMonitor";
 import { DeepfakeGame } from "@/components/DeepfakeGame";
 import { Landing } from "./pages/Landing";
