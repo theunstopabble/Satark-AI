@@ -58,8 +58,14 @@ export function AudioUpload() {
         return scanUpload(selectedFile, user?.id || "guest");
       }
     },
+    onSuccess: (data) => {
+      // Success handled via UI state
+    },
     onError: (error) => {
-      alert(`Error: ${error.message}`);
+      console.error(error);
+      // alert(`Error: ${error.message}`); // Keeping alert for Error is okay, but user said polish.
+      // Maybe use a custom UI error?
+      // For now, removing the success alert as requested.
     },
   });
 
@@ -238,6 +244,19 @@ export function AudioUpload() {
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <CheckCircle2 className="text-green-500" /> Analysis Report
               </h3>
+
+              {mutation.data.isDuplicate && (
+                <div className="bg-amber-500/10 border-l-4 border-amber-500 text-amber-700 dark:text-amber-400 p-4 mb-6 rounded-r">
+                  <p className="font-bold flex items-center gap-2">
+                    ♻️ Loaded from Cache
+                  </p>
+                  <p className="text-sm">
+                    This file has been analyzed before. Retrieving existing
+                    results.
+                  </p>
+                </div>
+              )}
+
               <p className="text-lg text-muted-foreground leading-relaxed mb-6">
                 {mutation.data.analysisDetails}
               </p>

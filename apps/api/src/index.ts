@@ -104,7 +104,6 @@ app.post("/scan-upload", async (c) => {
     });
 
     if (existingScan) {
-      console.log(`♻️ Duplicate Scan Found: ${existingScan.id}`);
       return c.json({
         ...existingScan,
         isDuplicate: true,
@@ -168,7 +167,7 @@ app.get("/audio/:id", async (c) => {
     });
 
     if (!scan || !scan.audioData) {
-      return c.status(404);
+      return c.text("Audio not found", 404);
     }
 
     const audioBuffer = Buffer.from(scan.audioData, "base64");
@@ -180,7 +179,7 @@ app.get("/audio/:id", async (c) => {
     });
   } catch (error) {
     console.error("Audio Fetch Error:", error);
-    return c.status(500);
+    return c.text("Internal Server Error", 500);
   }
 });
 
