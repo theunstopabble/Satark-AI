@@ -1,150 +1,81 @@
 # Satark-AI Project Status 🚀
 
 **Date**: February 11, 2026
-**Status**: 🟢 **Submission Ready (Internship)**
+**Status**: 🟢 **Completed & Polished (Ready for Submission)**
 
 ## 1. Overview
 
-Satark-AI is a multi-modal security platform aimed at detecting **Deepfakes** (Audio/Video) and verifying **Speaker Identity** using biometric voice prints.
-**Focus:** Final Polish & Submission Strategy
+Satark-AI is a comprehensive **AI-Powered Deepfake Detection & Voice Analysis Platform**.
+Designed to defend truth in the age of Generative AI, it provides real-time detection, speaker verification, and live monitoring capabilities.
 
-The project is **feature-complete** and optimized for the Microsoft Elevate Internship submission.
-Key achievements include:
-
-- **Real-time Deepfake Detection** (Live Monitor).
-- **Persistent History** with Audio Playback & PDF Reports.
-- **Smart Deduplication** using SHA-256 Hashing.
-- **Microservices Architecture** (React + Hono + Python Engine).
-
-Ready for video recording and demo. 🎥
+**Submission Target:** Microsoft Elevate Internship / Hackathon.
 
 ## 2. Architecture 🏗️
 
-The project follows a localized microservices architecture:
+The project utilizes a modern **Monorepo** structure with **Turborepo**:
 
-| Service      | Path          | Tech Stack                        | Port   | Description                                 |
-| :----------- | :------------ | :-------------------------------- | :----- | :------------------------------------------ |
-| **Frontend** | `apps/web`    | React, Vite, Tailwind, Clerk      | `5173` | User Interface (Dashboard, Uploads).        |
-| **API**      | `apps/api`    | Node.js, Hono, Drizzle ORM        | `3000` | Orchestrator, Database Logic.               |
-| **Engine**   | `apps/engine` | Python, FastAPI, Librosa, PyTorch | `5500` | AI Inference (Deepfake & Speaker ID).       |
-| **Database** | `local`       | PostgreSQL                        | `5432` | Stores scan history and speaker embeddings. |
+| Service      | Path          | Tech Stack                            | Port   | Description                   |
+| :----------- | :------------ | :------------------------------------ | :----- | :---------------------------- |
+| **Frontend** | `apps/web`    | React, Vite, Tailwind, Framer Motion  | `5173` | Responsive Dashboard, PWA.    |
+| **API**      | `apps/api`    | Node.js, Hono, Drizzle ORM            | `3000` | Gateway, Business Logic, DB.  |
+| **Engine**   | `apps/engine` | Python, FastAPI, PyTorch, SpeechBrain | `5500` | AI Inference, Audio Analysis. |
 
-## 3. Live Deployment 🌐
+**Database**: PostgreSQL (Local/Supabase compatible).
 
-The project is deployed and active at the following URLs:
+## 3. Features ✅
 
-| Service      | URL                                                                     | Hosting Provider | Config Required                                                        |
-| :----------- | :---------------------------------------------------------------------- | :--------------- | :--------------------------------------------------------------------- |
-| **Frontend** | [satark-deepfake.vercel.app](https://satark-deepfake.vercel.app/)       | Vercel           | `VITE_API_URL=https://satark-ai-f5t7.onrender.com`                     |
-| **API**      | [satark-ai-f5t7.onrender.com](https://satark-ai-f5t7.onrender.com/)     | Render           | `ENGINE_URL=https://satark-ai-engine.onrender.com`, `DATABASE_URL=...` |
-| **Engine**   | [satark-ai-engine.onrender.com](https://satark-ai-engine.onrender.com/) | Render           | None (Python Runtime)                                                  |
+### 📱 PWA & Mobile First
 
-## 4. Current Features ✅
+- **Progressive Web App**: Installable on iOS/Android/Desktop.
+- **Responsive UI**: Optimized for all viewports (Mobile-first navigation).
+- **Offline Support**: Caches key assets for instant improvements.
 
-### 📱 PWA Support (New)
+### 🕵️‍♂️ Deepfake Detection
 
-- **Installable**: Can be installed as a native app on Mobile/Desktop.
-- **Offline Ready**: Caches assets for offline access.
-- **Responsive**: Fully optimized for all screen sizes.
+- **Multi-Modal**: Analyzes Audio files (MP3/WAV) and Video Audio (MP4).
+- **Advanced Metrics**: Uses **MFCC (Mel-frequency cepstral coefficients)** and **Spectral Analysis**.
+- **Transparency**: Provides confidence scores and heatmaps (XAI).
 
-### A. Deepfake Detection 🕵️‍♂️
+### 🆔 Speaker Identity
 
-- **Audio**: MFCC & Spectral analysis to detect synthetic speech artifacts.
-- **Video**: Extracts audio from MP4 files and analyzes it.
-- **XAI**: Returns "Explainable AI" heatmap data (fake segments).
+- **Biometric Enrollment**: Creates a unique voice embedding for a speaker.
+- **Verification**: Matches new audio against enrolled voices with high precision.
+- **Engine**: Powered by `speechbrain/spkrec-ecapa-voxceleb`.
 
-### B. Speaker Verification 🆔
+### 🎙️ Live Monitor
 
-- **Enrollment**: Registers a user's voice print (embedding) in DB.
-- **Verification**: compares new audio against stored print using Cosine Similarity.
-- **Engine**: Uses `speechbrain/spkrec-ecapa-voxceleb` (Patched for Windows).
+- **Real-Time Analysis**: records audio in 5s chunks from the browser.
+- **Persistence**: Automatically saves analysis results to the database.
+- **Continuous Protection**: Ideal for monitoring calls or live streams.
 
-### C. History & Analytics 📊
+### 📊 Analytics & History
 
-- **Dashboard**: Real-time stats (Total Scans, Fake Ratio).
-- **History Page**: Lazy-loaded table of past scans with feedback loop.
-- **Playback**: Listen to past audio scans (Stored in DB).
+- **Smart Dashboard**: Visualizes threats and usage stats.
+- **Playback**: Listen to past scans directly from the history table.
+- **Deduplication**: SHA-256 hashing prevents redundant processing.
+- **PDF Reports**: downloadable, detailed forensic reports.
 
-### D. Live Monitor (Upgrade) 🎙️
+## 4. Work Completed 🛠️
 
-- **Real-Time Analysis**: Captures 5s chunks and sends to Engine.
-- **Persistence**: Auto-saves every analysis to Database History.
-- **Reporting**: PDF Reports with detailed analysis.
+- **Core Logic**: End-to-end integration of Web -> API -> Engine.
+- **UI Polish**:
+  - Glassmorphism Design Concept.
+  - Professional Footer with Social Links.
+  - Dynamic Navbar (Mobile/Desktop).
+  - Dark/Light Mode.
+- **Optimization**:
+  - `SpeechBrain` patches for Windows.
+  - Database Indexing & Caching.
+  - Code Cleanup (Removed unused logs/files).
 
-## 5. Key Files & Logic 📂
+## 5. Development Setup
 
-### Engine (`apps/engine`)
+To run the project locally:
 
-- `main.py`: FastAPI entry point. Defines `/scan`, `/scan-upload`, `/embed`.
-- `detect.py`: Core Deepfake Detection logic. (Optimized with `run_in_executor`).
-- `speaker.py`: Speaker Verification logic. (Contains Windows patches for Symlinks/Torchaudio).
+1.  **Frontend**: `cd apps/web && npm run dev`
+2.  **Backend**: `cd apps/api && npm run dev`
+3.  **AI Engine**: `cd apps/engine && python -m uvicorn main:app --reload --port 5500`
 
-### API (`apps/api`)
+---
 
-- `src/index.ts`: API Gateway. Routes requests to Engine or DB.
-- `src/db/schema.ts`: Database Schema (`scans`, `speakers`). (Indexed for performance).
-
-### Web (`apps/web`)
-
-- `src/App.tsx`: Main Router. (Uses `React.lazy` for split chunks).
-- `src/components/SpeakerIdentity.tsx`: Identity Enrollment/Verification UI.
-
-## 6. Visual State 🖼️
-
-### Dashboard Overview
-
-![Dashboard](file:///C:/Users/gauta/.gemini/antigravity/brain/bebaf7f0-afce-4163-bf48-c40f5d23e499/dashboard_overview_1770741630046.png)
-
-### Speaker Identity Tab
-
-![Speaker ID](file:///C:/Users/gauta/.gemini/antigravity/brain/bebaf7f0-afce-4163-bf48-c40f5d23e499/dashboard_speaker_identity_1770741639207.png)
-
-## 7. How to Resume Work 🔄
-
-To start the project again from scratch:
-
-1.  **Database**: Ensure PostgreSQL is running.
-2.  **Terminals**: Open 3 separate terminals.
-3.  **Run Engine**:
-    ```bash
-    cd apps/engine
-    python -m uvicorn main:app --reload --port 5500
-    ```
-4.  **Run API**:
-    ```bash
-    cd apps/api
-    npm run dev
-    ```
-5.  **Run Web**:
-    ```bash
-    cd apps/web
-    npm run dev
-    ```
-
-**Note**: If you face "Port In Use" errors, use `npx kill-port 3000` (or 5500/5173).
-
-## 8. Known Patches
-
-- **Windows Symlinks**: `speaker.py` monkey-patches `speechbrain` to COPY files instead of using symlinks.
-- **Torchaudio**: `speaker.py` forces `backend="soundfile"` to avoid `torchcodec` errors.
-
-## 9. Verification Log (Automated) ✅
-
-- **Deepfake Detector**: Verified via URL Scan (Success).
-- **Speaker Identity**: Verified Enrollment UI accessibility (Success).
-- **Live Deployment**: Verified Vercel & Render URLs (Active).
-- **History Logging**: Fixed bug where Speaker Identity scans were not saved. verified via code patch.
-- **Codebase Polish**: Optimized Engine imports/logging, Refactored API index.ts, Cleaned unused files.
-- **Engine Crash Fix**: Added missing `torch` / `speechbrain` dependencies to requirements.txt & Dockerfile (Verified).
-- **Torchaudio Patch**: Fixed `AttributeError` by reordering monkey patch before `speechbrain` imports (Verified).
-- **Theme Toggle**: Implemented Dark/Light/System mode with persistence (Verified).
-- **Live Monitor Persistence**: Verified Audio Recording, API Upload, and Database Entry (History).
-- **PDF Reports**: Verified generation with correct Metadata and numeric ID handling.
-- **Audio Storage & Playback**: Verified DB persistence (Base64) and Frontend Player (`apps/api/src/index.ts`).
-- **Deduplication**: Verified SHA-256 Hashing and Cache Hit Logic.
-
-## 10. User Preferences 🗣️
-
-- **Language**: Always communicate in **Hindi** or **Hinglish**.
-- **Data Persistence**: Ensure ALL scans (Live, Upload, URL) are saved to Database.
-- **Privacy**: No Cloud Storage for audio files (Local Processing Only).
+**Developed by [Gautam Kumar](https://www.linkedin.com/in/gautamkr62/)**
