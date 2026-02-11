@@ -17,4 +17,4 @@ jobs:
       - name: Ping Python Engine
         run: |
           echo "Pinging Engine..."
-          curl -I https://satark-ai-engine.onrender.com/
+          curl -I https://satark-ai-engine-uzjb.onrender.com/
