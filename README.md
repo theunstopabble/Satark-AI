@@ -8,6 +8,10 @@
 [![SpeechBrain](https://img.shields.io/badge/SpeechBrain-Powered-FFD700?style=for-the-badge)](https://speechbrain.github.io)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
+## 🌐 Live Demo
+
+👉 **[Click Here to Open App](https://satark-deepfake.vercel.app/)**
+
 **Satark-AI** is a cutting-edge deepfake detection and speaker verification platform. It leverages advanced audio analysis techniques (MFCC, Spectral Analysis) and Deep Learning models to identify synthetic media and verify speaker identities in real-time.
 
 ---
