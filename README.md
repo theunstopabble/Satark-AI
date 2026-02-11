@@ -109,13 +109,13 @@ Open 3 terminals to start the microservices:
 
 ## 📸 Screenshots
 
-|                                     Dashboard                                     |                                   Mobile View                                   |
-| :-------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------: |
-| ![Dashboard Layout](apps/web/public/logo.png) _Replace with dashboard screenshot_ | ![Mobile Responsive](apps/web/public/logo.png) _Replace with mobile screenshot_ |
+|                     Dashboard                      |                   Mobile View                    |
+| :------------------------------------------------: | :----------------------------------------------: |
+| ![Dashboard Layout](apps/web/public/dashboard.png) | ![Mobile Responsive](apps/web/public/mobile.png) |
 
-|                                Live Monitor                                 |                              Speaker Identity                              |
-| :-------------------------------------------------------------------------: | :------------------------------------------------------------------------: |
-| ![Live Monitor](apps/web/public/logo.png) _Replace with monitor screenshot_ | ![Speaker ID](apps/web/public/logo.png) _Replace with identity screenshot_ |
+|                 Live Monitor                 |              Speaker Identity               |
+| :------------------------------------------: | :-----------------------------------------: |
+| ![Live Monitor](apps/web/public/monitor.png) | ![Speaker ID](apps/web/public/identity.png) |
 
 _(Note: Capture screenshots and replace the paths above)_
 
