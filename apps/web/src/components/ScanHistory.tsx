@@ -64,6 +64,19 @@ export function ScanHistory() {
                       <p className="text-xs text-muted-foreground mt-1">
                         {new Date(scan.createdAt).toLocaleString()}
                       </p>
+                      {/* Audio Player for Uploads */}
+                      {scan.audioUrl.startsWith("uploaded://") && (
+                        <div className="mt-2">
+                          <audio
+                            controls
+                            src={`${
+                              import.meta.env.VITE_API_URL ||
+                              "http://localhost:3000"
+                            }/audio/${scan.id}`}
+                            className="h-8 w-48"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 

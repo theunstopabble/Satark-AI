@@ -89,6 +89,32 @@ app.post("/scan-upload", async (c) => {
       return c.json({ error: "File is required" }, 400);
     }
 
+    // 1. Calculate File Hash (Deduplication)
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const fileHash = hashArray
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    // 2. Check DB for existing hash
+    const existingScan = await db.query.scans.findFirst({
+      where: eq(scans.fileHash, fileHash),
+    });
+
+    if (existingScan) {
+      console.log(`♻️ Duplicate Scan Found: ${existingScan.id}`);
+      return c.json({
+        ...existingScan,
+        isDuplicate: true,
+        message: "Loaded from cache",
+      });
+    }
+
+    // 3. Prepare Audio Data (Base64) for Storage
+    const audioData = buffer.toString("base64");
+
     const formData = new FormData();
     formData.append("file", file, file.name);
     formData.append("userId", userId as string);
@@ -109,12 +135,52 @@ app.post("/scan-upload", async (c) => {
     }
 
     const result = await response.json();
-    const scanId = await saveScanResult(result);
+
+    // 4. Save to DB with Hash and Audio Data
+    const saveResult = await db
+      .insert(scans)
+      .values({
+        userId: result.userId,
+        audioUrl: result.audioUrl,
+        isDeepfake: result.isDeepfake,
+        confidenceScore: result.confidenceScore,
+        analysisDetails: result.analysisDetails,
+        fileHash: fileHash,
+        audioData: audioData,
+      })
+      .returning({ id: scans.id });
+
+    const scanId = saveResult[0]?.id;
 
     return c.json({ ...result, id: scanId });
   } catch (error) {
     console.error("Upload API Error:", error);
     return c.json({ error: "Failed to process upload" }, 500);
+  }
+});
+
+// New Endpoint: Serve Audio from DB
+app.get("/audio/:id", async (c) => {
+  const id = c.req.param("id");
+  try {
+    const scan = await db.query.scans.findFirst({
+      where: eq(scans.id, Number(id)),
+    });
+
+    if (!scan || !scan.audioData) {
+      return c.status(404);
+    }
+
+    const audioBuffer = Buffer.from(scan.audioData, "base64");
+
+    // Simple way to serve binary data in Hono
+    return c.body(audioBuffer, 200, {
+      "Content-Type": "audio/wav", // Assuming WAV for simplicity, or generic audio
+      "Content-Length": audioBuffer.length.toString(),
+    });
+  } catch (error) {
+    console.error("Audio Fetch Error:", error);
+    return c.status(500);
   }
 });
 

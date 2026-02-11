@@ -18,6 +18,8 @@ export const scans = pgTable(
     audioUrl: text("audio_url").notNull(),
     isDeepfake: boolean("is_deepfake"),
     confidenceScore: doublePrecision("confidence_score"),
+    fileHash: text("file_hash"),
+    audioData: text("audio_data"), // Base64 encoded audio
     analysisDetails: text("analysis_details"),
     createdAt: timestamp("created_at").defaultNow(),
     feedback: text("feedback"),
@@ -26,6 +28,7 @@ export const scans = pgTable(
     return {
       userIdIdx: index("scans_user_id_idx").on(table.userId),
       createdAtIdx: index("scans_created_at_idx").on(table.createdAt),
+      fileHashIdx: index("scans_file_hash_idx").on(table.fileHash),
     };
   },
 );
