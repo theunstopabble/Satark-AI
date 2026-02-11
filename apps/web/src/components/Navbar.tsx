@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Shield, Menu, X, ChevronRight } from "lucide-react";
+import { ShieldCheck, Menu, X, ChevronRight } from "lucide-react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,15 +21,16 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        {/* Logo */}
         <Link
           to="/"
           className="flex items-center gap-2 font-bold text-2xl hover:opacity-80 transition-opacity"
         >
-          <div className="bg-primary/10 p-2 rounded-lg">
-            <Shield className="text-primary" size={26} />
-          </div>
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
+          <img
+            src="/logo.png"
+            alt="Satark-AI Logo"
+            className="w-10 h-10 object-contain"
+          />
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300">
             {t("brand.name")}
           </span>
         </Link>
