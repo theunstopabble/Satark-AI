@@ -14,6 +14,7 @@ import {
 } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
+import { Analytics } from "@vercel/analytics/react";
 // ThreatGlobe removed
 import { AudioUpload } from "@/components/AudioUpload";
 import { LiveMonitor } from "@/components/LiveMonitor";
@@ -217,6 +218,7 @@ function App() {
           </BrowserRouter>
         </LanguageProvider>
       </ThemeProvider>
+      <Analytics />
     </QueryClientProvider>
   );
 }
