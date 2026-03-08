@@ -1,212 +1,48 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  ClerkProvider,
-  SignedIn,
-  SignedOut,
-  RedirectToSignIn,
-} from "@clerk/clerk-react";
-import {
-  BrowserRouter,
-  Route,
-  Routes,
-  useNavigate,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
-import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { Landing } from "./pages/Landing";
-import { Navbar } from "@/components/Navbar";
+import { LandingNavbar } from "@/components/LandingNavbar";
 import { Footer } from "@/components/Footer";
-import { useState, lazy, Suspense } from "react";
+import { Suspense, lazy } from "react";
 
-// All heavy dashboard components are lazy loaded to not affect initial page load
-const AudioUpload = lazy(() =>
-  import("@/components/AudioUpload").then((m) => ({ default: m.AudioUpload })),
-);
-const LiveMonitor = lazy(() =>
-  import("@/components/LiveMonitor").then((m) => ({ default: m.LiveMonitor })),
-);
-const DeepfakeGame = lazy(() =>
-  import("@/components/DeepfakeGame").then((m) => ({ default: m.DeepfakeGame })),
-);
-const History = lazy(() =>
-  import("./pages/History").then((m) => ({ default: m.History })),
-);
-const SpeakerIdentity = lazy(() =>
-  import("@/components/SpeakerIdentity").then((m) => ({
-    default: m.SpeakerIdentity,
-  })),
-);
+/**
+ * Core strategy:
+ * - Landing page ("/") renders IMMEDIATELY with zero Clerk JS on the critical path.
+ * - Clerk + all auth components are lazy-loaded in AuthenticatedShell, which only
+ *   activates when user navigates to /dashboard, /sign-in, /sign-up, etc.
+ * - This removes ~200KB of Clerk JS from the landing page's initial load.
+ */
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-if (!PUBLISHABLE_KEY) {
-  console.error("Missing VITE_CLERK_PUBLISHABLE_KEY");
-}
+// Heavy authenticated subtree - Clerk + entire dashboard - loaded on demand only
+const AuthenticatedShell = lazy(() => import("./AuthenticatedShell"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Cache results for 5 minutes by default - reduces redundant network calls
       staleTime: 5 * 60 * 1000,
       retry: 1,
     },
   },
 });
 
-// Loading fallback - lightweight spinner
-function LoadingSpinner({ label = "Loading..." }: { label?: string }) {
+function LandingPageShell() {
+  return (
+    <>
+      <LandingNavbar />
+      <Landing />
+      <Footer />
+    </>
+  );
+}
+
+function LoadingSpinner() {
   return (
     <div className="flex flex-col justify-center items-center h-screen gap-3">
       <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="text-sm text-muted-foreground">Loading...</p>
     </div>
-  );
-}
-
-function Dashboard() {
-  const [mode, setMode] = useState<
-    "analysis" | "identity" | "monitor" | "game"
-  >("analysis");
-  const { t } = useLanguage();
-
-  return (
-    <div className="p-4 md:p-8 max-w-full min-h-screen relative overflow-x-hidden font-sans selection:bg-primary/20">
-      {/* Background Gradient */}
-      <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
-
-      <div className="relative z-10 w-full max-w-6xl mx-auto pt-20 lg:pt-24 space-y-8">
-        {/* Feature Toggles */}
-        <div className="flex justify-center w-full sticky top-4 z-50">
-          <div className="bg-background/80 backdrop-blur-xl p-1.5 rounded-full flex flex-wrap justify-center gap-2 border border-border/50 shadow-sm ring-1 ring-border/20 transition-all hover:shadow-md">
-            <button
-              onClick={() => setMode("analysis")}
-              className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "analysis" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
-            >
-              {t("toggle.detector")}
-            </button>
-            <button
-              onClick={() => setMode("identity")}
-              className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "identity" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
-            >
-              {t("toggle.identity")}
-            </button>
-            <button
-              onClick={() => setMode("monitor")}
-              className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "monitor" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
-            >
-              🎙️ Live Monitor
-            </button>
-            <button
-              onClick={() => setMode("game")}
-              className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "game" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
-            >
-              🎮 Challenge
-            </button>
-          </div>
-        </div>
-
-        {/* Main Content Area - all lazy loaded */}
-        <div className="w-full max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-700 ease-out">
-          <Suspense fallback={<LoadingSpinner label="Loading module..." />}>
-            {mode === "analysis" && (
-              <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-[2rem] p-1 shadow-xl">
-                <AudioUpload />
-              </div>
-            )}
-            {mode === "identity" && <SpeakerIdentity />}
-            {mode === "monitor" && <LiveMonitor />}
-            {mode === "game" && <DeepfakeGame />}
-          </Suspense>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ClerkProviderWithRoutes() {
-  const navigate = useNavigate();
-
-  if (!PUBLISHABLE_KEY) {
-    return (
-      <div className="flex bg-destructive/10 h-screen items-center justify-center flex-col gap-4 p-4 text-center">
-        <h1 className="text-4xl font-bold text-destructive">
-          Configuration Error
-        </h1>
-        <p className="text-lg">
-          Missing <code>VITE_CLERK_PUBLISHABLE_KEY</code> in{" "}
-          <code>apps/web/.env</code>
-        </p>
-        <p>Please add your Clerk Publishable Key to continue.</p>
-      </div>
-    );
-  }
-
-  return (
-    <ClerkProvider
-      publishableKey={PUBLISHABLE_KEY}
-      navigate={(to) => navigate(to)}
-    >
-      <Navbar />
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route
-            path="/sign-in/*"
-            element={
-              <>
-                <SignedIn>
-                  <Navigate to="/dashboard" replace />
-                </SignedIn>
-                <SignedOut>
-                  <RedirectToSignIn afterSignInUrl="/dashboard" />
-                </SignedOut>
-              </>
-            }
-          />
-          <Route
-            path="/sign-up/*"
-            element={
-              <>
-                <SignedIn>
-                  <Navigate to="/dashboard" replace />
-                </SignedIn>
-                <SignedOut>
-                  <RedirectToSignIn afterSignInUrl="/dashboard" />
-                </SignedOut>
-              </>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <>
-                <SignedIn>
-                  <Dashboard />
-                </SignedIn>
-                <SignedOut>
-                  <RedirectToSignIn />
-                </SignedOut>
-              </>
-            }
-          />
-          <Route
-            path="/dashboard/history"
-            element={
-              <>
-                <SignedIn>
-                  <History />
-                </SignedIn>
-                <SignedOut>
-                  <RedirectToSignIn />
-                </SignedOut>
-              </>
-            }
-          />
-        </Routes>
-      </Suspense>
-      <Footer />
-    </ClerkProvider>
   );
 }
 
@@ -216,7 +52,20 @@ function App() {
       <ThemeProvider defaultTheme="light" storageKey="satark-ui-theme">
         <LanguageProvider>
           <BrowserRouter>
-            <ClerkProviderWithRoutes />
+            <Routes>
+              {/* PUBLIC route - zero Clerk dependency */}
+              <Route path="/" element={<LandingPageShell />} />
+
+              {/* ALL auth routes - Clerk loads lazily only when user navigates here */}
+              <Route
+                path="/*"
+                element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <AuthenticatedShell />
+                  </Suspense>
+                }
+              />
+            </Routes>
           </BrowserRouter>
         </LanguageProvider>
       </ThemeProvider>

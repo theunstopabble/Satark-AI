@@ -12,7 +12,7 @@ export function Footer() {
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2 font-bold text-xl">
               <img
-                src="/logo.png"
+                src="/logo.webp"
                 alt="Satark-AI"
                 className="w-8 h-8 object-contain"
               />
