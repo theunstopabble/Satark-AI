@@ -3,11 +3,6 @@
 
 <head>
   <meta charset="UTF-8" />
-  <!-- Preconnect to external domains for faster DNS resolution -->
-  <link rel="preconnect" href="https://clerk.satark-deepfake.vercel.app" />
-  <link rel="preconnect" href="https://img.clerk.com" />
-  <link rel="preconnect" href="https://accounts.clerk.dev" crossorigin />
-  <link rel="dns-prefetch" href="https://clerk.dev" />
   <link rel="icon" type="image/webp" href="/logo.webp" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
@@ -30,10 +25,154 @@
   <link rel="preload" as="image" href="/logo.webp" fetchpriority="high" />
   <link rel="apple-touch-icon" href="/logo.webp" />
   <title>Satark-AI | Deepfake Detector</title>
+
+  <!-- Critical CSS: Inline styles for above-the-fold skeleton - eliminates render-blocking -->
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff;
+      color: #0f172a;
+      -webkit-font-smoothing: antialiased
+    }
+
+    @media(prefers-color-scheme:dark) {
+      body {
+        background: #09090b;
+        color: #fafafa
+      }
+    }
+
+    #sk-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      border-bottom: 1px solid rgba(0, 0, 0, .08);
+      background: rgba(255, 255, 255, .95);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 50;
+      gap: 10px
+    }
+
+    @media(prefers-color-scheme:dark) {
+      #sk-nav {
+        background: rgba(9, 9, 11, .95);
+        border-color: rgba(255, 255, 255, .08)
+      }
+    }
+
+    #sk-main {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 24px 24px;
+      background: radial-gradient(ellipse at center, rgba(37, 99, 235, .07) 0%, transparent 70%)
+    }
+
+    #sk-h1 {
+      font-size: clamp(2.2rem, 8vw, 4.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      max-width: 800px;
+      letter-spacing: -0.02em
+    }
+
+    #sk-span {
+      color: #2563eb
+    }
+
+    #sk-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      border: 1px solid rgba(37, 99, 235, .2);
+      background: rgba(37, 99, 235, .05);
+      color: #2563eb;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 24px
+    }
+
+    #sk-sub {
+      font-size: 1.1rem;
+      color: #64748b;
+      max-width: 600px;
+      line-height: 1.7;
+      margin-top: 20px
+    }
+
+    @media(prefers-color-scheme:dark) {
+      #sk-sub {
+        color: #94a3b8
+      }
+    }
+
+    #sk-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 32px;
+      padding: 16px 32px;
+      background: #2563eb;
+      color: #fff;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 10px 30px rgba(37, 99, 235, .25)
+    }
+  </style>
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- Inline HTML skeleton: gives immediate FCP on Slow 4G before React JS loads.
+         React replaces this entire #root div when it initialises. -->
+
+    <!-- Navbar skeleton -->
+    <nav id="sk-nav">
+      <img src="/logo.webp" width="40" height="40" alt="Satark-AI" style="object-fit:contain;border-radius:4px"
+        fetchpriority="high" />
+      <span
+        style="font-size:1.25rem;font-weight:700;background:linear-gradient(135deg,#2563eb,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent">
+        Satark AI
+      </span>
+    </nav>
+
+    <!-- Hero skeleton -->
+    <main id="sk-main">
+      <div>
+        <div id="sk-badge">🚀 Advanced Deepfake Detection System</div>
+        <h1 id="sk-h1">
+          Defending Truth in the<br />
+          <span id="sk-span">Age of Generative AI</span>
+        </h1>
+        <p id="sk-sub">
+          Detect AI-generated audio with scientifically validated precision.
+          Empowering journalists, researchers, and the public to verify authenticity instantly.
+        </p>
+        <a id="sk-cta" href="/dashboard">Analyze Audio Now ↗</a>
+      </div>
+    </main>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
