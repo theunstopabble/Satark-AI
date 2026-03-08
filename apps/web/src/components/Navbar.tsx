@@ -30,6 +30,9 @@ export function Navbar() {
             src="/logo.png"
             alt="Satark-AI Logo"
             className="w-10 h-10 object-contain"
+            width={40}
+            height={40}
+            fetchPriority="high"
           />
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 whitespace-nowrap text-lg md:text-2xl">
             {t("brand.name")}
@@ -100,6 +103,8 @@ export function Navbar() {
           <button
             className="p-2 text-foreground hover:bg-muted rounded-lg transition-colors"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle mobile menu"
+            aria-expanded={isOpen}
           >
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>

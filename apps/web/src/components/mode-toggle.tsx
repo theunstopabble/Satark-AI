@@ -26,6 +26,8 @@ export function ModeToggle() {
         onClick={() => setIsOpen(!isOpen)}
         className="p-2 rounded-full hover:bg-muted transition-colors flex items-center justify-center border border-transparent hover:border-border"
         title="Toggle theme"
+        aria-label="Toggle theme"
+        aria-expanded={isOpen}
       >
         <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
         <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -47,11 +49,10 @@ export function ModeToggle() {
                   setTheme("light");
                   setIsOpen(false);
                 }}
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                  theme === "light"
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${theme === "light"
                     ? "bg-accent text-accent-foreground"
                     : "hover:bg-muted text-popover-foreground"
-                }`}
+                  }`}
               >
                 <Sun size={16} />
                 <span>Light</span>
@@ -61,11 +62,10 @@ export function ModeToggle() {
                   setTheme("dark");
                   setIsOpen(false);
                 }}
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                  theme === "dark"
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${theme === "dark"
                     ? "bg-accent text-accent-foreground"
                     : "hover:bg-muted text-popover-foreground"
-                }`}
+                  }`}
               >
                 <Moon size={16} />
                 <span>Dark</span>
@@ -75,11 +75,10 @@ export function ModeToggle() {
                   setTheme("system");
                   setIsOpen(false);
                 }}
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                  theme === "system"
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${theme === "system"
                     ? "bg-accent text-accent-foreground"
                     : "hover:bg-muted text-popover-foreground"
-                }`}
+                  }`}
               >
                 <Laptop size={16} />
                 <span>System</span>

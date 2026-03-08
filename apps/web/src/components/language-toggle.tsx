@@ -26,6 +26,8 @@ export function LanguageToggle() {
         onClick={() => setIsOpen(!isOpen)}
         className="p-2 rounded-full hover:bg-muted transition-colors flex items-center justify-center border border-transparent hover:border-border gap-1"
         title="Change Language"
+        aria-label="Change language"
+        aria-expanded={isOpen}
       >
         <Languages className="h-[1.2rem] w-[1.2rem]" />
         <span className="text-xs font-bold uppercase">{language}</span>
@@ -46,11 +48,10 @@ export function LanguageToggle() {
                   setLanguage("en");
                   setIsOpen(false);
                 }}
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                  language === "en"
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${language === "en"
                     ? "bg-accent text-accent-foreground"
                     : "hover:bg-muted text-popover-foreground"
-                }`}
+                  }`}
               >
                 <span>🇬🇧 English</span>
               </button>
@@ -59,11 +60,10 @@ export function LanguageToggle() {
                   setLanguage("hi");
                   setIsOpen(false);
                 }}
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                  language === "hi"
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${language === "hi"
                     ? "bg-accent text-accent-foreground"
                     : "hover:bg-muted text-popover-foreground"
-                }`}
+                  }`}
               >
                 <span>🇮🇳 Hindi</span>
               </button>
