@@ -14,33 +14,55 @@ import {
 } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider, useLanguage } from "@/context/LanguageContext";
-// ThreatGlobe removed
-import { AudioUpload } from "@/components/AudioUpload";
-import { LiveMonitor } from "@/components/LiveMonitor";
-import { DeepfakeGame } from "@/components/DeepfakeGame";
 import { Landing } from "./pages/Landing";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useState, lazy, Suspense } from "react";
 
-const History = lazy(() =>
-  import("./pages/History").then((module) => ({ default: module.History })),
+// All heavy dashboard components are lazy loaded to not affect initial page load
+const AudioUpload = lazy(() =>
+  import("@/components/AudioUpload").then((m) => ({ default: m.AudioUpload })),
 );
-
+const LiveMonitor = lazy(() =>
+  import("@/components/LiveMonitor").then((m) => ({ default: m.LiveMonitor })),
+);
+const DeepfakeGame = lazy(() =>
+  import("@/components/DeepfakeGame").then((m) => ({ default: m.DeepfakeGame })),
+);
+const History = lazy(() =>
+  import("./pages/History").then((m) => ({ default: m.History })),
+);
 const SpeakerIdentity = lazy(() =>
-  import("@/components/SpeakerIdentity").then((module) => ({
-    default: module.SpeakerIdentity,
+  import("@/components/SpeakerIdentity").then((m) => ({
+    default: m.SpeakerIdentity,
   })),
 );
 
-// TODO: Move to env
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
   console.error("Missing VITE_CLERK_PUBLISHABLE_KEY");
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Cache results for 5 minutes by default - reduces redundant network calls
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+    },
+  },
+});
+
+// Loading fallback - lightweight spinner
+function LoadingSpinner({ label = "Loading..." }: { label?: string }) {
+  return (
+    <div className="flex flex-col justify-center items-center h-screen gap-3">
+      <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      <p className="text-sm text-muted-foreground">{label}</p>
+    </div>
+  );
+}
 
 function Dashboard() {
   const [mode, setMode] = useState<
@@ -50,12 +72,11 @@ function Dashboard() {
 
   return (
     <div className="p-4 md:p-8 max-w-full min-h-screen relative overflow-x-hidden font-sans selection:bg-primary/20">
-      {/* Background Gradient for subtle depth without Globe */}
+      {/* Background Gradient */}
       <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <div className="relative z-10 w-full max-w-6xl mx-auto pt-20 lg:pt-24 space-y-8">
-        {/* Feature Toggles (Centered & Sticky) */}
-        {/* Changed justify-start to justify-center as requested */}
+        {/* Feature Toggles */}
         <div className="flex justify-center w-full sticky top-4 z-50">
           <div className="bg-background/80 backdrop-blur-xl p-1.5 rounded-full flex flex-wrap justify-center gap-2 border border-border/50 shadow-sm ring-1 ring-border/20 transition-all hover:shadow-md">
             <button
@@ -85,30 +106,18 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Main Content Area */}
-        {/* Added mx-auto to center the content block */}
+        {/* Main Content Area - all lazy loaded */}
         <div className="w-full max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-700 ease-out">
-          {mode === "analysis" && (
-            <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-[2rem] p-1 shadow-xl">
-              <AudioUpload />
-            </div>
-          )}
-
-          {mode === "identity" && (
-            <Suspense
-              fallback={
-                <div className="p-12 text-center text-xl text-muted-foreground">
-                  Initializing Identity Neural Net...
-                </div>
-              }
-            >
-              <SpeakerIdentity />
-            </Suspense>
-          )}
-
-          {mode === "monitor" && <LiveMonitor />}
-
-          {mode === "game" && <DeepfakeGame />}
+          <Suspense fallback={<LoadingSpinner label="Loading module..." />}>
+            {mode === "analysis" && (
+              <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-[2rem] p-1 shadow-xl">
+                <AudioUpload />
+              </div>
+            )}
+            {mode === "identity" && <SpeakerIdentity />}
+            {mode === "monitor" && <LiveMonitor />}
+            {mode === "game" && <DeepfakeGame />}
+          </Suspense>
         </div>
       </div>
     </div>
@@ -139,13 +148,7 @@ function ClerkProviderWithRoutes() {
       navigate={(to) => navigate(to)}
     >
       <Navbar />
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center h-screen">
-            Loading...
-          </div>
-        }
-      >
+      <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route
