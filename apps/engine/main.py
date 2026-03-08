@@ -23,6 +23,7 @@ async def scan_audio(data: AudioUpload):
 
 import shutil
 import os
+import asyncio
 from fastapi import UploadFile, File, Form
 from detect import analyze_file_path, TEMP_DIR
 from fastapi.responses import JSONResponse
@@ -38,8 +39,9 @@ async def scan_upload(
         shutil.copyfileobj(file.file, buffer)
         
     try:
-        # Analyze
-        result = analyze_file_path(file_path, userId, source=f"uploaded://{file.filename}")
+        # Analyze without blocking event loop
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, analyze_file_path, file_path, userId, f"uploaded://{file.filename}")
         return result
     finally:
         if os.path.exists(file_path):
@@ -70,8 +72,9 @@ async def analyze_audio_endpoint(file: UploadFile = File(...)):
             except Exception as e:
                 return JSONResponse(content={"error": f"Video processing failed: {str(e)}"}, status_code=500)
 
-        # Analyze Audio
-        result = analyze_audio(audio_path)
+        # Analyze Audio without blocking event loop
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, analyze_audio, audio_path)
         
         # Cleanup
         if os.path.exists(temp_filename):

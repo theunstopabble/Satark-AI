@@ -4,7 +4,7 @@ import { AudioUploadSchema, AudioUploadType } from "@repo/shared";
 import { useMutation } from "@tanstack/react-query";
 import { useApiClient } from "@/api/client";
 import { useUser } from "@clerk/clerk-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload,
@@ -103,21 +103,19 @@ export function AudioUpload() {
             <div className="flex space-x-2 p-1.5 bg-muted/50 rounded-xl border">
               <button
                 onClick={() => setMode("url")}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                  mode === "url"
-                    ? "bg-background text-primary shadow-sm ring-1 ring-border"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${mode === "url"
+                  ? "bg-background text-primary shadow-sm ring-1 ring-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
               >
                 <LinkIcon size={16} /> URL Link
               </button>
               <button
                 onClick={() => setMode("file")}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                  mode === "file"
-                    ? "bg-background text-primary shadow-sm ring-1 ring-border"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${mode === "file"
+                  ? "bg-background text-primary shadow-sm ring-1 ring-border"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
               >
                 <Upload size={16} /> File Upload
               </button>
@@ -262,8 +260,8 @@ export function AudioUpload() {
                 {mutation.data.analysisDetails}
               </p>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {[
+              {(() => {
+                const stats = useMemo(() => [
                   {
                     label: "Silence Ratio",
                     value: `${((mutation.data.features?.silence_ratio || 0) * 100).toFixed(1)}%`,
@@ -280,20 +278,26 @@ export function AudioUpload() {
                     label: "Rolloff",
                     value: `${(mutation.data.features?.rolloff || 0).toFixed(0)} Hz`,
                   },
-                ].map((stat, i) => (
-                  <div
-                    key={i}
-                    className="p-3 bg-muted/40 rounded-lg border border-border/50"
-                  >
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                      {stat.label}
-                    </div>
-                    <div className="text-lg font-mono font-semibold text-foreground">
-                      {stat.value}
-                    </div>
+                ], [mutation.data.features]);
+
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {stats.map((stat, i) => (
+                      <div
+                        key={i}
+                        className="p-3 bg-muted/40 rounded-lg border border-border/50"
+                      >
+                        <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                          {stat.label}
+                        </div>
+                        <div className="text-lg font-mono font-semibold text-foreground">
+                          {stat.value}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
 
               <div className="mt-6 pt-6 border-t border-border/50">
                 <FeedbackWidget scanId={mutation.data.id} />
@@ -305,37 +309,37 @@ export function AudioUpload() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {((mode === "url" && watchedUrl) ||
               (mode === "file" && selectedFile)) && (
-              <div className="bg-card rounded-2xl border shadow-sm p-6">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
+                <div className="bg-card rounded-2xl border shadow-sm p-6">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    {selectedFile?.type.startsWith("video/") ? (
+                      <>
+                        <Video size={18} /> Video Preview
+                      </>
+                    ) : (
+                      <>
+                        <Music size={18} /> Waveform
+                      </>
+                    )}
+                  </h4>
                   {selectedFile?.type.startsWith("video/") ? (
-                    <>
-                      <Video size={18} /> Video Preview
-                    </>
+                    <video
+                      controls
+                      className="w-full rounded-lg max-h-[400px] bg-black"
+                      src={URL.createObjectURL(selectedFile)}
+                    />
                   ) : (
-                    <>
-                      <Music size={18} /> Waveform
-                    </>
+                    <AudioVisualizer
+                      audioUrl={
+                        mode === "url"
+                          ? watchedUrl || ""
+                          : selectedFile
+                            ? URL.createObjectURL(selectedFile)
+                            : ""
+                      }
+                    />
                   )}
-                </h4>
-                {selectedFile?.type.startsWith("video/") ? (
-                  <video
-                    controls
-                    className="w-full rounded-lg max-h-[400px] bg-black"
-                    src={URL.createObjectURL(selectedFile)}
-                  />
-                ) : (
-                  <AudioVisualizer
-                    audioUrl={
-                      mode === "url"
-                        ? watchedUrl || ""
-                        : selectedFile
-                          ? URL.createObjectURL(selectedFile)
-                          : ""
-                    }
-                  />
-                )}
-              </div>
-            )}
+                </div>
+              )}
 
             {/* XAI Heatmap Integration */}
             {mutation.data?.features?.segments &&

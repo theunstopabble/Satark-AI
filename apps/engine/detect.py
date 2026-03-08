@@ -67,8 +67,8 @@ def analyze_segments(y, sr, chunk_duration=0.5):
                 "end": float(end / sr),
                 "score": min(score, 1.0)
             })
-        except Exception:
-             pass
+        except Exception as e:
+            logger.warning(f"Segment chunk analysis failed: {e}")
     return segments
 
 def extract_features(path: str):
