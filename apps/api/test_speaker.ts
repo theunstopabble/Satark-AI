@@ -24,9 +24,11 @@ async function run() {
     method: "POST",
     body: formData,
   });
-  console.log("Enroll Status:", resEnroll.status);
+  console.info("Enroll Status completed");
+  console.dir({ status: resEnroll.status });
   const jsonEnroll = await resEnroll.json();
-  console.log("Enroll Response:", jsonEnroll);
+  console.info("Enroll Response received");
+  console.dir(jsonEnroll);
 
   if (!resEnroll.ok) process.exit(1);
 
@@ -39,9 +41,11 @@ async function run() {
     method: "POST",
     body: formVerify,
   });
-  console.log("Verify Status:", resVerify.status);
+  console.info("Verify Status completed");
+  console.dir({ status: resVerify.status });
   const jsonVerify = await resVerify.json();
-  console.log("Verify Response:", jsonVerify);
+  console.info("Verify Response received");
+  console.dir(jsonVerify);
 }
 
 run().catch(console.error);
