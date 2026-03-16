@@ -68,7 +68,7 @@ def analyze_segments(y, sr, chunk_duration=0.5):
                 "score": min(score, 1.0)
             })
         except Exception as e:
-            logger.warning(f"Segment chunk analysis failed: {e}")
+            logger.warning("Segment chunk analysis failed: %s", e)
     return segments
 
 def extract_features(path: str):
@@ -87,7 +87,7 @@ def extract_features(path: str):
         mfcc_plot = np.mean(mfcc_val, axis=0).tolist()
         
         non_silent_intervals = librosa.effects.split(y, top_db=20)
-        non_silent_duration = sum([end - start for start, end in non_silent_intervals]) / sr
+        non_silent_duration = sum(end - start for start, end in non_silent_intervals) / sr
         total_duration = librosa.get_duration(y=y, sr=sr)
         silence_ratio = 1 - (non_silent_duration / total_duration) if total_duration > 0 else 0
 
@@ -104,7 +104,7 @@ def extract_features(path: str):
             "segments": segments # List of {start, end, score}
         }
     except Exception as e:
-        logger.error(f"Error extracting features: {e}")
+        logger.error("Error extracting features: %s", e)
         return None
 
 def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
