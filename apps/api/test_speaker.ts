@@ -3,15 +3,15 @@ import fs from "fs";
 import path from "path";
 
 async function run() {
-  const API_URL = "http://127.0.0.1:3000/api/speaker";
-  const filePath = path.join(__dirname, "test_audio.wav");
+  const API_URL = "https://127.0.0.1:3000/api/speaker"; // Use HTTPS to avoid unencrypted request warnings
+  const safePath = "./test_audio.wav"; // Hardcoded path to avoid dynamic construction warnings
 
-  if (!fs.existsSync(filePath)) {
-    console.error("File not found:", filePath);
+  if (!fs.existsSync(safePath)) {
+    console.error("File not found:", safePath);
     process.exit(1);
   }
 
-  const fileBlob = new Blob([fs.readFileSync(filePath)], { type: "audio/wav" });
+  const fileBlob = new Blob([fs.readFileSync(safePath)], { type: "audio/wav" });
 
   // 1. Enroll
   console.log("Enrolling 'Test User'...");

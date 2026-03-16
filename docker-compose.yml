@@ -10,6 +10,9 @@ services:
       - "8000:8000"
     security_opt:
       - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
     volumes:
       - ./apps/engine:/app
     environment:
@@ -24,6 +27,10 @@ services:
       - "3000:3000"
     security_opt:
       - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /root/.bun
     volumes:
       - .:/app
     depends_on:
@@ -42,6 +49,10 @@ services:
       - "5173:5173"
     security_opt:
       - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /root/.npm
     volumes:
       - .:/app
     environment:
