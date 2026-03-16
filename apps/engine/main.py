@@ -24,6 +24,7 @@ async def scan_audio(data: AudioUpload):
 import shutil
 import os
 import asyncio
+import uuid
 from fastapi import UploadFile, File, Form
 from detect import analyze_file_path, TEMP_DIR
 from fastapi.responses import JSONResponse
@@ -33,15 +34,16 @@ async def scan_upload(
     file: UploadFile = File(...), 
     userId: str = Form(...)
 ):
-    # Save uploaded file
-    file_path = os.path.join(TEMP_DIR, f"upload_{file.filename}")
+    # Save uploaded file safely using UUID
+    safe_filename = f"{uuid.uuid4().hex}_{os.path.basename(file.filename)}" if file.filename else f"{uuid.uuid4().hex}.tmp"
+    file_path = os.path.join(TEMP_DIR, safe_filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         
     try:
         # Analyze without blocking event loop
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, analyze_file_path, file_path, userId, f"uploaded://{file.filename}")
+        result = await loop.run_in_executor(None, analyze_file_path, file_path, userId, f"uploaded://{safe_filename}")
         return result
     finally:
         if os.path.exists(file_path):
@@ -51,10 +53,12 @@ async def scan_upload(
 async def analyze_audio_endpoint(file: UploadFile = File(...)):
     try:
         # Check if file is video
-        is_video = file.content_type.startswith("video/")
+        is_video = file.content_type.startswith("video/") if getattr(file, "content_type", None) else False
         
-        # Save uploaded file temporarily
-        temp_filename = f"temp_{file.filename}"
+        # Save uploaded file temporarily with UUID
+        safe_filename = f"{uuid.uuid4().hex}_{os.path.basename(file.filename)}" if getattr(file, "filename", None) else f"{uuid.uuid4().hex}.tmp"
+        temp_filename = os.path.join(TEMP_DIR, safe_filename)
+        
         with open(temp_filename, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
@@ -66,10 +70,11 @@ async def analyze_audio_endpoint(file: UploadFile = File(...)):
             try:
                 from moviepy.editor import VideoFileClip
                 video = VideoFileClip(temp_filename)
-                audio_path = f"temp_audio_{file.filename}.wav"
+                audio_path = os.path.join(TEMP_DIR, f"{uuid.uuid4().hex}.wav")
                 video.audio.write_audiofile(audio_path, logger=None)
                 video.close()
             except Exception as e:
+                if os.path.exists(temp_filename): os.remove(temp_filename)
                 return JSONResponse(content={"error": f"Video processing failed: {str(e)}"}, status_code=500)
 
         # Analyze Audio without blocking event loop
@@ -95,8 +100,10 @@ from speaker import get_embedding
 async def embed_audio_endpoint(file: UploadFile = File(...)):
     """Generates speaker embedding vector."""
     try:
-        # Save temp file
-        temp_filename = f"temp_embed_{file.filename}"
+        # Save temp file securely
+        safe_filename = f"{uuid.uuid4().hex}_{os.path.basename(file.filename)}" if getattr(file, "filename", None) else f"{uuid.uuid4().hex}.tmp"
+        temp_filename = os.path.join(TEMP_DIR, safe_filename)
+        
         with open(temp_filename, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         

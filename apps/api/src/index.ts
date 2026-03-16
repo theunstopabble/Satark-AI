@@ -10,7 +10,28 @@ import { serve } from "@hono/node-server";
 import { desc, eq, sql } from "drizzle-orm";
 
 const app = new Hono();
-app.use("/*", cors());
+
+// Secure CORS configuration
+const allowedOrigins = [
+  "http://localhost:5173", // Local dev
+  "https://satark-deepfake.vercel.app", // Production Vercel
+  "https://satark-ai.vercel.app" // Alternative Vercel if exists
+];
+
+app.use(
+  "/*",
+  cors({
+    origin: (origin) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return origin || "*";
+      }
+      return "https://satark-deepfake.vercel.app"; // Default fallback
+    },
+    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
 app.route("/api/speaker", speakerRouter);
 
