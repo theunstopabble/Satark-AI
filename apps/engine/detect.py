@@ -30,7 +30,7 @@ async def download_audio(url: str) -> str:
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
     
-    async with httpx.AsyncClient(verify=False) as client:
+    async with httpx.AsyncClient() as client:
         response = await client.get(url, follow_redirects=True, headers=headers)
         if response.status_code != 200:
             raise Exception(f"Failed to download audio: {response.status_code}")

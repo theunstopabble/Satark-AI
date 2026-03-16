@@ -8,6 +8,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    security_opt:
+      - no-new-privileges:true
     volumes:
       - ./apps/engine:/app
     environment:
@@ -20,6 +22,8 @@ services:
     command: bun run dev
     ports:
       - "3000:3000"
+    security_opt:
+      - no-new-privileges:true
     volumes:
       - .:/app
     depends_on:
@@ -36,6 +40,8 @@ services:
     command: sh -c "npm install && npm run dev -- --host"
     ports:
       - "5173:5173"
+    security_opt:
+      - no-new-privileges:true
     volumes:
       - .:/app
     environment:

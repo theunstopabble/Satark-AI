@@ -16,7 +16,10 @@ RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pyt
 
 # Copy application code
 COPY . .
-
 EXPOSE 8000
+
+# Create and switch to a non-root user for security
+RUN useradd -m appuser
+USER appuser
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

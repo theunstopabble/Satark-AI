@@ -86,7 +86,7 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`AI Engine Error (${response.status}):`, errorText);
+      console.error("AI Engine Error", response.status, errorText);
       return c.json({ error: "AI Engine Error", details: errorText }, 500);
     }
 
