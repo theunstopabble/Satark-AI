@@ -6,6 +6,7 @@ import { Landing } from "./pages/Landing";
 import { LandingNavbar } from "@/components/LandingNavbar";
 import { Footer } from "@/components/Footer";
 import { Suspense, lazy } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 /**
  * Core strategy:
@@ -67,6 +68,7 @@ function App() {
               />
             </Routes>
           </BrowserRouter>
+          <Analytics />
         </LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>
