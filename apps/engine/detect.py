@@ -132,7 +132,7 @@ def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
                 score += 10
                 reasons.append("suspiciously low frequency bandwidth")
 
-            total_score = min(score + 20, 99) 
+            total_score = min(score, 99) if reasons else min(score + 5, 30)
             
             if total_score > 50:
                 is_deepfake = True
