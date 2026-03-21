@@ -8,6 +8,8 @@ import { scans } from "./db/schema";
 import speakerRouter from "./routes/speaker";
 import { serve } from "@hono/node-server";
 import { desc, eq, sql } from "drizzle-orm";
+import { authMiddleware } from "./middleware/auth";
+import { clerkMiddleware } from "@hono/clerk-auth";
 
 const app = new Hono();
 
@@ -31,7 +33,11 @@ app.use(
     credentials: true,
   })
 );
-
+app.use("*", clerkMiddleware());
+app.use("/scan", authMiddleware);
+app.use("/scan-upload", authMiddleware);
+app.use("/scans/*", authMiddleware);
+app.use("/scans", authMiddleware);
 app.route("/api/speaker", speakerRouter);
 
 app.get("/", (c) => {
