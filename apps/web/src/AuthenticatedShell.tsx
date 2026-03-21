@@ -4,7 +4,7 @@ import {
     SignedOut,
     RedirectToSignIn,
 } from "@clerk/clerk-react";
-import { Route, Routes, useNavigate, Navigate } from "react-router-dom";
+import { Route, Routes, useNavigate, Navigate, Link} from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useState, lazy, Suspense } from "react";
@@ -153,6 +153,18 @@ function ClerkRoutes() {
                             </>
                         }
                     />
+                    <Route
+  path="*"
+  element={
+    <div className="flex flex-col items-center justify-center h-screen gap-4">
+      <h1 className="text-4xl font-bold">404</h1>
+      <p className="text-muted-foreground">Page not found</p>
+      <Link to="/dashboard" className="text-primary hover:underline">
+        Go to Dashboard →
+      </Link>
+    </div>
+  }
+/>
                 </Routes>
             </Suspense>
             <Footer />
