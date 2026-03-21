@@ -120,7 +120,7 @@ app.post("/verify", async (c) => {
         userId,
         audioUrl: "Speaker Verification (File Upload)",
         isDeepfake: !isMatch, // No match = potential fake/impersonator
-        confidenceScore: bestMatch.score * 100,
+        confidenceScore: bestMatch.score,
         analysisDetails: `Identity: ${details}`,
       });
     } catch (dbErr) {
