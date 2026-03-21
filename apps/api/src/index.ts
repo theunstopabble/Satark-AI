@@ -12,11 +12,10 @@ import { desc, eq, sql } from "drizzle-orm";
 const app = new Hono();
 
 // Secure CORS configuration
-const allowedOrigins = [
-  "http://localhost:5173", // Local dev
-  "https://satark-deepfake.vercel.app", // Production Vercel
-  "https://satark-ai.vercel.app" // Alternative Vercel if exists
-];
+const allowedOrigins = (
+  process.env.ALLOWED_ORIGINS ||
+  "http://localhost:5173,https://satark-deepfake.vercel.app"
+).split(",").map(o => o.trim());
 
 app.use(
   "/*",
