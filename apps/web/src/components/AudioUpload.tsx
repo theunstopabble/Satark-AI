@@ -4,7 +4,7 @@ import { AudioUploadSchema, AudioUploadType } from "@repo/shared";
 import { useMutation } from "@tanstack/react-query";
 import { useApiClient } from "@/api/client";
 import { useUser } from "@clerk/clerk-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload,
@@ -47,6 +47,14 @@ export function AudioUpload() {
   });
 
   const watchedUrl = watch("audioUrl");
+  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+
+useEffect(() => {
+  if (!selectedFile) return;
+  const url = URL.createObjectURL(selectedFile);
+  setObjectUrl(url);
+  return () => URL.revokeObjectURL(url); // memory leak fix
+}, [selectedFile]);
 
   // Mutation Setup
   const mutation = useMutation({
@@ -73,6 +81,12 @@ export function AudioUpload() {
   const onSubmit = (data: AudioUploadType) => {
     mutation.mutate(data);
   };
+  const featureStats = useMemo(() => [
+  { label: "Silence Ratio", value: `${((mutation.data?.features?.silence_ratio || 0) * 100).toFixed(1)}%` },
+  { label: "Duration", value: `${(mutation.data?.features?.duration || 0).toFixed(2)}s` },
+  { label: "Zero Crossing", value: (mutation.data?.features?.zcr || 0).toFixed(4) },
+  { label: "Rolloff", value: `${(mutation.data?.features?.rolloff || 0).toFixed(0)} Hz` },
+], [mutation.data?.features]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -167,10 +181,8 @@ export function AudioUpload() {
                     Upload Audio File
                   </label>
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-10 text-center hover:bg-muted/30 hover:border-primary/50 transition-all cursor-pointer relative group">
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      title="Upload Audio File"
+                    <input type="file" accept="audio/*,video/*"
+                      title="Upload Audio & Video File"
                       onChange={handleFileChange}
                       className="absolute inset-0 opacity-0 cursor-pointer z-10"
                     />
@@ -260,44 +272,19 @@ export function AudioUpload() {
                 {mutation.data.analysisDetails}
               </p>
 
-              {(() => {
-                const stats = useMemo(() => [
-                  {
-                    label: "Silence Ratio",
-                    value: `${((mutation.data.features?.silence_ratio || 0) * 100).toFixed(1)}%`,
-                  },
-                  {
-                    label: "Duration",
-                    value: `${(mutation.data.features?.duration || 0).toFixed(2)}s`,
-                  },
-                  {
-                    label: "Zero Crossing",
-                    value: (mutation.data.features?.zcr || 0).toFixed(4),
-                  },
-                  {
-                    label: "Rolloff",
-                    value: `${(mutation.data.features?.rolloff || 0).toFixed(0)} Hz`,
-                  },
-                ], [mutation.data.features]);
-
-                return (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    {stats.map((stat, i) => (
-                      <div
-                        key={i}
-                        className="p-3 bg-muted/40 rounded-lg border border-border/50"
-                      >
-                        <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                          {stat.label}
-                        </div>
-                        <div className="text-lg font-mono font-semibold text-foreground">
-                          {stat.value}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
+              
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+  {featureStats.map((stat, i) => (
+    <div key={i} className="p-3 bg-muted/40 rounded-lg border border-border/50">
+      <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+        {stat.label}
+      </div>
+      <div className="text-lg font-mono font-semibold text-foreground">
+        {stat.value}
+      </div>
+    </div>
+  ))}
+</div>
 
               <div className="mt-6 pt-6 border-t border-border/50">
                 <FeedbackWidget scanId={mutation.data.id} />
@@ -325,16 +312,14 @@ export function AudioUpload() {
                     <video
                       controls
                       className="w-full rounded-lg max-h-[400px] bg-black"
-                      src={URL.createObjectURL(selectedFile)}
+                      src={objectUrl || ""}
                     />
                   ) : (
                     <AudioVisualizer
                       audioUrl={
                         mode === "url"
                           ? watchedUrl || ""
-                          : selectedFile
-                            ? URL.createObjectURL(selectedFile)
-                            : ""
+                          : objectUrl || ""
                       }
                     />
                   )}
