@@ -22,6 +22,7 @@ export function LiveMonitor() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const animationFrameRef = useRef<number>();
+  const isListeningRef = useRef(false);
 
   // Recording Interval (5 seconds)
   const RECORDING_INTERVAL_MS = 5000;
@@ -86,6 +87,7 @@ export function LiveMonitor() {
       // Let's restart the recorder implementation below for robustness.
 
       setIsListening(true);
+      isListeningRef.current = true;
       setStatus("analyzing");
       drawVisualizer();
 
@@ -101,8 +103,7 @@ export function LiveMonitor() {
     // We need a separate MediaRecorder for chunks to ensure clean headers for each file
 
     const processNextChunk = () => {
-      if (!isListening && intervalRef.current === null) return; // Stopped
-
+     if (!isListeningRef.current && intervalRef.current === null) return;
       // Create a new recorder for this 5s chunk
       const chunkRecorder = new MediaRecorder(stream, { mimeType });
       const localChunks: Blob[] = [];
@@ -130,11 +131,11 @@ export function LiveMonitor() {
           // Update UI based on Result
           if (result.isDeepfake) {
             setStatus("danger");
-            setThreatLevel(Math.floor(result.confidenceScore));
+            setThreatLevel(Math.floor(result.confidenceScore * 100)); 
             setLastResult("Deepfake Detected!");
           } else {
             setStatus("safe");
-            setThreatLevel(Math.floor(result.confidenceScore));
+            setThreatLevel(Math.floor(result.confidenceScore * 100)); 
             setLastResult("Audio seems Real.");
           }
 
@@ -196,6 +197,7 @@ export function LiveMonitor() {
     }
 
     setIsListening(false);
+    isListeningRef.current = false
     setStatus("idle");
     setThreatLevel(0);
     setLastResult(null);
