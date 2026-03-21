@@ -14,7 +14,7 @@ export const ScanResultSchema = z.object({
   userId: z.string(),
   audioUrl: z.string(),
   isDeepfake: z.boolean(),
-  confidenceScore: z.number().min(0).max(100),
+  confidenceScore: z.number().min(0).max(1),
   analysisDetails: z.string().optional(), // For XAI explanation
   features: z
     .object({
