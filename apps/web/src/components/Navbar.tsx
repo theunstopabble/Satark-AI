@@ -35,9 +35,9 @@ export function Navbar() {
       <style>{mobileMenuStyles}</style>
       <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
         <Link
-          to="/"
-          className="flex items-center gap-2 font-bold text-2xl hover:opacity-80 transition-opacity"
-        >
+  to="/dashboard"
+  className="flex items-center gap-2 font-bold text-2xl hover:opacity-80 transition-opacity"
+          >
           <img
             src="/logo.webp"
             alt="Satark-AI Logo"
