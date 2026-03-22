@@ -33,7 +33,10 @@ app.use(
     credentials: true,
   })
 );
-app.use("*", clerkMiddleware());
+app.use("/scan", clerkMiddleware());
+app.use("/scan-upload", clerkMiddleware());
+app.use("/scans/*", clerkMiddleware());
+app.use("/scans", clerkMiddleware());
 app.use("/scan", authMiddleware);
 app.use("/scan-upload", authMiddleware);
 app.use("/scans/*", authMiddleware);
