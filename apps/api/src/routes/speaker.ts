@@ -1,11 +1,7 @@
 import { Hono } from "hono";
-import { z } from "zod";
-import { zValidator } from "@hono/zod-validator";
 import { db } from "../db";
 import { speakers, scans } from "../db/schema";
-import { cosineDistance, desc, eq } from "drizzle-orm"; // wait, drizzle doesn't have cosineDistance helper easily for JSON
-// I'll implement in-memory cosine similarity
-import { stream } from "hono/streaming";
+import {eq } from "drizzle-orm"; 
 
 const app = new Hono();
 
