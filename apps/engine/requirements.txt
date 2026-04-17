@@ -10,3 +10,6 @@ transformers>=4.40.0
 accelerate>=0.29.0
 huggingface-hub
 speechbrain
+moviepy>=2.2.0
+Pillow>=10.3.0
+torchvision>=0.17.0

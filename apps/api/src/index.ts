@@ -11,13 +11,79 @@ import { desc, eq, sql } from "drizzle-orm";
 import { authMiddleware } from "./middleware/auth";
 import { clerkMiddleware } from "@hono/clerk-auth";
 
+// ─── Rate Limiter ────────────────────────────────────────────────────
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 10; // max requests
+const RATE_WINDOW_MS = 60_000; // per 60 seconds
+
+function rateLimiter(userId: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
+// Cleanup stale entries every 5 minutes to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of rateLimitMap.entries()) {
+    if (now > val.resetAt) rateLimitMap.delete(key);
+  }
+}, 5 * 60_000);
+// ─────────────────────────────────────────────────────────────────────
+
+// ─── File Validation ─────────────────────────────────────────────────
+const ALLOWED_AUDIO_TYPES = [
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/wave",
+  "audio/x-wav",
+  "audio/ogg",
+  "audio/webm",
+  "audio/mp4",
+  "audio/flac",
+  "audio/aac",
+  "video/mp4",
+  "video/webm",
+];
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/bmp",
+];
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
+
+function validateFile(file: File, allowImages = false): string | null {
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return `File too large. Max size is 50MB. Your file: ${(file.size / 1024 / 1024).toFixed(1)}MB`;
+  }
+  const allowed = allowImages
+    ? [...ALLOWED_AUDIO_TYPES, ...ALLOWED_IMAGE_TYPES]
+    : ALLOWED_AUDIO_TYPES;
+  if (!allowed.includes(file.type)) {
+    return `Invalid file type: ${file.type}. Allowed: audio and video files only.`;
+  }
+  return null; // null = valid
+}
+// ─────────────────────────────────────────────────────────────────────
+
 const app = new Hono();
 
 // Secure CORS configuration
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
   "http://localhost:5173,https://satark-deepfake.vercel.app"
-).split(",").map(o => o.trim());
+)
+  .split(",")
+  .map((o) => o.trim());
 
 app.use(
   "/*",
@@ -31,7 +97,7 @@ app.use(
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-  })
+  }),
 );
 app.use("/scan", clerkMiddleware());
 app.use("/scan-upload", clerkMiddleware());
@@ -41,6 +107,8 @@ app.use("/scan", authMiddleware);
 app.use("/scan-upload", authMiddleware);
 app.use("/scans/*", authMiddleware);
 app.use("/scans", authMiddleware);
+app.use("/scan-image", clerkMiddleware());
+app.use("/scan-image", authMiddleware);
 app.route("/api/speaker", speakerRouter);
 
 app.get("/", (c) => {
@@ -85,6 +153,13 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
   const data = c.req.valid("json");
   const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
 
+  if (!rateLimiter(data.userId ?? "anonymous")) {
+    return c.json(
+      { error: "Rate limit exceeded. Max 10 scans per minute." },
+      429,
+    );
+  }
+
   try {
     const response = await fetch(`${engineUrl}/scan`, {
       method: "POST",
@@ -116,6 +191,14 @@ app.post("/scan-upload", async (c) => {
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "File is required" }, 400);
+    }
+
+    const rateLimitUserId = (userId as string) ?? "anonymous";
+    if (!rateLimiter(rateLimitUserId)) {
+      return c.json(
+        { error: "Rate limit exceeded. Max 10 scans per minute." },
+        429,
+      );
     }
 
     // 1. Calculate File Hash (Deduplication)
@@ -187,7 +270,59 @@ app.post("/scan-upload", async (c) => {
   }
 });
 
-// New Endpoint: Serve Audio from DB
+// ─── Image Deepfake Scan ─────────────────────────────────────────────
+app.post("/scan-image", async (c) => {
+  try {
+    const body = await c.req.parseBody();
+    const file = body["file"];
+    const userId = (body["userId"] as string) ?? "anonymous";
+
+    if (!file || !(file instanceof File)) {
+      return c.json({ error: "Image file is required" }, 400);
+    }
+
+    // Rate limit check
+    if (!rateLimiter(userId)) {
+      return c.json(
+        { error: "Rate limit exceeded. Max 10 scans per minute." },
+        429,
+      );
+    }
+
+    // File size check
+    const validationError = validateFile(file as File, true);
+    if (validationError) {
+      return c.json({ error: validationError }, 400);
+    }
+
+    // Forward to Python engine
+    const engineUrl = process.env.ENGINE_URL ?? "http://127.0.0.1:8000";
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("userId", userId);
+
+    const engineRes = await fetch(`${engineUrl}/scan-image`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!engineRes.ok) {
+      const errorText = await engineRes.text();
+      return c.json({ error: "Image Engine Error", details: errorText }, 500);
+    }
+
+    const result = await engineRes.json();
+
+    // Save to DB
+    const scanId = await saveScanResult(result);
+    return c.json({ ...result, id: scanId });
+  } catch (error) {
+    console.error("Image Scan API Error:", error);
+    return c.json({ error: "Failed to process image" }, 500);
+  }
+});
+// ─────────────────────────────────────────────────────────────────────
+
 app.get("/audio/:id", async (c) => {
   const id = c.req.param("id");
   try {

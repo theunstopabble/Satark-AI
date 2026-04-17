@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+// Fix for NodeJS.Timeout type in browser context
+// @ts-ignore
+type NodeJSTimeout = ReturnType<typeof setTimeout>;
 import { motion } from "framer-motion";
 import { Mic, Activity, AlertTriangle, Save } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
@@ -26,7 +29,8 @@ export function LiveMonitor() {
 
   // Recording Interval (5 seconds)
   const RECORDING_INTERVAL_MS = 5000;
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Use the locally defined NodeJSTimeout type to avoid NodeJS namespace error
+  const intervalRef = useRef<NodeJSTimeout | null>(null);
 
   useEffect(() => {
     return () => {
@@ -103,7 +107,7 @@ export function LiveMonitor() {
     // We need a separate MediaRecorder for chunks to ensure clean headers for each file
 
     const processNextChunk = () => {
-     if (!isListeningRef.current && intervalRef.current === null) return;
+      if (!isListeningRef.current && intervalRef.current === null) return;
       // Create a new recorder for this 5s chunk
       const chunkRecorder = new MediaRecorder(stream, { mimeType });
       const localChunks: Blob[] = [];
@@ -131,11 +135,11 @@ export function LiveMonitor() {
           // Update UI based on Result
           if (result.isDeepfake) {
             setStatus("danger");
-            setThreatLevel(Math.floor(result.confidenceScore * 100)); 
+            setThreatLevel(Math.floor(result.confidenceScore * 100));
             setLastResult("Deepfake Detected!");
           } else {
             setStatus("safe");
-            setThreatLevel(Math.floor(result.confidenceScore * 100)); 
+            setThreatLevel(Math.floor(result.confidenceScore * 100));
             setLastResult("Audio seems Real.");
           }
 
@@ -197,7 +201,7 @@ export function LiveMonitor() {
     }
 
     setIsListening(false);
-    isListeningRef.current = false
+    isListeningRef.current = false;
     setStatus("idle");
     setThreatLevel(0);
     setLastResult(null);

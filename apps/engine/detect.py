@@ -3,178 +3,12 @@ import uuid
 import httpx
 import librosa
 import numpy as np
-import asyncio
-import logging
-from datetime import datetime
-from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
-from schemas import AudioUpload, ScanResult
-
-# Configure Logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-TEMP_DIR = "/tmp/satark_audio"
-os.makedirs(TEMP_DIR, exist_ok=True)
-
-async def download_audio(url: str) -> str:
-    """Downloads audio from URL and saves to a temp file."""
-    # Try to get extension from URL, default to .mp3
-    ext = os.path.splitext(url)[1].split("?")[0]
-    if not ext or len(ext) > 5:
-        ext = ".mp3"
-        
-    filename = f"{uuid.uuid4()}{ext}"
-    path = os.path.join(TEMP_DIR, filename)
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, follow_redirects=True, headers=headers)
-        if response.status_code != 200:
-            raise Exception(f"Failed to download audio: {response.status_code}")
-        
-        with open(path, "wb") as f:
-            f.write(response.content)
-            
-    return path
-
-def analyze_segments(y, sr, chunk_duration=0.5):
-    """Analyzes audio in chunks to find fake segments."""
-    segments = []
-    chunk_samples = int(chunk_duration * sr)
-    total_samples = len(y)
-    
-    for start in range(0, total_samples, chunk_samples):
-        end = min(start + chunk_samples, total_samples)
-        if (end - start) < chunk_samples / 2: continue
-        
-        chunk = y[start:end]
-        
-        # Simplified analysis per chunk
-        try:
-            zcr = np.mean(librosa.feature.zero_crossing_rate(chunk))
-            rolloff = np.mean(librosa.feature.spectral_rolloff(y=chunk, sr=sr))
-            
-            score = 0.0
-            # Heuristics for fake audio artifacts
-            if zcr > 0.08: score += 0.4 # Lower threshold for chunk
-            if rolloff < 3000: score += 0.4
-            
-            segments.append({
-                "start": float(start / sr),
-                "end": float(end / sr),
-                "score": min(score, 1.0)
-            })
-        except Exception as e:
-            logger.warning("Segment chunk analysis failed: %s", e)
-    return segments
-
-def extract_features(path: str):
-    """Extracts basic audio features using Librosa."""
-    try:
-        # Optimize: resample to 22050Hz (standard) to speed up processing
-        y, sr = librosa.load(path, sr=22050)
-        
-        zcr_val = np.mean(librosa.feature.zero_crossing_rate(y))
-        rolloff_val = np.mean(librosa.feature.spectral_rolloff(y=y, sr=sr))
-        mfcc_val = librosa.feature.mfcc(y=y, sr=sr)
-        mfcc_mean_val = np.mean(mfcc_val)
-        
-        # Create a simple 1D array for plotting (mean of MFCCs over time)
-        # This will be used for the "Feature Graph" in the UI
-        mfcc_plot = np.mean(mfcc_val, axis=0).tolist()
-        
-        non_silent_intervals = librosa.effects.split(y, top_db=20)
-        non_silent_duration = sum(end - start for start, end in non_silent_intervals) / sr
-        total_duration = librosa.get_duration(y=y, sr=sr)
-        silence_ratio = 1 - (non_silent_duration / total_duration) if total_duration > 0 else 0
-
-        # Run Segment Analysis
-        segments = analyze_segments(y, sr)
-
-        return {
-            "zcr": float(zcr_val),
-            "rolloff": float(rolloff_val),
-            "mfcc_mean": float(mfcc_mean_val),
-            "silence_ratio": float(silence_ratio),
-            "duration": float(total_duration),
-            "mfcc_plot": mfcc_plot, # List of floats
-            "segments": segments # List of {start, end, score}
-        }
-    except Exception as e:
-        logger.error("Error extracting features: %s", e)
-        return None
-
-def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
-    """Analyzes audio file at given path and returns ScanResult."""
-    try:
-        features = extract_features(path)
-        
-        is_deepfake = False
-        confidence = 0.0
-        details = "Audio appears natural."
-
-        if features:
-            score = 0
-            reasons = []
-
-            if features["silence_ratio"] < 0.05:
-                score += 30
-                reasons.append("Unnaturally continuous speech pattern")
-
-            if features["zcr"] > 0.15: 
-                score += 20
-                reasons.append("High frequency noise anomalies")
-                
-            if features["rolloff"] < 2000: 
-                score += 10
-                reasons.append("suspiciously low frequency bandwidth")
-
-            total_score = min(score + 20, 99) 
-            
-            if total_score > 50:
-                is_deepfake = True
-                confidence = total_score / 100.0
-                details = f"Deepfake suspected: {'; '.join(reasons)}"
-            else:
-                is_deepfake = False
-                confidence = (100 - total_score) / 100.0
-                details = "No significant artifacts detected."
-
-        return ScanResult(
-            id=str(uuid.uuid4()),
-            userId=user_id,
-            audioUrl=source, # URL or "uploaded file"
-            isDeepfake=is_deepfake,
-            confidenceScore=confidence,
-            analysisDetails=details,
-            features=features,
-            createdAt=datetime.now()
-        )
-    finally:
-        pass # Caller handles cleanup if needed
-
-async def analyze_audio(data: AudioUpload) -> ScanResult:
-    path = await download_audio(data.audioUrl)
-    try:
-        loop = asyncio.get_running_loop()
-        # Run CPU-bound analysis in a separate thread to avoid blocking the event loop
-        return await loop.run_in_executor(None, analyze_file_path, path, data.userId, data.audioUrl)
-    finally:
-        if os.path.exists(path):
-            os.remove(path)
-import os
-import uuid
-import httpx
-import librosa
-import numpy as np
 import soundfile as sf
 import asyncio
 import logging
 from datetime import datetime
 from schemas import AudioUpload, ScanResult
+from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -182,6 +16,36 @@ logger = logging.getLogger(__name__)
 
 TEMP_DIR = "/tmp/satark_audio"
 os.makedirs(TEMP_DIR, exist_ok=True)
+
+# --- Model Registry and Lazy Loading ---
+MODEL_NAME = "garystafford/wav2vec2-deepfake-voice-detector"
+DEVICE = "cuda" if hasattr(__import__("torch"), "cuda") and __import__("torch").cuda.is_available() else "cpu"
+
+# Module-level registry — accessible via getattr
+_registry: dict = {}
+
+def _load_audio_model():
+    """Load wav2vec2 model lazily and cache in registry."""
+    if "_feature_extractor" not in _registry:
+        logger.info(f"Loading deepfake detection model: {MODEL_NAME} on {DEVICE}")
+        _registry["_feature_extractor"] = AutoFeatureExtractor.from_pretrained(MODEL_NAME)
+        _registry["_model"] = AutoModelForAudioClassification.from_pretrained(MODEL_NAME)
+        _registry["_model"].to(DEVICE)
+        _registry["_model"].eval()
+        logger.info("Model loaded successfully.")
+    return _registry["_feature_extractor"], _registry["_model"]
+
+# Expose as module attributes for warmup compatibility
+def __getattr__(name: str):
+    if name in ("_feature_extractor", "_model"):
+        _load_audio_model()
+        return _registry[name]
+    raise AttributeError(f"module 'detect' has no attribute '{name}'")
+
+# Eagerly load on import so warmup works
+_load_audio_model()
+
+# ---
 
 async def download_audio(url: str) -> str:
     """Downloads audio from URL and saves to a temp file."""

@@ -1,9 +1,15 @@
+
 import logging
 logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI
 from schemas import AudioUpload, ScanResult
 from detect import analyze_audio
+from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse
+import asyncio
+from detect_image import analyze_image_bytes, is_image_file
+import traceback
 
 app = FastAPI(title="Satark-AI Engine")
 
@@ -35,9 +41,6 @@ async def warmup_model():
 @app.get("/")
 def home():
     return {"status": "AI Engine Running", "framework": "FastAPI"}
-
-import traceback
-from fastapi import HTTPException
 
 @app.post("/scan", response_model=ScanResult)
 async def scan_audio(data: AudioUpload):
@@ -96,7 +99,10 @@ async def analyze_audio_endpoint(file: UploadFile = File(...)):
         if is_video:
             print(f"Processing video: {temp_filename}")
             try:
-                from moviepy.editor import VideoFileClip
+                try:
+                    from moviepy.editor import VideoFileClip
+                except ImportError:
+                    raise HTTPException(status_code=500, detail="moviepy is required for video processing. Please install moviepy.")
                 video = VideoFileClip(temp_filename)
                 audio_path = os.path.join(TEMP_DIR, f"{uuid.uuid4().hex}.wav")
                 video.audio.write_audiofile(audio_path, logger=None)
@@ -147,6 +153,69 @@ async def embed_audio_endpoint(file: UploadFile = File(...)):
         print(f"Embedding error: {e}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/scan-image", response_model=ScanResult)
+async def scan_image(data: UploadFile = File(...)):
+    try:
+        # Check if file is image
+        if not is_image_file(data):
+            raise HTTPException(status_code=400, detail="File is not an image")
+        
+        # Save uploaded file temporarily with UUID
+        safe_filename = f"{uuid.uuid4().hex}_{os.path.basename(data.filename)}" if getattr(data, "filename", None) else f"{uuid.uuid4().hex}.tmp"
+        temp_filename = os.path.join(TEMP_DIR, safe_filename)
+        
+        with open(temp_filename, "wb") as buffer:
+            shutil.copyfileobj(data.file, buffer)
+
+        # Analyze image
+        result = await analyze_image_bytes(temp_filename)
+        
+        # Cleanup
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+            
+        return result
+    except Exception as e:
+        print(f"Error processing scan: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/scan-image")
+async def scan_image_upload(request: Request):
+    """Deepfake detection for uploaded images."""
+    try:
+        form = await request.form()
+        file = form.get("file")
+        user_id = form.get("userId", "guest")
+
+        if not file or not hasattr(file, 'filename'):
+            raise HTTPException(status_code=400, detail="Image file is required")
+
+        filename = file.filename
+        if not is_image_file(filename):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file. Supported: .jpg, .jpeg, .png, .webp, .gif, .bmp"
+            )
+
+        image_bytes = await file.read()
+        if len(image_bytes) > 50 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Image too large. Max 50MB.")
+
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            None, analyze_image_bytes, image_bytes, user_id, filename
+        )
+        return JSONResponse(content={
+            **result,
+            "createdAt": result["createdAt"].isoformat()
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Image scan error: {e}")
+        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
