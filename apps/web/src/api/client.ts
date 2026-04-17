@@ -113,6 +113,25 @@ export const useApiClient = () => {
     return response.json();
   };
 
+  // New: Image Deepfake Scan
+  const scanImage = async (file: File): Promise<ScanResultType> => {
+    const token = await getToken();
+    const { userId } = useAuth();
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("userId", userId ?? "anonymous");
+    const response = await fetch(`${API_URL}/scan-image`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Failed to analyze image");
+    }
+    return response.json();
+  };
+
   return {
     scanAudio,
     scanUpload,
@@ -120,5 +139,6 @@ export const useApiClient = () => {
     submitFeedback,
     enrollSpeaker,
     verifySpeaker,
+    scanImage,
   };
 };
