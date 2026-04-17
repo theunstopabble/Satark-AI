@@ -1,8 +1,36 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from fastapi import FastAPI
 from schemas import AudioUpload, ScanResult
 from detect import analyze_audio
 
 app = FastAPI(title="Satark-AI Engine")
+
+@app.on_event("startup")
+async def warmup_model():
+    """Pre-warm the wav2vec2 model to avoid cold start on first request."""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("Warming up deepfake detection model...")
+    try:
+        import detect  # This triggers full module-level model loading
+        import numpy as np
+        import torch
+
+        dummy_audio = np.zeros(16000, dtype=np.float32)
+        inputs = detect._feature_extractor(
+            dummy_audio,
+            sampling_rate=16000,
+            return_tensors="pt",
+            padding=True
+        )
+        inputs = {k: v.to(detect.DEVICE) for k, v in inputs.items()}
+        with torch.no_grad():
+            detect._model(**inputs)
+        logger.info("Model warmup complete. Ready for requests.")
+    except Exception as e:
+        logger.warning(f"Warmup failed (non-critical): {e}")
 
 @app.get("/")
 def home():
