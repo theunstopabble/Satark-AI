@@ -1,8 +1,9 @@
 import { AudioUploadType, ScanResultType } from "@repo/shared";
 import { useAuth } from "@clerk/clerk-react";
 
+const { getToken, userId } = useAuth();
+
 export const useApiClient = () => {
-  const { getToken } = useAuth();
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   const scanAudio = async (data: AudioUploadType): Promise<ScanResultType> => {
@@ -116,7 +117,6 @@ export const useApiClient = () => {
   // New: Image Deepfake Scan
   const scanImage = async (file: File): Promise<ScanResultType> => {
     const token = await getToken();
-    const { userId } = useAuth();
     const formData = new FormData();
     formData.append("file", file);
     formData.append("userId", userId ?? "anonymous");

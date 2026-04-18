@@ -7,7 +7,6 @@ import { LandingNavbar } from "@/components/LandingNavbar";
 import { Footer } from "@/components/Footer";
 import { Suspense, lazy } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { ImageUpload } from "./components/ImageUpload";
 
 /**
  * Core strategy:
@@ -67,9 +66,6 @@ function App() {
                   </Suspense>
                 }
               />
-
-              {/* Image Analysis route */}
-              <Route path="/image-scan" element={<ImageUpload />} />
             </Routes>
           </BrowserRouter>
           <Analytics />
