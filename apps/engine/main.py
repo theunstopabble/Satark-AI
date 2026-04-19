@@ -18,23 +18,8 @@ app = FastAPI(title="Satark-AI Engine")
 
 @app.on_event("startup")
 async def warmup_model():
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info("Warming up deepfake detection model...")
-    try:
-        import detect
-        import numpy as np
-        import torch
-        dummy_audio = np.zeros(16000, dtype=np.float32)
-        inputs = detect._feature_extractor(
-            dummy_audio, sampling_rate=16000, return_tensors="pt", padding=True
-        )
-        inputs = {k: v.to(detect.DEVICE) for k, v in inputs.items()}
-        with torch.no_grad():
-            detect._model(**inputs)
-        logger.info("Model warmup complete. Ready for requests.")
-    except Exception as e:
-        logger.warning(f"Warmup failed (non-critical): {e}")
+    # ✅ Warmup disabled — models load on first request to avoid OOM
+    logger.info("Engine started. Models will load on first request.")
 
 
 @app.get("/")
@@ -128,10 +113,7 @@ async def scan_image_upload(request: Request):
 
         filename = file.filename
         if not is_image_file(filename):
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid file. Supported: .jpg, .jpeg, .png, .webp, .gif, .bmp"
-            )
+            raise HTTPException(status_code=400, detail="Invalid file. Supported: .jpg, .jpeg, .png, .webp, .gif, .bmp")
 
         image_bytes = await file.read()
         if len(image_bytes) > 50 * 1024 * 1024:
