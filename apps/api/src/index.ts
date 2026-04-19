@@ -277,22 +277,19 @@ app.post("/scan-image", async (c) => {
   const apiKey = process.env.IMAGE_API_KEY;
   const apiUrl = process.env.IMAGE_API_URL;
   if (!apiKey || !apiUrl) {
-    return c.json({ error: "Image API URL or API KEY not configured" }, 500);
+    console.error("Missing IMAGE_API_KEY or IMAGE_API_URL");
+    return c.json({ error: "Server Configuration Error" }, 500);
   }
 
   // 2. Parse multipart form
   const body = await c.req.parseBody();
-  // 3. Extract file and userId, validate
   const file = body["file"];
   const userId = (body["userId"] as string) ?? "anonymous";
   if (!file || !(file instanceof File)) {
     return c.json({ error: "Image file is required" }, 400);
   }
-  if (!userId) {
-    return c.json({ error: "userId is required" }, 400);
-  }
 
-  // Optional: Rate limit and file size checks (keep for security)
+  // 3. Optional: Rate limit and file size checks
   if (!rateLimiter(userId)) {
     return c.json(
       { error: "Rate limit exceeded. Max 10 scans per minute." },
@@ -303,10 +300,13 @@ app.post("/scan-image", async (c) => {
     return c.json({ error: "File too large. Max size is 50MB." }, 400);
   }
 
-  // 4. Construct fetch to Modulate.ai
+  // 4. Prepare FormData
   const formData = new FormData();
   formData.append("file", file, file.name || "uploaded_image.png");
 
+  // 5. Setup AbortController for timeout
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
   let extResponse;
   try {
     const extRes = await fetch(`${apiUrl}/detect`, {
@@ -315,7 +315,9 @@ app.post("/scan-image", async (c) => {
         Authorization: `Bearer ${apiKey}`,
       },
       body: formData,
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     if (!extRes.ok) {
       const errorText = await extRes.text();
       return c.json(
@@ -327,12 +329,19 @@ app.post("/scan-image", async (c) => {
       );
     }
     extResponse = await extRes.json();
-  } catch (err) {
+  } catch (err: any) {
+    clearTimeout(timeout);
+    if (err && err.name === "AbortError") {
+      return c.json(
+        {
+          error: "Server Busy",
+          details: "Modulate AI took too long to respond",
+        },
+        504,
+      );
+    }
     return c.json(
-      {
-        error: "External Scan Failed",
-        details: (err && (err as any).message) || String(err),
-      },
+      { error: "External Scan Failed", details: err?.message || String(err) },
       502,
     );
   }

@@ -103,7 +103,6 @@ export const useApiClient = () => {
   const scanImage = async (file: File): Promise<ScanResultType> => {
     const token = await getToken();
     const formData = new FormData();
-    // Always send explicit filename
     formData.append("file", file, file.name || "uploaded_image.png");
     formData.append("userId", userId ?? "anonymous");
 
@@ -121,10 +120,10 @@ export const useApiClient = () => {
       let errorMessage = "Unknown server error";
       try {
         const json = await response.clone().json();
-        errorMessage = json.details || json.error || "Analysis Failed";
+        errorMessage = json.message || json.error || JSON.stringify(json);
       } catch {
         try {
-          errorMessage = (await response.text()) || "Server unavailable";
+          errorMessage = await response.text();
         } catch {
           errorMessage = "Server unavailable";
         }
