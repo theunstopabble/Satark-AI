@@ -12,7 +12,7 @@ export function FeedbackWidget({ scanId }: FeedbackWidgetProps) {
     "idle" | "loading" | "success" | "error"
   >("idle");
 
-  const handleFeedback = async (type: "thumbs_up" | "thumbs_down") => {
+  const handleFeedback = async (type: "thumbsup" | "thumbsdown") => {
     setStatus("loading");
     try {
       await submitFeedback(scanId, type);
@@ -40,7 +40,7 @@ export function FeedbackWidget({ scanId }: FeedbackWidgetProps) {
       </span>
       <div className="flex gap-2">
         <button
-          onClick={() => handleFeedback("thumbs_up")}
+          onClick={() => handleFeedback("thumbsup")}
           disabled={status === "loading"}
           className="p-2 hover:bg-green-100 hover:text-green-700 rounded-lg transition-colors text-muted-foreground"
           title="Yes, correct"
@@ -48,7 +48,7 @@ export function FeedbackWidget({ scanId }: FeedbackWidgetProps) {
           <ThumbsUp size={18} />
         </button>
         <button
-          onClick={() => handleFeedback("thumbs_down")}
+          onClick={() => handleFeedback("thumbsdown")}
           disabled={status === "loading"}
           className="p-2 hover:bg-red-100 hover:text-red-700 rounded-lg transition-colors text-muted-foreground"
           title="No, incorrect"
