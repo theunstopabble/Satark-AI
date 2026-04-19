@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      mode: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
       manifest: {
         name: "Satark-AI: Deepfake Detector",
@@ -59,11 +59,14 @@ export default defineConfig({
           // Framer motion - large animation lib, isolated
           if (id.includes("framer-motion")) return "vendor-framer";
           // React core - essential, cached forever
-          if (id.includes("react-dom") || id.includes("react-router")) return "vendor-react";
+          if (id.includes("react-dom") || id.includes("react-router"))
+            return "vendor-react";
           // Charting / visualization
-          if (id.includes("recharts") || id.includes("d3")) return "vendor-charts";
+          if (id.includes("recharts") || id.includes("d3"))
+            return "vendor-charts";
           // Heavy audio processing utilities
-          if (id.includes("wavesurfer") || id.includes("lamejs")) return "vendor-audio";
+          if (id.includes("wavesurfer") || id.includes("lamejs"))
+            return "vendor-audio";
           // All other node_modules
           if (id.includes("node_modules")) return "vendor-misc";
         },
