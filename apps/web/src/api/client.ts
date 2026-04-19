@@ -3,7 +3,9 @@ import { useAuth } from "@clerk/clerk-react";
 
 export const useApiClient = () => {
   const { getToken, userId } = useAuth();
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const API_URL = (
+    import.meta.env.VITE_API_URL || "http://localhost:3000"
+  ).replace(/\/+$/, "");
 
   const scanAudio = async (data: AudioUploadType): Promise<ScanResultType> => {
     const token = await getToken();

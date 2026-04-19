@@ -296,9 +296,14 @@ app.post("/scan-image", async (c) => {
     }
 
     // Forward to Python engine
-    const engineUrl = process.env.ENGINE_URL ?? "http://127.0.0.1:8000";
+    const engineUrlRaw = process.env.ENGINE_URL ?? "http://127.0.0.1:8000";
+    const engineUrl = engineUrlRaw.replace(/\/+$/, "");
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append(
+      "file",
+      file,
+      file && file.name ? file.name : "uploaded_image.png",
+    );
     formData.append("userId", userId);
 
     const engineRes = await fetch(`${engineUrl}/scan-image`, {
@@ -317,8 +322,10 @@ app.post("/scan-image", async (c) => {
     const scanId = await saveScanResult(result);
     return c.json({ ...result, id: scanId });
   } catch (error) {
-    console.error("Image Scan API Error:", error);
-    return c.json({ error: "Failed to process image" }, 500);
+    const message =
+      error && (error as any).message ? (error as any).message : String(error);
+    console.error("Image Scan API Error:", message);
+    return c.json({ error: "Failed to process image", details: message }, 500);
   }
 });
 // ─────────────────────────────────────────────────────────────────────
