@@ -274,7 +274,7 @@ app.post("/scan-upload", async (c) => {
 
 app.post("/scan-image", async (c) => {
   try {
-    // 1. Read API URL and KEY from env
+    // Read API URL and KEY from env
     const apiUrlRaw = process.env.IMAGE_API_URL;
     const apiKey = process.env.IMAGE_API_KEY;
     if (!apiUrlRaw || !apiKey) {
@@ -282,12 +282,12 @@ app.post("/scan-image", async (c) => {
     }
     const apiUrl = apiUrlRaw.replace(/\/+$/, "");
 
-    // 2. Parse the form body
+    // Parse the form body
     const body = await c.req.parseBody();
     const file = body["file"];
     const userId = (body["userId"] as string) ?? "anonymous";
 
-    // 3. Validate file and userId
+    // Validate file and userId
     if (!file || !(file instanceof File)) {
       return c.json({ error: "Image file is required" }, 400);
     }
@@ -295,7 +295,7 @@ app.post("/scan-image", async (c) => {
       return c.json({ error: "userId is required" }, 400);
     }
 
-    // 4. Rate limit check
+    // Rate limit check
     if (!rateLimiter(userId)) {
       return c.json(
         { error: "Rate limit exceeded. Max 10 scans per minute." },
@@ -303,16 +303,16 @@ app.post("/scan-image", async (c) => {
       );
     }
 
-    // 5. File size check (max 50MB)
+    // File size check (max 50MB)
     if (file.size > 50 * 1024 * 1024) {
       return c.json({ error: "File too large. Max size is 50MB." }, 400);
     }
 
-    // 6. Prepare FormData for Modulate API
+    // Prepare FormData for external API
     const formData = new FormData();
     formData.append("file", file, file.name || "uploaded_image.png");
 
-    // 7. Send POST request to Modulate API
+    // Send POST request to external API
     const response = await fetch(`${apiUrl}/detect`, {
       method: "POST",
       headers: {
@@ -332,19 +332,19 @@ app.post("/scan-image", async (c) => {
       );
     }
 
-    // 8. Map Modulate response to our format
-    const modulate = await response.json();
+    // Map external response to ScanResult
+    const ext = await response.json();
     const mappedResult = {
-      isDeepfake: modulate.ext?.is_deepfake,
-      confidenceScore: modulate.ext?.score,
-      analysisDetails: "AI Analysis Complete",
-      features: {},
+      isDeepfake: ext.is_deepfake ?? ext.ext?.is_deepfake,
+      confidenceScore: ext.score ?? ext.ext?.score,
+      analysisDetails: ext.analysis_details || "AI Analysis Complete",
+      features: ext.features || {},
       userId,
       audioUrl: "image_upload",
       createdAt: new Date(),
     };
 
-    // 9. Save to DB and return
+    // Save to DB and return
     const scanId = await saveScanResult(mappedResult);
     return c.json({ ...mappedResult, id: scanId });
   } catch (error) {

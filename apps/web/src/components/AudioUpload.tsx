@@ -49,12 +49,12 @@ export function AudioUpload() {
   const watchedUrl = watch("audioUrl");
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
-useEffect(() => {
-  if (!selectedFile) return;
-  const url = URL.createObjectURL(selectedFile);
-  setObjectUrl(url);
-  return () => URL.revokeObjectURL(url); // memory leak fix
-}, [selectedFile]);
+  useEffect(() => {
+    if (!selectedFile) return;
+    const url = URL.createObjectURL(selectedFile);
+    setObjectUrl(url);
+    return () => URL.revokeObjectURL(url); // memory leak fix
+  }, [selectedFile]);
 
   // Mutation Setup
   const mutation = useMutation({
@@ -81,12 +81,38 @@ useEffect(() => {
   const onSubmit = (data: AudioUploadType) => {
     mutation.mutate(data);
   };
-  const featureStats = useMemo(() => [
-  { label: "Silence Ratio", value: `${((mutation.data?.features?.silence_ratio || 0) * 100).toFixed(1)}%` },
-  { label: "Duration", value: `${(mutation.data?.features?.duration || 0).toFixed(2)}s` },
-  { label: "Zero Crossing", value: (mutation.data?.features?.zcr || 0).toFixed(4) },
-  { label: "Rolloff", value: `${(mutation.data?.features?.rolloff || 0).toFixed(0)} Hz` },
-], [mutation.data?.features]);
+  // Forensic metrics for display
+  const featureStats = useMemo(
+    () => [
+      {
+        label: "MFCC Mean",
+        value: (mutation.data?.features?.mfcc_mean ?? 0).toFixed(2),
+        key: "mfcc_mean",
+      },
+      {
+        label: "Silence Ratio",
+        value: `${((mutation.data?.features?.silence_ratio ?? 0) * 100).toFixed(1)}%`,
+        key: "silence_ratio",
+      },
+      {
+        label: "ZCR",
+        value: (mutation.data?.features?.zcr ?? 0).toFixed(4),
+        key: "zcr",
+      },
+    ],
+    [mutation.data?.features],
+  );
+
+  // Determine which metric triggered deepfake suspicion
+  const suspiciousMetric = useMemo(() => {
+    if (!mutation.data?.isDeepfake || !mutation.data?.features) return null;
+    const { silence_ratio, zcr, mfcc_mean } = mutation.data.features;
+    // Heuristic: highlight the most anomalous metric
+    if (silence_ratio > 0.4) return "silence_ratio";
+    if (zcr > 0.15) return "zcr";
+    if (mfcc_mean < -100) return "mfcc_mean"; // Example threshold, tune as needed
+    return null;
+  }, [mutation.data]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -117,19 +143,21 @@ useEffect(() => {
             <div className="flex space-x-2 p-1.5 bg-muted/50 rounded-xl border">
               <button
                 onClick={() => setMode("url")}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${mode === "url"
-                  ? "bg-background text-primary shadow-sm ring-1 ring-border"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                  mode === "url"
+                    ? "bg-background text-primary shadow-sm ring-1 ring-border"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
               >
                 <LinkIcon size={16} /> URL Link
               </button>
               <button
                 onClick={() => setMode("file")}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${mode === "file"
-                  ? "bg-background text-primary shadow-sm ring-1 ring-border"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                  mode === "file"
+                    ? "bg-background text-primary shadow-sm ring-1 ring-border"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
               >
                 <Upload size={16} /> File Upload
               </button>
@@ -181,7 +209,9 @@ useEffect(() => {
                     Upload Audio File
                   </label>
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-10 text-center hover:bg-muted/30 hover:border-primary/50 transition-all cursor-pointer relative group">
-                    <input type="file" accept="audio/*,video/*"
+                    <input
+                      type="file"
+                      accept="audio/*,video/*"
                       title="Upload Audio & Video File"
                       onChange={handleFileChange}
                       className="absolute inset-0 opacity-0 cursor-pointer z-10"
@@ -246,6 +276,19 @@ useEffect(() => {
                 score={mutation.data.confidenceScore}
                 isDeepfake={mutation.data.isDeepfake}
               />
+              <div className="mt-6 text-center">
+                <span
+                  className={`inline-block px-4 py-2 rounded-full font-bold text-lg ${
+                    mutation.data.isDeepfake
+                      ? "bg-red-100 text-red-600 border border-red-300"
+                      : "bg-green-100 text-green-700 border border-green-300"
+                  }`}
+                >
+                  {mutation.data.isDeepfake
+                    ? "Synthetic (Deepfake)"
+                    : "Real (Authentic)"}
+                </span>
+              </div>
             </div>
 
             <div className="md:col-span-2 bg-card rounded-2xl border shadow-sm p-6 relative overflow-hidden">
@@ -253,7 +296,16 @@ useEffect(() => {
                 <FileAudio size={120} />
               </div>
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <CheckCircle2 className="text-green-500" /> Analysis Report
+                {mutation.data.isDeepfake ? (
+                  <span className="text-red-500">
+                    <CheckCircle2 />
+                  </span>
+                ) : (
+                  <span className="text-green-500">
+                    <CheckCircle2 />
+                  </span>
+                )}
+                Analysis Report
               </h3>
 
               {mutation.data.isDuplicate && (
@@ -272,19 +324,49 @@ useEffect(() => {
                 {mutation.data.analysisDetails}
               </p>
 
-              
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-  {featureStats.map((stat, i) => (
-    <div key={i} className="p-3 bg-muted/40 rounded-lg border border-border/50">
-      <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-        {stat.label}
-      </div>
-      <div className="text-lg font-mono font-semibold text-foreground">
-        {stat.value}
-      </div>
-    </div>
-  ))}
-</div>
+              {/* Forensic Metrics Progress Bar */}
+              <div className="flex flex-col gap-4 mb-6">
+                <div className="flex items-center gap-4">
+                  {featureStats.map((stat, i) => (
+                    <div key={i} className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                          {stat.label}
+                        </span>
+                        <span className="text-xs font-mono">{stat.value}</span>
+                      </div>
+                      <div className="w-full h-3 rounded bg-muted/30 relative overflow-hidden">
+                        <div
+                          className={`h-3 rounded transition-all duration-500 ${
+                            suspiciousMetric === stat.key &&
+                            mutation.data.isDeepfake
+                              ? "bg-red-500"
+                              : "bg-green-500/70"
+                          }`}
+                          style={{
+                            width:
+                              suspiciousMetric === stat.key &&
+                              mutation.data.isDeepfake
+                                ? "100%"
+                                : "60%",
+                            opacity:
+                              suspiciousMetric === stat.key &&
+                              mutation.data.isDeepfake
+                                ? 1
+                                : 0.5,
+                          }}
+                        />
+                      </div>
+                      {suspiciousMetric === stat.key &&
+                        mutation.data.isDeepfake && (
+                          <div className="text-xs text-red-600 mt-1 font-semibold">
+                            Suspicious
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div className="mt-6 pt-6 border-t border-border/50">
                 <FeedbackWidget scanId={mutation.data.id} />
@@ -296,35 +378,33 @@ useEffect(() => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {((mode === "url" && watchedUrl) ||
               (mode === "file" && selectedFile)) && (
-                <div className="bg-card rounded-2xl border shadow-sm p-6">
-                  <h4 className="font-semibold mb-4 flex items-center gap-2">
-                    {selectedFile?.type.startsWith("video/") ? (
-                      <>
-                        <Video size={18} /> Video Preview
-                      </>
-                    ) : (
-                      <>
-                        <Music size={18} /> Waveform
-                      </>
-                    )}
-                  </h4>
+              <div className="bg-card rounded-2xl border shadow-sm p-6">
+                <h4 className="font-semibold mb-4 flex items-center gap-2">
                   {selectedFile?.type.startsWith("video/") ? (
-                    <video
-                      controls
-                      className="w-full rounded-lg max-h-[400px] bg-black"
-                      src={objectUrl || ""}
-                    />
+                    <>
+                      <Video size={18} /> Video Preview
+                    </>
                   ) : (
-                    <AudioVisualizer
-                      audioUrl={
-                        mode === "url"
-                          ? watchedUrl || ""
-                          : objectUrl || ""
-                      }
-                    />
+                    <>
+                      <Music size={18} /> Waveform
+                    </>
                   )}
-                </div>
-              )}
+                </h4>
+                {selectedFile?.type.startsWith("video/") ? (
+                  <video
+                    controls
+                    className="w-full rounded-lg max-h-[400px] bg-black"
+                    src={objectUrl || ""}
+                  />
+                ) : (
+                  <AudioVisualizer
+                    audioUrl={
+                      mode === "url" ? watchedUrl || "" : objectUrl || ""
+                    }
+                  />
+                )}
+              </div>
+            )}
 
             {/* XAI Heatmap Integration */}
             {mutation.data?.features?.segments &&

@@ -15,21 +15,32 @@ logger = logging.getLogger(__name__)
 TEMP_DIR = "/tmp/satark_audio"
 os.makedirs(TEMP_DIR, exist_ok=True)
 
+
 MODEL_NAME = "garystafford/wav2vec2-deepfake-voice-detector"
-DEVICE = "cuda" if hasattr(__import__("torch"), "cuda") and __import__("torch").cuda.is_available() else "cpu"
+import torch
+DEVICE = "cpu"  # Always use CPU for inference to avoid VRAM issues
 
 _registry: dict = {}
 
 
+
+# Singleton loader for Wav2Vec2 model and feature extractor
 def _load_audio_model():
-    if "_feature_extractor" not in _registry:
+    if "_feature_extractor" in _registry and "_model" in _registry:
+        return _registry["_feature_extractor"], _registry["_model"]
+    try:
         logger.info(f"Loading deepfake detection model: {MODEL_NAME} on {DEVICE}")
+        from transformers import AutoFeatureExtractor, Wav2Vec2ForSequenceClassification
         _registry["_feature_extractor"] = AutoFeatureExtractor.from_pretrained(MODEL_NAME)
-        _registry["_model"] = Wav2Vec2ForSequenceClassification.from_pretrained(MODEL_NAME)
-        _registry["_model"].to(DEVICE)
-        _registry["_model"].eval()
+        model = Wav2Vec2ForSequenceClassification.from_pretrained(MODEL_NAME)
+        model.to(torch.device("cpu"))  # Force CPU for inference
+        model.eval()
+        _registry["_model"] = model
         logger.info("Model loaded successfully.")
-    return _registry["_feature_extractor"], _registry["_model"]
+    except Exception as e:
+        logger.warning(f"Failed to initialize Wav2Vec2 model: {e}")
+        # Do not crash server, just leave registry empty
+    return _registry.get("_feature_extractor"), _registry.get("_model")
 
 
 def __getattr__(name: str):
@@ -120,26 +131,36 @@ def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
         confidence = 0.0
         details = "Audio appears natural."
         if features:
-            score = 0
+            # Multi-metric composite scoring
+            silence = features.get("silence_ratio", 0.0)
+            zcr = features.get("zcr", 0.0)
+            rolloff = features.get("rolloff", 0.0)
+
+            # Normalize each metric to [0, 1] risk
+            # Silence Ratio: high silence = more suspicious (risk rises above 0.25)
+            silence_risk = min(max((silence - 0.25) / 0.5, 0.0), 1.0)
+            # ZCR: risk rises above 0.12 (empirical, >0.25 is very suspicious)
+            zcr_risk = min(max((zcr - 0.12) / 0.13, 0.0), 1.0)
+            # Rolloff: risk rises below 2500Hz (low rolloff = more suspicious)
+            rolloff_risk = min(max((2500 - rolloff) / 1500, 0.0), 1.0)
+
+            # Weighted composite (tune weights as needed)
+            composite = 0.4 * silence_risk + 0.3 * zcr_risk + 0.3 * rolloff_risk
+            confidence = min(max(composite, 0.0), 1.0)
+            is_deepfake = confidence > 0.5
+
             reasons = []
-            if features["silence_ratio"] < 0.05:
-                score += 30
-                reasons.append("Unnaturally continuous speech pattern")
-            if features["zcr"] > 0.15:
-                score += 20
-                reasons.append("High frequency noise anomalies")
-            if features["rolloff"] < 2000:
-                score += 10
-                reasons.append("suspiciously low frequency bandwidth")
-            total_score = min(score, 99) if reasons else min(score + 5, 30)
-            if total_score > 50:
-                is_deepfake = True
-                confidence = total_score / 100.0
-                details = f"Deepfake suspected: {'; '.join(reasons)}"
+            if silence_risk > 0.5:
+                reasons.append(f"High silence ratio ({silence:.2f})")
+            if zcr_risk > 0.5:
+                reasons.append(f"Anomalous zero crossing rate ({zcr:.3f})")
+            if rolloff_risk > 0.5:
+                reasons.append(f"Low spectral rolloff ({rolloff:.1f} Hz)")
+            if is_deepfake:
+                details = f"Deepfake risk detected: {'; '.join(reasons) if reasons else 'Composite risk score high'}"
             else:
-                is_deepfake = False
-                confidence = (100 - total_score) / 100.0
-                details = "No significant artifacts detected."
+                details = "No significant deepfake artifacts detected."
+
         return ScanResult(
             id=str(uuid.uuid4()),
             userId=user_id,
