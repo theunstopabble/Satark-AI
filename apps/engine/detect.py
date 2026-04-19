@@ -8,7 +8,8 @@ import asyncio
 import logging
 from datetime import datetime
 from schemas import AudioUpload, ScanResult
-from transformers import AutoModelForAudioClassification, AutoFeatureExtractor
+from transformers import AutoFeatureExtractor
+from transformers import Wav2Vec2ForSequenceClassification
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +30,8 @@ def _load_audio_model():
     if "_feature_extractor" not in _registry:
         logger.info(f"Loading deepfake detection model: {MODEL_NAME} on {DEVICE}")
         _registry["_feature_extractor"] = AutoFeatureExtractor.from_pretrained(MODEL_NAME)
-        _registry["_model"] = AutoModelForAudioClassification.from_pretrained(MODEL_NAME)
+        _registry["_model"] = Wav2Vec2ForSequenceClassification.from_pretrained(MODEL_NAME)
+
         _registry["_model"].to(DEVICE)
         _registry["_model"].eval()
         logger.info("Model loaded successfully.")
