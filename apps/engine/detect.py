@@ -8,8 +8,6 @@ import asyncio
 import logging
 from datetime import datetime
 from schemas import AudioUpload, ScanResult
-from transformers import AutoFeatureExtractor
-from transformers import Wav2Vec2ForSequenceClassification
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
