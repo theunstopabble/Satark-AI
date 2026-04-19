@@ -273,88 +273,84 @@ app.post("/scan-upload", async (c) => {
 // ─── Image Deepfake Scan ─────────────────────────────────────────────
 
 app.post("/scan-image", async (c) => {
+  // 1. Retrieve credentials
+  const apiKey = process.env.IMAGE_API_KEY;
+  const apiUrl = process.env.IMAGE_API_URL;
+  if (!apiKey || !apiUrl) {
+    return c.json({ error: "Image API URL or API KEY not configured" }, 500);
+  }
+
+  // 2. Parse multipart form
+  const body = await c.req.parseBody();
+  // 3. Extract file and userId, validate
+  const file = body["file"];
+  const userId = (body["userId"] as string) ?? "anonymous";
+  if (!file || !(file instanceof File)) {
+    return c.json({ error: "Image file is required" }, 400);
+  }
+  if (!userId) {
+    return c.json({ error: "userId is required" }, 400);
+  }
+
+  // Optional: Rate limit and file size checks (keep for security)
+  if (!rateLimiter(userId)) {
+    return c.json(
+      { error: "Rate limit exceeded. Max 10 scans per minute." },
+      429,
+    );
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    return c.json({ error: "File too large. Max size is 50MB." }, 400);
+  }
+
+  // 4. Construct fetch to Modulate.ai
+  const formData = new FormData();
+  formData.append("file", file, file.name || "uploaded_image.png");
+
+  let extResponse;
   try {
-    // Read API URL and KEY from env
-    const apiUrlRaw = process.env.IMAGE_API_URL;
-    const apiKey = process.env.IMAGE_API_KEY;
-    if (!apiUrlRaw || !apiKey) {
-      return c.json({ error: "Image API URL or API KEY not configured" }, 500);
-    }
-    const apiUrl = apiUrlRaw.replace(/\/+$/, "");
-
-    // Parse the form body
-    const body = await c.req.parseBody();
-    const file = body["file"];
-    const userId = (body["userId"] as string) ?? "anonymous";
-
-    // Validate file and userId
-    if (!file || !(file instanceof File)) {
-      return c.json({ error: "Image file is required" }, 400);
-    }
-    if (!userId) {
-      return c.json({ error: "userId is required" }, 400);
-    }
-
-    // Rate limit check
-    if (!rateLimiter(userId)) {
-      return c.json(
-        { error: "Rate limit exceeded. Max 10 scans per minute." },
-        429,
-      );
-    }
-
-    // File size check (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      return c.json({ error: "File too large. Max size is 50MB." }, 400);
-    }
-
-    // Prepare FormData for external API
-    const formData = new FormData();
-    formData.append("file", file, file.name || "uploaded_image.png");
-
-    // Send POST request to external API (no /detect, just IMAGE_API_URL)
-    const response = await fetch(apiUrl, {
+    const extRes = await fetch(`${apiUrl}/detect`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
       },
       body: formData,
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!extRes.ok) {
+      const errorText = await extRes.text();
       return c.json(
         {
-          error: "External Image API Failed",
+          error: "External Scan Failed",
           details: errorText || "No error details received",
         },
-        500,
+        502,
       );
     }
-
-    // Map external response to ScanResult
-    const ext = await response.json();
-    const mappedResult = {
-      isDeepfake: ext.is_deepfake ?? ext.ext?.is_deepfake,
-      confidenceScore: ext.score ?? ext.ext?.score,
-      analysisDetails: ext.analysis_details || "AI Analysis Complete",
-      features: ext.features || {},
-      userId,
-      audioUrl: "image_upload",
-      createdAt: new Date(),
-    };
-
-    // Save to DB and return
-    const scanId = await saveScanResult(mappedResult);
-    return c.json({ ...mappedResult, id: scanId });
-  } catch (error) {
-    const message =
-      error && (error as any).message ? (error as any).message : String(error);
+    extResponse = await extRes.json();
+  } catch (err) {
     return c.json(
-      { error: "External Image API Failed", details: message },
-      500,
+      {
+        error: "External Scan Failed",
+        details: (err && (err as any).message) || String(err),
+      },
+      502,
     );
   }
+
+  // 6. Map response
+  const mappedResult = {
+    isDeepfake: extResponse.is_deepfake,
+    confidenceScore: extResponse.score,
+    analysisDetails: "AI Verification Complete via Modulate",
+    features: extResponse.features || {},
+    userId,
+    audioUrl: "image_upload",
+    createdAt: new Date(),
+  };
+
+  // 7. Save and return
+  const scanId = await saveScanResult(mappedResult);
+  return c.json({ ...mappedResult, id: scanId });
 });
 
 app.get("/audio/:id", async (c) => {
