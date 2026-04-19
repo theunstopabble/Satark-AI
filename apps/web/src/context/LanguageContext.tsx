@@ -122,7 +122,10 @@ const translations: Translations = {
   "landing.trust.orgs": { en: "Organizations", hi: "संगठन" },
 
   // Home/Landing - Footer
-  "landing.footer.rights": { en: "All rights reserved." },
+  "landing.footer.rights": {
+    en: "All rights reserved.",
+    hi: "सर्वाधिकार सुरक्षित हैं।",
+  },
 };
 
 type LanguageContextType = {
