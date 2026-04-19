@@ -270,65 +270,67 @@ app.post("/scan-upload", async (c) => {
   }
 });
 
+// ... inside apps/api/src/index.ts
+
 // ─── Image Deepfake Scan ─────────────────────────────────────────────
 app.post("/scan-image", async (c) => {
-  try {
-    const body = await c.req.parseBody();
-    const file = body["file"];
-    const userId = (body["userId"] as string) ?? "anonymous";
+	try {
+		const body = await c.req.parseBody();
+		const file = body["file"];
+		const userId = (body["userId"] as string) ?? "anonymous";
 
-    if (!file || !(file instanceof File)) {
-      return c.json({ error: "Image file is required" }, 400);
-    }
+		if (!file || !(file instanceof File)) {
+			return c.json({ error: "Image file is required" }, 400);
+		}
 
-    // Rate limit check
-    if (!rateLimiter(userId)) {
-      return c.json(
-        { error: "Rate limit exceeded. Max 10 scans per minute." },
-        429,
-      );
-    }
+		// Rate limit check
+		if (!rateLimiter(userId)) {
+			return c.json({ error: "Rate limit exceeded." }, 429);
+		}
 
-    // File size check
-    const validationError = validateFile(file as File, true);
-    if (validationError) {
-      return c.json({ error: validationError }, 400);
-    }
+		// File size check (max 50MB)
+		if (file.size > 50 * 1024 * 1024) {
+			return c.json({ error: "File too large. Max size is 50MB." }, 400);
+		}
 
-    // Forward to Python engine
-    const engineUrlRaw = process.env.ENGINE_URL ?? "http://127.0.0.1:8000";
-    const engineUrl = engineUrlRaw.replace(/\/+$/, "");
-    const formData = new FormData();
-    formData.append(
-      "file",
-      file,
-      file && file.name ? file.name : "uploaded_image.png",
-    );
-    formData.append("userId", userId);
+		const engineUrlRaw = process.env.ENGINE_URL || "http://127.0.0.1:8000";
+		const engineUrl = engineUrlRaw.replace(/\/+$/, "");
 
-    const engineRes = await fetch(`${engineUrl}/scan-image`, {
-      method: "POST",
-      body: formData,
-    });
+		const formData = new FormData();
+		formData.append("file", file, file.name || "uploaded_image.png");
+		formData.append("userId", userId);
 
-    if (!engineRes.ok) {
-      const errorText = await engineRes.text();
-      return c.json({ error: "Image Engine Error", details: errorText }, 500);
-    }
+		console.log(`Sending image scan request to engine: ${engineUrl}/scan-image`);
 
-    const result = await engineRes.json();
+		const engineRes = await fetch(`${engineUrl}/scan-image`, {
+			method: "POST",
+			body: formData,
+		});
 
-    // Save to DB
-    const scanId = await saveScanResult(result);
-    return c.json({ ...result, id: scanId });
-  } catch (error) {
-    const message =
-      error && (error as any).message ? (error as any).message : String(error);
-    console.error("Image Scan API Error:", message);
-    return c.json({ error: "Failed to process image", details: message }, 500);
-  }
+		if (!engineRes.ok) {
+			// Critical Fix: Read the error text from the engine BEFORE returning 500
+			const errorText = await engineRes.text();
+			console.error("❌ Image Engine Error Response:", errorText);
+			
+			return c.json(
+				{ error: "Image Engine Failed", details: errorText || "No error details received" },
+				500
+			);
+		}
+
+		const result = await engineRes.json();
+
+		// Save to DB
+		const scanId = await saveScanResult(result);
+		return c.json({ ...result, id: scanId });
+
+	} catch (error) {
+		const message = error && (error as any).message ? (error as any).message : String(error);
+		console.error("🚨 Critical Image Scan API Error:", message);
+		return c.json({ error: "Failed to process image", details: message }, 500);
+	}
 });
-// ─────────────────────────────────────────────────────────────────────
+// ...─────────────────────────────────────────────────────────────────────
 
 app.get("/audio/:id", async (c) => {
   const id = c.req.param("id");

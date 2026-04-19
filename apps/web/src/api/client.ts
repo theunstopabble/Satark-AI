@@ -105,15 +105,32 @@ export const useApiClient = () => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("userId", userId ?? "anonymous");
+
+    const API_URL = (
+      import.meta.env.VITE_API_URL || "http://localhost:3000"
+    ).replace(/\/+$/, "");
+
     const response = await fetch(`${API_URL}/scan-image`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
+
     if (!response.ok) {
-      const e = await response.text();
-      throw new Error(e || "Failed to analyze image");
+      // Try to parse JSON error first, fallback to text
+      const contentType = response.headers.get("content-type");
+      let errorMessage = "Unknown server error";
+
+      if (contentType?.includes("application/json")) {
+        const json = await response.json();
+        errorMessage = json.details || json.error || "Analysis Failed";
+      } else {
+        errorMessage = (await response.text()) || "Server unavailable";
+      }
+
+      throw new Error(errorMessage);
     }
+
     return response.json();
   };
 
