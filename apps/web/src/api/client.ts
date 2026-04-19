@@ -1,14 +1,12 @@
 import { AudioUploadType, ScanResultType } from "@repo/shared";
 import { useAuth } from "@clerk/clerk-react";
 
-const { getToken, userId } = useAuth();
-
 export const useApiClient = () => {
+  const { getToken, userId } = useAuth();
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
   const scanAudio = async (data: AudioUploadType): Promise<ScanResultType> => {
     const token = await getToken();
-
     const response = await fetch(`${API_URL}/scan`, {
       method: "POST",
       headers: {
@@ -17,11 +15,7 @@ export const useApiClient = () => {
       },
       body: JSON.stringify(data),
     });
-
-    if (!response.ok) {
-      throw new Error("Failed to scan audio");
-    }
-
+    if (!response.ok) throw new Error("Failed to scan audio");
     return response.json();
   };
 
@@ -33,20 +27,15 @@ export const useApiClient = () => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("userId", userId);
-
     const response = await fetch(`${API_URL}/scan-upload`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
-
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Failed to upload audio");
+      const e = await response.text();
+      throw new Error(e || "Failed to upload audio");
     }
-
     return response.json();
   };
 
@@ -55,14 +44,13 @@ export const useApiClient = () => {
     const response = await fetch(`${API_URL}/scans?userId=${userId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-
     if (!response.ok) throw new Error("Failed to fetch history");
     return response.json();
   };
 
   const submitFeedback = async (
     scanId: string,
-    feedback: "thumbs_up" | "thumbs_down",
+    feedback: "thumbsup" | "thumbsdown",
   ) => {
     const token = await getToken();
     await fetch(`${API_URL}/scans/${scanId}/feedback`, {
@@ -81,16 +69,14 @@ export const useApiClient = () => {
     formData.append("file", file);
     formData.append("name", name);
     formData.append("userId", userId);
-
     const response = await fetch(`${API_URL}/api/speaker/enroll`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
-
     if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || "Enrollment failed");
+      const d = await response.json();
+      throw new Error(d.error || "Enrollment failed");
     }
     return response.json();
   };
@@ -100,21 +86,18 @@ export const useApiClient = () => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("userId", userId);
-
     const response = await fetch(`${API_URL}/api/speaker/verify`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
-
     if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || "Verification failed");
+      const d = await response.json();
+      throw new Error(d.error || "Verification failed");
     }
     return response.json();
   };
 
-  // New: Image Deepfake Scan
   const scanImage = async (file: File): Promise<ScanResultType> => {
     const token = await getToken();
     const formData = new FormData();
@@ -126,8 +109,8 @@ export const useApiClient = () => {
       body: formData,
     });
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Failed to analyze image");
+      const e = await response.text();
+      throw new Error(e || "Failed to analyze image");
     }
     return response.json();
   };
