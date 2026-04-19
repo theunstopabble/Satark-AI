@@ -307,7 +307,7 @@ app.post("/scan-image", async (c) => {
   // 5. Setup AbortController for timeout
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
-  let extResponse;
+  let data;
   try {
     const extRes = await fetch(`${apiUrl}/detect`, {
       method: "POST",
@@ -328,7 +328,8 @@ app.post("/scan-image", async (c) => {
         502,
       );
     }
-    extResponse = await extRes.json();
+    data = await extRes.json();
+    console.log("🔍 Modulate Raw Response:", JSON.stringify(data));
   } catch (err: any) {
     clearTimeout(timeout);
     if (err && err.name === "AbortError") {
@@ -346,12 +347,18 @@ app.post("/scan-image", async (c) => {
     );
   }
 
-  // 6. Map response
+  // 6. Safe extraction and mapping
+  const isDeepfake =
+    data.is_deepfake !== undefined
+      ? data.is_deepfake
+      : data.isDeepfake === true;
+  const confidence = Number(data.score ?? data.confidence ?? 0);
+
   const mappedResult = {
-    isDeepfake: extResponse.is_deepfake,
-    confidenceScore: extResponse.score,
+    isDeepfake,
+    confidenceScore: confidence,
     analysisDetails: "AI Verification Complete via Modulate",
-    features: extResponse.features || {},
+    features: data.features || {},
     userId,
     audioUrl: "image_upload",
     createdAt: new Date(),
@@ -359,7 +366,12 @@ app.post("/scan-image", async (c) => {
 
   // 7. Save and return
   const scanId = await saveScanResult(mappedResult);
-  return c.json({ ...mappedResult, id: scanId });
+  return c.json({
+    ...mappedResult,
+    id: scanId,
+    isDeepfake,
+    confidenceScore: confidence,
+  });
 });
 
 app.get("/audio/:id", async (c) => {
