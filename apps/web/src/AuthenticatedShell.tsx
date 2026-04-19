@@ -1,5 +1,5 @@
 const ImageUpload = lazy(() =>
-  import("../components/ImageUpload").then((m) => ({ default: m.ImageUpload })),
+  import("@/components/ImageUpload").then((m) => ({ default: m.ImageUpload })),
 );
 import {
   ClerkProvider,
