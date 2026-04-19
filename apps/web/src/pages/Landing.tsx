@@ -7,8 +7,6 @@ import {
   Gamepad2,
   FileText,
   Users,
-  Github,
-  Twitter,
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
