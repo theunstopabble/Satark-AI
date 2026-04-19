@@ -270,8 +270,6 @@ app.post("/scan-upload", async (c) => {
   }
 });
 
-// ... inside apps/api/src/index.ts
-
 // ─── Image Deepfake Scan ─────────────────────────────────────────────
 
 app.post("/scan-image", async (c) => {
@@ -302,7 +300,7 @@ app.post("/scan-image", async (c) => {
       return c.json({ error: "File too large. Max size is 50MB." }, 400);
     }
 
-    // Forward to external Deepfake Detection API
+    // Modulate.ai API config
     const apiUrlRaw = process.env.IMAGE_API_URL;
     const apiKey = process.env.IMAGE_API_KEY;
     if (!apiUrlRaw || !apiKey) {
@@ -310,11 +308,12 @@ app.post("/scan-image", async (c) => {
     }
     const apiUrl = apiUrlRaw.replace(/\/+$/, "");
 
+    // Prepare FormData
     const formData = new FormData();
     formData.append("file", file, file.name || "uploaded_image.png");
-    formData.append("userId", userId);
 
-    const apiRes = await fetch(`${apiUrl}/analyze`, {
+    // Call Modulate.ai
+    const response = await fetch(`${apiUrl}/detect`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -322,9 +321,8 @@ app.post("/scan-image", async (c) => {
       body: formData,
     });
 
-    if (!apiRes.ok) {
-      const errorText = await apiRes.text();
-      console.error("❌ External Image API Error Response:", errorText);
+    if (!response.ok) {
+      const errorText = await response.text();
       return c.json(
         {
           error: "External Image API Failed",
@@ -334,17 +332,16 @@ app.post("/scan-image", async (c) => {
       );
     }
 
-    // Parse and map result
-    const ext = await apiRes.json();
+    // Map Modulate.ai response to our format
+    const modulate = await response.json();
     const mappedResult = {
-      isDeepfake: ext.is_deepfake ?? ext.isDeepfake ?? false,
-      confidenceScore: ext.score ?? ext.confidence ?? 0,
-      analysisDetails:
-        ext.message ?? ext.analysis_details ?? ext.analysisDetails ?? "",
+      isDeepfake: modulate.is_deepfake,
+      confidenceScore: modulate.score,
+      analysisDetails: "AI Analysis Complete",
+      features: {},
       userId,
-      audioUrl: "image_upload", // or ext.audioUrl if provided
-      features: ext.features ?? {},
-      createdAt: ext.createdAt ? new Date(ext.createdAt) : new Date(),
+      audioUrl: "image_upload",
+      createdAt: new Date(),
     };
 
     const scanId = await saveScanResult(mappedResult);
@@ -352,7 +349,6 @@ app.post("/scan-image", async (c) => {
   } catch (error) {
     const message =
       error && (error as any).message ? (error as any).message : String(error);
-    console.error("Image Scan API Error:", message);
     return c.json(
       { error: "External Image API Failed", details: message },
       500,

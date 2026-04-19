@@ -7,10 +7,3 @@ numpy==1.26.4
 soundfile==0.12.1
 torch==2.2.0
 torchaudio==2.2.0
-transformers==4.40.0
-accelerate==0.29.0
-huggingface-hub
-speechbrain
-moviepy==2.2.0
-Pillow==10.3.0
-torchvision==0.17.0

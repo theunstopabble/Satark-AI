@@ -8,9 +8,10 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
+
 # Install Python dependencies
 COPY requirements.txt .
-# Install CPU-only torch first to save space, then other requirements
+# Install CPU-only torch and torchaudio, then all other requirements with --no-cache-dir
 RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
