@@ -309,6 +309,7 @@ app.post("/scan-image", async (c) => {
 
 		if (!engineRes.ok) {
 			// Critical Fix: Read the error text from the engine BEFORE returning 500
+			// This helps us see if the server crashed (no response) or gave an error message.
 			const errorText = await engineRes.text();
 			console.error("❌ Image Engine Error Response:", errorText);
 			
@@ -330,7 +331,6 @@ app.post("/scan-image", async (c) => {
 		return c.json({ error: "Failed to process image", details: message }, 500);
 	}
 });
-// ...─────────────────────────────────────────────────────────────────────
 
 app.get("/audio/:id", async (c) => {
   const id = c.req.param("id");
