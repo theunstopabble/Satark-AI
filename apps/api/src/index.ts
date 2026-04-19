@@ -274,33 +274,7 @@ app.post("/scan-upload", async (c) => {
 
 app.post("/scan-image", async (c) => {
   try {
-    // Parse multipart form
-    const body = await c.req.parseBody();
-    const file = body["file"];
-    const userId = (body["userId"] as string) ?? "anonymous";
-
-    // Validate file and userId
-    if (!file || !(file instanceof File)) {
-      return c.json({ error: "Image file is required" }, 400);
-    }
-    if (!userId) {
-      return c.json({ error: "userId is required" }, 400);
-    }
-
-    // Rate limit check
-    if (!rateLimiter(userId)) {
-      return c.json(
-        { error: "Rate limit exceeded. Max 10 scans per minute." },
-        429,
-      );
-    }
-
-    // File size check (max 50MB)
-    if (file.size > 50 * 1024 * 1024) {
-      return c.json({ error: "File too large. Max size is 50MB." }, 400);
-    }
-
-    // Modulate.ai API config
+    // 1. Read API URL and KEY from env
     const apiUrlRaw = process.env.IMAGE_API_URL;
     const apiKey = process.env.IMAGE_API_KEY;
     if (!apiUrlRaw || !apiKey) {
@@ -308,11 +282,37 @@ app.post("/scan-image", async (c) => {
     }
     const apiUrl = apiUrlRaw.replace(/\/+$/, "");
 
-    // Prepare FormData
+    // 2. Parse the form body
+    const body = await c.req.parseBody();
+    const file = body["file"];
+    const userId = (body["userId"] as string) ?? "anonymous";
+
+    // 3. Validate file and userId
+    if (!file || !(file instanceof File)) {
+      return c.json({ error: "Image file is required" }, 400);
+    }
+    if (!userId) {
+      return c.json({ error: "userId is required" }, 400);
+    }
+
+    // 4. Rate limit check
+    if (!rateLimiter(userId)) {
+      return c.json(
+        { error: "Rate limit exceeded. Max 10 scans per minute." },
+        429,
+      );
+    }
+
+    // 5. File size check (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      return c.json({ error: "File too large. Max size is 50MB." }, 400);
+    }
+
+    // 6. Prepare FormData for Modulate API
     const formData = new FormData();
     formData.append("file", file, file.name || "uploaded_image.png");
 
-    // Call Modulate.ai
+    // 7. Send POST request to Modulate API
     const response = await fetch(`${apiUrl}/detect`, {
       method: "POST",
       headers: {
@@ -332,11 +332,11 @@ app.post("/scan-image", async (c) => {
       );
     }
 
-    // Map Modulate.ai response to our format
+    // 8. Map Modulate response to our format
     const modulate = await response.json();
     const mappedResult = {
-      isDeepfake: modulate.is_deepfake,
-      confidenceScore: modulate.score,
+      isDeepfake: modulate.ext?.is_deepfake,
+      confidenceScore: modulate.ext?.score,
       analysisDetails: "AI Analysis Complete",
       features: {},
       userId,
@@ -344,6 +344,7 @@ app.post("/scan-image", async (c) => {
       createdAt: new Date(),
     };
 
+    // 9. Save to DB and return
     const scanId = await saveScanResult(mappedResult);
     return c.json({ ...mappedResult, id: scanId });
   } catch (error) {
