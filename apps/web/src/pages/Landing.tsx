@@ -157,36 +157,6 @@ export function Landing() {
             </div>
           </div>
         </section>
-
-        {/* Footer */}
-        <footer className="py-8 bg-muted/40 border-t">
-          <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Satark AI.{" "}
-              {t("landing.footer.rights")}
-            </div>
-            <div className="flex gap-4">
-              <a
-                href="https://github.com/theunstopabble/Satark-AI"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-primary transition-colors"
-                aria-label="GitHub"
-              >
-                <Github size={20} />
-              </a>
-              <a
-                href="https://twitter.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-primary transition-colors"
-                aria-label="Twitter"
-              >
-                <Twitter size={20} />
-              </a>
-            </div>
-          </div>
-        </footer>
       </div>
     </>
   );
