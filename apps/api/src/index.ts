@@ -312,8 +312,8 @@ app.post("/scan-image", async (c) => {
     const formData = new FormData();
     formData.append("file", file, file.name || "uploaded_image.png");
 
-    // Send POST request to external API
-    const response = await fetch(`${apiUrl}/detect`, {
+    // Send POST request to external API (no /detect, just IMAGE_API_URL)
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
