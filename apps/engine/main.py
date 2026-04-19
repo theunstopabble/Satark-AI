@@ -11,7 +11,7 @@ from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from schemas import AudioUpload, ScanResult
 from detect import analyze_audio, analyze_file_path, TEMP_DIR
-from detect_image import analyze_image_bytes, is_image_file
+
 
 app = FastAPI(title="Satark-AI Engine")
 
@@ -101,37 +101,10 @@ async def embed_audio_endpoint(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
 @app.post("/scan-image")
 async def scan_image_upload(request: Request):
-    try:
-        form = await request.form()
-        file = form.get("file")
-        user_id = form.get("userId", "guest")
-
-        if not file or not hasattr(file, 'filename'):
-            raise HTTPException(status_code=400, detail="Image file is required")
-
-        filename = file.filename
-        if not is_image_file(filename):
-            raise HTTPException(status_code=400, detail="Invalid file. Supported: .jpg, .jpeg, .png, .webp, .gif, .bmp")
-
-        image_bytes = await file.read()
-        if len(image_bytes) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="Image too large. Max 50MB.")
-
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(
-            None, analyze_image_bytes, image_bytes, user_id, filename
-        )
-
-        result["createdAt"] = result["createdAt"].isoformat()
-        return JSONResponse(content=result)
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Image scan error: {e}")
-        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
+    pass
 
 
 if __name__ == "__main__":

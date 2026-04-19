@@ -273,63 +273,91 @@ app.post("/scan-upload", async (c) => {
 // ... inside apps/api/src/index.ts
 
 // ─── Image Deepfake Scan ─────────────────────────────────────────────
+
 app.post("/scan-image", async (c) => {
-	try {
-		const body = await c.req.parseBody();
-		const file = body["file"];
-		const userId = (body["userId"] as string) ?? "anonymous";
+  try {
+    // Parse multipart form
+    const body = await c.req.parseBody();
+    const file = body["file"];
+    const userId = (body["userId"] as string) ?? "anonymous";
 
-		if (!file || !(file instanceof File)) {
-			return c.json({ error: "Image file is required" }, 400);
-		}
+    // Validate file and userId
+    if (!file || !(file instanceof File)) {
+      return c.json({ error: "Image file is required" }, 400);
+    }
+    if (!userId) {
+      return c.json({ error: "userId is required" }, 400);
+    }
 
-		// Rate limit check
-		if (!rateLimiter(userId)) {
-			return c.json({ error: "Rate limit exceeded." }, 429);
-		}
+    // Rate limit check
+    if (!rateLimiter(userId)) {
+      return c.json(
+        { error: "Rate limit exceeded. Max 10 scans per minute." },
+        429,
+      );
+    }
 
-		// File size check (max 50MB)
-		if (file.size > 50 * 1024 * 1024) {
-			return c.json({ error: "File too large. Max size is 50MB." }, 400);
-		}
+    // File size check (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      return c.json({ error: "File too large. Max size is 50MB." }, 400);
+    }
 
-		const engineUrlRaw = process.env.ENGINE_URL || "http://127.0.0.1:8000";
-		const engineUrl = engineUrlRaw.replace(/\/+$/, "");
+    // Forward to external Deepfake Detection API
+    const apiUrlRaw = process.env.IMAGE_API_URL;
+    const apiKey = process.env.IMAGE_API_KEY;
+    if (!apiUrlRaw || !apiKey) {
+      return c.json({ error: "Image API URL or API KEY not configured" }, 500);
+    }
+    const apiUrl = apiUrlRaw.replace(/\/+$/, "");
 
-		const formData = new FormData();
-		formData.append("file", file, file.name || "uploaded_image.png");
-		formData.append("userId", userId);
+    const formData = new FormData();
+    formData.append("file", file, file.name || "uploaded_image.png");
+    formData.append("userId", userId);
 
-		console.log(`Sending image scan request to engine: ${engineUrl}/scan-image`);
+    const apiRes = await fetch(`${apiUrl}/analyze`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: formData,
+    });
 
-		const engineRes = await fetch(`${engineUrl}/scan-image`, {
-			method: "POST",
-			body: formData,
-		});
+    if (!apiRes.ok) {
+      const errorText = await apiRes.text();
+      console.error("❌ External Image API Error Response:", errorText);
+      return c.json(
+        {
+          error: "External Image API Failed",
+          details: errorText || "No error details received",
+        },
+        500,
+      );
+    }
 
-		if (!engineRes.ok) {
-			// Critical Fix: Read the error text from the engine BEFORE returning 500
-			// This helps us see if the server crashed (no response) or gave an error message.
-			const errorText = await engineRes.text();
-			console.error("❌ Image Engine Error Response:", errorText);
-			
-			return c.json(
-				{ error: "Image Engine Failed", details: errorText || "No error details received" },
-				500
-			);
-		}
+    // Parse and map result
+    const ext = await apiRes.json();
+    const mappedResult = {
+      isDeepfake: ext.is_deepfake ?? ext.isDeepfake ?? false,
+      confidenceScore: ext.score ?? ext.confidence ?? 0,
+      analysisDetails:
+        ext.message ?? ext.analysis_details ?? ext.analysisDetails ?? "",
+      userId,
+      audioUrl: "image_upload", // or ext.audioUrl if provided
+      features: ext.features ?? {},
+      createdAt: ext.createdAt ? new Date(ext.createdAt) : new Date(),
+    };
 
-		const result = await engineRes.json();
-
-		// Save to DB
-		const scanId = await saveScanResult(result);
-		return c.json({ ...result, id: scanId });
-
-	} catch (error) {
-		const message = error && (error as any).message ? (error as any).message : String(error);
-		console.error("🚨 Critical Image Scan API Error:", message);
-		return c.json({ error: "Failed to process image", details: message }, 500);
-	}
+    const scanId = await saveScanResult(mappedResult);
+    return c.json({ ...mappedResult, id: scanId });
+  } catch (error) {
+    const message =
+      error && (error as any).message ? (error as any).message : String(error);
+    console.error("Image Scan API Error:", message);
+    return c.json(
+      { error: "External Image API Failed", details: message },
+      500,
+    );
+  }
 });
 
 app.get("/audio/:id", async (c) => {
