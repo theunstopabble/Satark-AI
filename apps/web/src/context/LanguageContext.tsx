@@ -65,6 +65,59 @@ const translations: Translations = {
   "si.result.match": { en: "Identity Match", hi: "पहचान मेल खाई" },
   "si.result.noconfidence": { en: "Low Confidence", hi: "कम विश्वास" },
   "si.result.mismatch": { en: "Identity Mismatch", hi: "पहचान मेल नहीं खाई" },
+
+  // Home/Landing - Hero Section
+  "landing.hero.badge": {
+    en: "Defend Truth in the Age of AI",
+    hi: "AI yug mein satya ki raksha karein",
+  },
+  "landing.hero.headline1": { en: "Next-Generation ", hi: "Agle Yug ka" },
+  "landing.hero.headline2": {
+    en: "Deepfake Detection",
+    hi: "Deepfake Pehchan",
+  },
+  "landing.hero.subheading": {
+    en: "Advanced audio and image analysis to reveal synthetic media instantly.",
+    hi: "Jhutli media ko turant pata lagane ke liye avansd audio aur image analysis.",
+  },
+  "landing.hero.cta1": { en: "Start Free Scan", hi: "Free Scan Shuru Karein" },
+  "landing.hero.cta2": { en: "Watch Demo", hi: "Demo Dekhein" },
+
+  // Home/Landing - Features Section
+  "landing.features.title": {
+    en: "How Satark Works",
+    hi: "Satark Kaise Kaam Karta Hai",
+  },
+  "landing.features.desc": {
+    en: "Our platform combines forensic science with machine learning.",
+    hi: "Hamara platform forensic vigyan aur machine learning ko jodta hai.",
+  },
+
+  // Home/Landing - Feature Cards
+  "landing.feature.spectra.title": {
+    en: "Spectral Analysis",
+    hi: "Spectral Vishleshan",
+  },
+  "landing.feature.spectra.desc": {
+    en: "Detects hidden artifacts invisible to the human eye.",
+    hi: "Insani aankh se chupe chupe artifacts ko pakadta hai.",
+  },
+  "landing.feature.silence.title": {
+    en: "Silence Detection",
+    hi: "Chuppan ka Pata",
+  },
+  "landing.feature.silence.desc": {
+    en: "Identifies unnatural gaps and silent spikes typical of TTS models.",
+    hi: "TTS models ke mukhya lakshan, ajeeb chuppan ko pehchan ta hai.",
+  },
+  "landing.feature.fusion.title": {
+    en: "Multi-Modal Fusion",
+    hi: "Multi-Modular Milan",
+  },
+  "landing.feature.fusion.desc": {
+    en: "Cross-references audio and video streams for higher accuracy.",
+    hi: "Behtar accuracy ke liye audio aur video streams ka milapan karta hai.",
+  },
 };
 
 type LanguageContextType = {
