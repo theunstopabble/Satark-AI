@@ -68,56 +68,61 @@ const translations: Translations = {
 
   // Home/Landing - Hero Section
   "landing.hero.badge": {
-    en: "Defend Truth in the Age of AI",
-    hi: "AI yug mein satya ki raksha karein",
+    en: "Advanced Deepfake Detection System",
+    hi: "उन्नत डीपफेक सेंसिंग प्रणाली",
   },
-  "landing.hero.headline1": { en: "Next-Generation ", hi: "Agle Yug ka" },
+  "landing.hero.headline1": {
+    en: "Defending Truth in the",
+    hi: "जनरेटिव AI के इस युग में",
+  },
   "landing.hero.headline2": {
-    en: "Deepfake Detection",
-    hi: "Deepfake Pehchan",
+    en: "Age of Generative AI",
+    hi: "सत्य की रक्षा करें",
   },
   "landing.hero.subheading": {
-    en: "Advanced audio and image analysis to reveal synthetic media instantly.",
-    hi: "Jhutli media ko turant pata lagane ke liye avansd audio aur image analysis.",
+    en: "Detect AI-generated audio with scientifically validated precision.",
+    hi: "वैज्ञानिक रूप से मान्यता प्राप्त सटीकता के साथ AI-जनित ऑडियो का पता लगाएं।",
   },
-  "landing.hero.cta1": { en: "Start Free Scan", hi: "Free Scan Shuru Karein" },
-  "landing.hero.cta2": { en: "Watch Demo", hi: "Demo Dekhein" },
+  "landing.hero.cta1": { en: "Start Free Scan", hi: "मुफ्त स्कैन शुरू करें" },
+  "landing.hero.cta2": { en: "How it Works", hi: "यह कैसे काम करता है" },
 
   // Home/Landing - Features Section
   "landing.features.title": {
     en: "How Satark Works",
-    hi: "Satark Kaise Kaam Karta Hai",
+    hi: "Satark कैसे काम करता है",
   },
-  "landing.features.desc": {
-    en: "Our platform combines forensic science with machine learning.",
-    hi: "Hamara platform forensic vigyan aur machine learning ko jodta hai.",
+  "landing.features.audio": { en: "Audio Forensics", hi: "ऑडियो फोरेंसिक्स" },
+  "landing.features.audio.desc": {
+    en: "Analyze spectral patterns for hidden artifacts.",
+    hi: "छुपे हुए आर्टिफैक्ट्स के लिए स्पेक्ट्रल पैटर्न का विश्लेषण करें।",
+  },
+  "landing.features.live": { en: "Live Monitoring", hi: "लाइव मॉनिटरिंग" },
+  "landing.features.live.desc": {
+    en: "Real-time verification during calls and meetings.",
+    hi: "कॉलों और मीटिंग्स के दौरान वास्तविक समय में सत्यापन।",
+  },
+  "landing.features.game": { en: "Deepfake Game", hi: "डीपफेक गेम" },
+  "landing.features.game.desc": {
+    en: "Test your skills in identifying synthetic media.",
+    hi: "सिंथेटिक मीडिया की पहचान करने में अपनी कौशल को परखें।",
+  },
+  "landing.features.pdf": { en: "Audit Reports", hi: "ऑडिट रिपोर्ट" },
+  "landing.features.pdf.desc": {
+    en: "Generate detailed forensic PDF certificates.",
+    hi: "विस्तृत फोरेंसिक PDF प्रमाणपत्र उत्पन्न करें।",
   },
 
-  // Home/Landing - Feature Cards
-  "landing.feature.spectra.title": {
-    en: "Spectral Analysis",
-    hi: "Spectral Vishleshan",
+  // Home/Landing - Trust Signals
+  "landing.trust.title": {
+    en: "Trusted by Security Professionals",
+    hi: "सुरक्षा पेशेवरों द्वारा भरोसेमंद",
   },
-  "landing.feature.spectra.desc": {
-    en: "Detects hidden artifacts invisible to the human eye.",
-    hi: "Insani aankh se chupe chupe artifacts ko pakadta hai.",
-  },
-  "landing.feature.silence.title": {
-    en: "Silence Detection",
-    hi: "Chuppan ka Pata",
-  },
-  "landing.feature.silence.desc": {
-    en: "Identifies unnatural gaps and silent spikes typical of TTS models.",
-    hi: "TTS models ke mukhya lakshan, ajeeb chuppan ko pehchan ta hai.",
-  },
-  "landing.feature.fusion.title": {
-    en: "Multi-Modal Fusion",
-    hi: "Multi-Modular Milan",
-  },
-  "landing.feature.fusion.desc": {
-    en: "Cross-references audio and video streams for higher accuracy.",
-    hi: "Behtar accuracy ke liye audio aur video streams ka milapan karta hai.",
-  },
+  "landing.trust.files": { en: "Files Analyzed", hi: "फ़ाइलों का विश्लेषण" },
+  "landing.trust.uptime": { en: "Uptime Guarantee", hi: "अपटाइम वारंटी" },
+  "landing.trust.orgs": { en: "Organizations", hi: "संगठन" },
+
+  // Home/Landing - Footer
+  "landing.footer.rights": { en: "All rights reserved." },
 };
 
 type LanguageContextType = {
