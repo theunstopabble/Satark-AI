@@ -205,6 +205,7 @@ app.post("/scan-upload", async (c) => {
 
     // Prepare Data
     const audioData = Buffer.from(arrayBuffer).toString("base64");
+    const audioMimeType = file.type || "audio/wav";
     const formData = new FormData();
     formData.append("file", file, file.name);
     formData.append("userId", userId);
@@ -222,7 +223,7 @@ app.post("/scan-upload", async (c) => {
 
     const result = await response.json();
 
-    // Save with Hash
+    // Save with Hash and MIME type
     const saved = await db
       .insert(scans)
       .values({
@@ -233,6 +234,7 @@ app.post("/scan-upload", async (c) => {
         analysisDetails: result.analysisDetails,
         fileHash: fileHash,
         audioData: audioData,
+        audioMimeType: audioMimeType,
       })
       .returning({ id: scans.id });
 
@@ -273,7 +275,7 @@ app.post("/scan-image", async (c) => {
     formData.append("file", file, file.name || "image.png");
 
     const controller = new AbortController();
-    setTimeout(() => controller.abort(), 15000); // 15s Timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s Timeout
 
     const targetUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
     const endpointUrl = `${targetUrl}/detect`;
@@ -289,7 +291,7 @@ app.post("/scan-image", async (c) => {
         signal: controller.signal,
       });
 
-      clearTimeout(timeout); // Clear timer on success
+      clearTimeout(timeoutId); // Clear timer on success
 
       if (!extRes.ok) {
         const errorText = await extRes.text();
@@ -305,6 +307,7 @@ app.post("/scan-image", async (c) => {
 
       data = await extRes.json();
     } catch (err: any) {
+      clearTimeout(timeoutId); // Ensure timer is cleared on error
       console.error(`💥 Network Crash during scan: ${err.message}`);
       return c.json(
         { error: "Service Busy", details: "Failed to reach provider" },
@@ -317,7 +320,7 @@ app.post("/scan-image", async (c) => {
     const confidence = Math.abs(Number(data.score ?? 0));
 
     const result = {
-      user_id: userId,
+      userId: userId,
       audioUrl: `image_scan:${file.name}`,
       isDeepfake,
       confidenceScore: confidence,
@@ -326,8 +329,8 @@ app.post("/scan-image", async (c) => {
       createdAt: new Date().toISOString(),
     };
 
-    const saved = await saveScanResult(result);
-    return c.json({ ...saved, id: saved.id });
+    const savedId = await saveScanResult(result);
+    return c.json({ ...result, id: savedId });
   } catch (error) {
     console.error("Critical Scan Error:", error);
     return c.json({ error: "Internal Server Error" }, 500);
@@ -343,7 +346,9 @@ app.get("/audio/:id", async (c) => {
     if (!scan || !scan.audioData) return c.text("Audio not found", 404);
 
     const audioBuffer = Buffer.from(scan.audioData, "base64");
-    return c.body(audioBuffer, 200, { "Content-Type": "audio/wav" });
+    // Use stored mimeType if available, else fallback to audio/wav
+    const mimeType = scan.audioMimeType || "audio/wav";
+    return c.body(audioBuffer, 200, { "Content-Type": mimeType });
   } catch (error) {
     console.error("Audio Fetch Error:", error);
     return c.text("Internal Server Error", 500);
@@ -354,12 +359,18 @@ app.get("/scans", async (c) => {
   const userId = c.req.query("userId");
   if (!userId) return c.json({ error: "UserId is required" }, 400);
 
+  // Pagination support
+  const limit = Math.min(Number(c.req.query("limit")) || 20, 100); // max 100
+  const offset = Math.max(Number(c.req.query("offset")) || 0, 0);
+
   try {
     const history = await db
       .select()
       .from(scans)
       .where(eq(scans.userId, userId))
-      .orderBy(desc(scans.createdAt));
+      .orderBy(desc(scans.createdAt))
+      .limit(limit)
+      .offset(offset);
     return c.json(history);
   } catch (error) {
     console.error("History Fetch Error:", error);
