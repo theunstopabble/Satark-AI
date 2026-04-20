@@ -10,11 +10,13 @@ import { serve } from "@hono/node-server";
 import { desc, eq, sql } from "drizzle-orm";
 import { authMiddleware } from "./middleware/auth";
 import { clerkMiddleware } from "@hono/clerk-auth";
+import crypto from "node:crypto";
+import { randomUUID } from "crypto";
 
 // ─── Rate Limiter ────────────────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10; // max requests
-const RATE_WINDOW_MS = 60_000; // per 60 seconds
+const RATE_LIMIT = 10;
+const RATE_WINDOW_MS = 60_000;
 
 function rateLimiter(userId: string): boolean {
   const now = Date.now();
@@ -30,7 +32,6 @@ function rateLimiter(userId: string): boolean {
   return true;
 }
 
-// Cleanup stale entries every 5 minutes to prevent memory leak
 setInterval(() => {
   const now = Date.now();
   for (const [key, val] of rateLimitMap.entries()) {
@@ -41,7 +42,7 @@ setInterval(() => {
 
 const app = new Hono();
 
-// Secure CORS configuration
+// CORS Setup
 const allowedOrigins = (
   process.env.ALLOWED_ORIGINS ||
   "http://localhost:5173,https://satark-deepfake.vercel.app"
@@ -56,7 +57,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         return origin || "*";
       }
-      return "https://satark-deepfake.vercel.app"; // Default fallback
+      return "https://satark-deepfake.vercel.app";
     },
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
@@ -64,7 +65,7 @@ app.use(
   }),
 );
 
-// Apply Clerk & Auth Middleware to protected routes
+// Apply Clerk Middleware
 app.use("/scan", clerkMiddleware(), authMiddleware);
 app.use("/scan-upload", clerkMiddleware(), authMiddleware);
 app.use("/scans/*", clerkMiddleware(), authMiddleware);
@@ -79,19 +80,16 @@ app.get("/", (c) => {
 
 app.get("/health-db", async (c) => {
   try {
-    const result = await db.execute(sql`SELECT 1`);
+    await db.execute(sql`SELECT 1`);
     return c.json({ status: "ok", db: "connected" });
   } catch (error) {
     console.error("Health Check DB Error:", error);
-    return c.json(
-      { status: "error", db: "disconnected", error: String(error) },
-      500,
-    );
+    return c.json({ status: "error", db: "disconnected" }, 500);
   }
 });
 
-// Helper to save scan results (Removed 'audioMimeType' as it doesn't exist in DB)
-async function saveScanResult(result: any) {
+// Helper to save scan results (Returns the Numeric ID from Database)
+async function saveScanResult(result: any): Promise<number | null> {
   try {
     const [inserted] = await db
       .insert(scans)
@@ -104,13 +102,14 @@ async function saveScanResult(result: any) {
       })
       .returning({ id: scans.id });
 
-    return inserted?.id;
+    return inserted?.id ?? null;
   } catch (dbError) {
     console.error("❌ Failed to save scan to DB:", dbError);
     return null;
   }
 }
 
+// --- 1. URL Scan Route ---
 app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
   const data = c.req.valid("json");
   const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
@@ -128,8 +127,7 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI Engine Error", response.status, errorText);
-      return c.json({ error: "AI Engine Error", details: errorText }, 500);
+      return c.json({ error: "Engine Error", details: errorText }, 500);
     }
 
     const result = await response.json();
@@ -142,10 +140,11 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
   }
 });
 
+// --- 2. Upload Scan Route ---
 app.post("/scan-upload", async (c) => {
   try {
     const body = await c.req.parseBody();
-    const file = body["file"] as File; // Cast to File
+    const file = body["file"] as File;
     const userId = (body["userId"] as string) ?? "anonymous";
 
     if (!file || !(file instanceof File)) {
@@ -156,7 +155,7 @@ app.post("/scan-upload", async (c) => {
       return c.json({ error: "Rate limit exceeded." }, 429);
     }
 
-    // 1. Calculate Hash (Deduplication)
+    // Calculate Hash
     const arrayBuffer = await file.arrayBuffer();
     const hashArray = Array.from(
       new Uint8Array(await crypto.subtle.digest("SHA-256", arrayBuffer)),
@@ -177,21 +176,13 @@ app.post("/scan-upload", async (c) => {
       });
     }
 
-    // Prepare Data
+    // Base64 Data
     const audioData = Buffer.from(arrayBuffer).toString("base64");
 
-    // Save to Local Temp Dir for Analysis
-    const safeFileName = `${Date.now()}_${file.name}`;
-    const filePath = `/tmp/${safeFileName}`; // Standard temp location
-    // NOTE: In production render, ensure /tmp is writable or use os.tmpdir()
-
-    // We need to read the file content again for local storage if we want to save original
-    // For now, we rely on the engine to process it
-
-    // Call Local Engine for Analysis
+    // Call Local Engine
     const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
     const formData = new FormData();
-    formData.append("file", file, safeFileName); // Append with unique name
+    formData.append("file", file, `upload_${Date.now()}`);
     formData.append("userId", userId);
 
     const response = await fetch(`${engineUrl}/scan-upload`, {
@@ -206,47 +197,41 @@ app.post("/scan-upload", async (c) => {
 
     const result = await response.json();
 
-    // Save to DB with Hash (Removed audioMimeType)
-    const saved = await db
-      .insert(scans)
-      .values({
-        userId: result.userId,
-        audioUrl: `uploaded://${safeFileName}`,
-        isDeepfake: result.isDeepfake,
-        confidenceScore: result.confidenceScore,
-        analysisDetails: result.analysisDetails,
-        fileHash: fileHash,
-        audioData: audioData,
-      })
-      .returning({ id: scans.id });
+    // Save with Hash & ID
+    const savedId = await saveScanResult({
+      ...result,
+      userId: result.userId,
+      audioUrl: `uploaded://${file.name}`,
+      fileHash: fileHash,
+    });
 
-    return c.json({ ...result, id: saved[0]?.id });
+    return c.json({ ...result, id: savedId });
   } catch (error) {
     console.error("Upload API Error:", error);
     return c.json({ error: "Failed to process upload" }, 500);
   }
 });
 
-// ─── Image Deepfake Scan (Cloud Integration) ─────────────────────
+// --- 3. Image Deepfake Scan Route (Cloud) ---
 app.post("/scan-image", async (c) => {
   try {
     const apiKey = process.env.IMAGE_API_KEY;
     const apiUrl = process.env.IMAGE_API_URL;
 
     if (!apiKey || !apiUrl) {
-      console.error("❌ Missing Config for Image Scan");
+      console.error("❌ Config Missing");
       return c.json({ error: "Server Configuration Error" }, 500);
     }
 
     const body = await c.req.parseBody();
-    const file = body["file"] as File;
-    const userId = (body["userId"] as string) ?? "anonymous";
+    const file = body["file"];
+    const userId = body["userId"] ?? "anonymous";
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "Image file is required" }, 400);
     }
 
-    if (!rateLimiter(userId)) {
+    if (!rateLimiter(String(userId))) {
       return c.json({ error: "Rate limit exceeded" }, 429);
     }
 
@@ -254,7 +239,9 @@ app.post("/scan-image", async (c) => {
     formData.append("file", file, file.name || "image.png");
 
     const controller = new AbortController();
-    setTimeout(() => controller.abort(), 15000);
+
+    // FIX: Declared timeout variable properly
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     const targetUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
     const endpointUrl = `${targetUrl}/detect`;
@@ -268,7 +255,8 @@ app.post("/scan-image", async (c) => {
         signal: controller.signal,
       });
 
-      clearTimeout(timeout);
+      // FIX: Use the declared variable name
+      clearTimeout(timeoutId);
 
       if (!extRes.ok) {
         const errorText = await extRes.text();
@@ -284,7 +272,7 @@ app.post("/scan-image", async (c) => {
 
       data = await extRes.json();
     } catch (err: any) {
-      console.error(`💥 Network Crash during scan: ${err.message}`);
+      console.error(`💥 Network Crash: ${err.message}`);
       return c.json(
         { error: "Service Busy", details: "Failed to reach provider" },
         500,
@@ -295,23 +283,30 @@ app.post("/scan-image", async (c) => {
     const isDeepfake = !!data.is_deepfake;
     const confidence = Math.abs(Number(data.score ?? 0));
 
-    const result = {
-      user_id: userId,
+    const mappedResult = {
+      userId: String(userId),
       audioUrl: `image_scan:${file.name}`,
       isDeepfake,
       confidenceScore: confidence,
       analysisDetails: data.message || "Verification Complete",
-      features: data.features || {},
+      features: {},
       createdAt: new Date().toISOString(),
     };
 
-    const saved = await saveScanResult(result);
-    return c.json({ ...saved, id: saved.id });
+    // FIX: Handle potential null from saveScanResult properly
+    const savedId = await saveScanResult(mappedResult);
+
+    return c.json({
+      ...mappedResult,
+      id: savedId ?? Date.now(), // Fallback ID if DB insert fails temporarily
+    });
   } catch (error) {
     console.error("Critical Scan Error:", error);
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });
+
+// --- 4. Helpers ---
 
 app.get("/audio/:id", async (c) => {
   const id = c.req.param("id");
@@ -319,13 +314,12 @@ app.get("/audio/:id", async (c) => {
     const scan = await db.query.scans.findFirst({
       where: eq(scans.id, Number(id)),
     });
-    if (!scan || !scan.audioData) return c.text("Audio not found", 404);
+    if (!scan || !scan.audioData) return c.text("Not found", 404);
 
     const audioBuffer = Buffer.from(scan.audioData, "base64");
     return c.body(audioBuffer, 200, { "Content-Type": "audio/wav" });
   } catch (error) {
-    console.error("Audio Fetch Error:", error);
-    return c.text("Internal Server Error", 500);
+    return c.text("Error", 500);
   }
 });
 
@@ -339,18 +333,9 @@ app.get("/scans", async (c) => {
       .from(scans)
       .where(eq(scans.userId, userId))
       .orderBy(desc(scans.createdAt));
-
-    // Clean up history to remove sensitive raw data if needed,
-    // or map fields to ensure no missing properties (like audioMimeType)
-    const cleanedHistory = history.map((h) => ({
-      ...h,
-      // Ensure returned object shape is consistent
-    }));
-
-    return c.json(cleanedHistory);
+    return c.json(history);
   } catch (error) {
-    console.error("History Fetch Error:", error);
-    return c.json({ error: "Failed to fetch history" }, 500);
+    return c.json({ error: "History Error" }, 500);
   }
 });
 
@@ -364,8 +349,7 @@ app.post("/scans/:id/feedback", async (c) => {
       .where(eq(scans.id, Number(id)));
     return c.json({ success: true });
   } catch (error) {
-    console.error("Feedback Error:", error);
-    return c.json({ error: "Failed to submit feedback" }, 500);
+    return c.json({ error: "Feedback Error" }, 500);
   }
 });
 
