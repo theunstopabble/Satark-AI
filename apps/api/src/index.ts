@@ -213,6 +213,7 @@ app.post("/scan-upload", async (c) => {
 });
 
 // --- 3. Image Deepfake Scan Route (Cloud) ---
+
 app.post("/scan-image", async (c) => {
   try {
     const apiKey = process.env.IMAGE_API_KEY;
@@ -239,23 +240,23 @@ app.post("/scan-image", async (c) => {
     formData.append("file", file, file.name || "image.png");
 
     const controller = new AbortController();
-
-    // FIX: Declared timeout variable properly
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    const targetUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
-    const endpointUrl = `${targetUrl}/detect`;
+    // --- Enhanced URL Construction ---
+    let finalUrl = apiUrl;
+    if (!/detect/i.test(apiUrl)) {
+      finalUrl = apiUrl.replace(/\/+$/, "") + "/detect";
+    }
 
     let data;
     try {
-      const extRes = await fetch(endpointUrl, {
+      console.log(`Attempting scan to: ${finalUrl}`);
+      const extRes = await fetch(finalUrl, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}` },
         body: formData,
         signal: controller.signal,
       });
-
-      // FIX: Use the declared variable name
       clearTimeout(timeoutId);
 
       if (!extRes.ok) {
@@ -272,9 +273,19 @@ app.post("/scan-image", async (c) => {
 
       data = await extRes.json();
     } catch (err: any) {
-      console.error(`💥 Network Crash: ${err.message}`);
+      clearTimeout(timeoutId);
+      if (err?.name === "AbortError") {
+        return c.json(
+          {
+            error: "Scan Timeout",
+            details: "Provider did not respond in time.",
+          },
+          504,
+        );
+      }
+      console.error(`💥 Network Crash: ${err?.message || err}`);
       return c.json(
-        { error: "Service Busy", details: "Failed to reach provider" },
+        { error: "Service Busy", details: String(err?.message || err) },
         500,
       );
     }
@@ -293,16 +304,21 @@ app.post("/scan-image", async (c) => {
       createdAt: new Date().toISOString(),
     };
 
-    // FIX: Handle potential null from saveScanResult properly
     const savedId = await saveScanResult(mappedResult);
 
     return c.json({
       ...mappedResult,
-      id: savedId ?? Date.now(), // Fallback ID if DB insert fails temporarily
+      id: savedId ?? Date.now(),
     });
-  } catch (error) {
-    console.error("Critical Scan Error:", error);
-    return c.json({ error: "Internal Server Error" }, 500);
+  } catch (error: any) {
+    console.error("Critical Scan Error:", error?.message || error);
+    return c.json(
+      {
+        error: "Internal Server Error",
+        details: String(error?.message || error),
+      },
+      500,
+    );
   }
 });
 
