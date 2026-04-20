@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-// Fix for NodeJS.Timeout type in browser context
-type NodeJSTimeout = ReturnType<typeof setTimeout>;
 import { motion } from "framer-motion";
 import { Mic, Activity, AlertTriangle, Save } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";

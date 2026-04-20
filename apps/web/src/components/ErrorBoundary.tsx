@@ -18,9 +18,9 @@ export class ErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
+  componentDidCatch(_error: Error, _info: React.ErrorInfo) {
     // Optionally log error to external service
-    // console.error("ErrorBoundary caught an error", error, info);
+    // console.error("ErrorBoundary caught an error", _error, _info);
   }
 
   handleReload = () => {
