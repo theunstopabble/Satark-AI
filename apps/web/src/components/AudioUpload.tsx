@@ -115,9 +115,34 @@ export function AudioUpload() {
   }, [mutation.data]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    // Strict validation
+    const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+    const ALLOWED_TYPES = [
+      "audio/mpeg",
+      "audio/mp3",
+      "audio/wav",
+      "video/mp4",
+      "video/webm",
+    ];
+
+    if (file.size > MAX_SIZE) {
+      alert("File too large. Max 50MB allowed.");
+      e.target.value = "";
+      setSelectedFile(null);
+      return;
     }
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      alert("Invalid file format. Please upload Audio or Video only.");
+      e.target.value = "";
+      setSelectedFile(null);
+      return;
+    }
+
+    setSelectedFile(file);
   };
 
   return (

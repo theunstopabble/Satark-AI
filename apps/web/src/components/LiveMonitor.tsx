@@ -112,13 +112,24 @@ export function LiveMonitor() {
         setTimeout(() => {
           // Only revert if we haven't found another danger
         }, 3000);
+        // Recursively process next chunk if still listening
+        if (isListeningRef.current) {
+          setTimeout(() => processNextChunk(stream), 200);
+        }
       } catch (e) {
-        console.error("Live Analysis Failed:", e);
-      }
-
-      // Recursively process next chunk if still listening
-      if (isListeningRef.current) {
-        setTimeout(() => processNextChunk(stream), 200);
+        // 1. Log error clearly
+        console.error("Live Analysis Failed (connection dropped):", e);
+        // 2. Show notification/toast (simple alert for now)
+        alert("Connection dropped. Retrying in 5 seconds...");
+        // 3. Stop all tracks and reset UI so user can restart
+        if (stream) {
+          stream.getTracks().forEach((t) => t.stop());
+        }
+        setIsListening(false);
+        isListeningRef.current = false;
+        setStatus("idle");
+        setThreatLevel(0);
+        setLastResult(null);
       }
     };
 
