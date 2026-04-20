@@ -92,6 +92,15 @@ app.post("/verify", async (c) => {
     // Optimization: In production, use pgvector. Here, fetch all (assuming < 1000)
     const allSpeakers = await db.select().from(speakers);
 
+    if (!allSpeakers || allSpeakers.length === 0) {
+      return c.json({
+        success: true,
+        isMatch: false,
+        details:
+          "No enrolled speakers found. Please enroll a reference voice first.",
+      });
+    }
+
     let bestMatch = { name: "Unknown", score: 0 };
 
     for (const spk of allSpeakers) {

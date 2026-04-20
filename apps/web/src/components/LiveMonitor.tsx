@@ -25,6 +25,9 @@ export function LiveMonitor() {
   // Recording Interval (5 seconds)
   const RECORDING_INTERVAL_MS = 5000;
 
+  // Persistent AbortController for API requests
+  const controllerRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     return () => {
       stopListening();
@@ -65,8 +68,15 @@ export function LiveMonitor() {
   };
 
   // Refactored: strictly sequential, one MediaRecorder per chunk, no setInterval
+
   const processNextChunk = async (stream: MediaStream) => {
     if (!isListeningRef.current) return;
+
+    // Abort previous API request if still running
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+    }
+    controllerRef.current = new AbortController();
 
     // Pick best mime type
     let mimeType = "audio/webm";
@@ -99,7 +109,8 @@ export function LiveMonitor() {
       });
 
       try {
-        const result = await client.scanUpload(file);
+        // Pass userId as second argument (API expects userId, not options)
+        const result = await client.scanUpload(file, userId ?? "anonymous");
         if (result.isDeepfake) {
           setStatus("danger");
           setThreatLevel(Math.floor(result.confidenceScore * 100));
@@ -116,7 +127,11 @@ export function LiveMonitor() {
         if (isListeningRef.current) {
           setTimeout(() => processNextChunk(stream), 200);
         }
-      } catch (e) {
+      } catch (e: any) {
+        if (controllerRef.current && e?.name === "AbortError") {
+          // Request was aborted, just exit
+          return;
+        }
         // 1. Log error clearly
         console.error("Live Analysis Failed (connection dropped):", e);
         // 2. Show notification/toast (simple alert for now)
@@ -142,6 +157,10 @@ export function LiveMonitor() {
   };
 
   const stopListening = () => {
+    // Abort any in-flight API request
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+    }
     if (audioContextRef.current) {
       audioContextRef.current.close();
     }

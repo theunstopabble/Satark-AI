@@ -4,6 +4,16 @@ import { useUser } from "@clerk/clerk-react";
 import { ScanResultType } from "@repo/shared";
 import { AnalyticsStats } from "./AnalyticsStats";
 
+// Date formatter for nice display
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+});
+
 export function ScanHistory() {
   const { user } = useUser();
   const { getHistory } = useApiClient();
@@ -44,7 +54,7 @@ export function ScanHistory() {
               {scans?.map((scan: ScanResultType) => (
                 <div
                   key={scan.id}
-                  className="p-4 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-muted/50 transition-colors gap-4"
+                  className="p-4 flex flex-col md:flex-row flex-wrap justify-between items-start md:items-center hover:bg-muted/50 transition-colors gap-4"
                 >
                   <div className="flex items-start gap-3">
                     <div className="bg-primary/10 p-2 rounded-lg mt-1">
@@ -62,7 +72,7 @@ export function ScanHistory() {
                         {scan.audioUrl.replace("uploaded://", "")}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(scan.createdAt).toLocaleString()}
+                        {dateFormatter.format(new Date(scan.createdAt))}
                       </p>
                       {/* Audio Player for Uploads */}
                       {scan.audioUrl.startsWith("uploaded://") && (
@@ -80,13 +90,13 @@ export function ScanHistory() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 self-end md:self-auto">
+                  <div className="flex items-center gap-4 flex-wrap self-end md:self-auto">
                     <div className="text-right">
                       <span className="text-xs text-muted-foreground block mb-0.5">
                         Confidence
                       </span>
                       <span className="font-mono font-bold">
-                        {(scan.confidenceScore * 100).toFixed(1)}%
+                        {(scan.confidenceScore * 100).toFixed(2)}%
                       </span>
                     </div>
                     <span
