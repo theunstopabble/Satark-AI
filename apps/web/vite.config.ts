@@ -2,10 +2,12 @@ import path from "path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+import svgr from "@svgr/plugin-svgr";
 
 export default defineConfig({
   plugins: [
     react(),
+    svgr(),
     VitePWA({
       mode: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
@@ -31,6 +33,17 @@ export default defineConfig({
         enabled: true,
         type: "module",
       },
+      workbox: {
+        // Disable precaching for dynamic API routes
+        navigateFallback: "/index.html",
+        runtimeCaching: [
+          {
+            urlPattern: /\/api\//,
+            handler: "NetworkOnly",
+            method: "GET",
+          },
+        ],
+      },
     }),
   ],
   resolve: {
@@ -50,6 +63,7 @@ export default defineConfig({
   build: {
     // Enable CSS code splitting
     cssCodeSplit: true,
+    chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
         // Split vendor bundles so browsers can cache them separately

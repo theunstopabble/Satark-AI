@@ -7,9 +7,35 @@ export const useApiClient = () => {
     import.meta.env.VITE_API_URL || "http://localhost:3000"
   ).replace(/\/+$/, "");
 
+  // Helper for fetch with timeout and strict error parsing
+  async function fetchWithTimeout<T>(
+    input: RequestInfo,
+    init: RequestInit = {},
+    timeoutMs = 15000,
+  ): Promise<T> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(input, { ...init, signal: controller.signal });
+      clearTimeout(timeout);
+      if (!res.ok) {
+        try {
+          const err = await res.clone().json();
+          throw new Error(err.message || err.error || JSON.stringify(err));
+        } catch {
+          throw new Error(await res.text());
+        }
+      }
+      return res.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  // Scan audio (JSON)
   const scanAudio = async (data: AudioUploadType): Promise<ScanResultType> => {
     const token = await getToken();
-    const response = await fetch(`${API_URL}/scan`, {
+    return fetchWithTimeout<ScanResultType>(`${API_URL}/scan`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -17,130 +43,64 @@ export const useApiClient = () => {
       },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error("Failed to scan audio");
-    return response.json();
   };
 
-  const scanUpload = async (
-    file: File,
-    userId: string,
-  ): Promise<ScanResultType> => {
+  // Scan upload (FormData)
+  const scanUpload = async (file: File): Promise<ScanResultType> => {
     const token = await getToken();
+    const uid =
+      typeof userId === "string" ? userId : (userId?.toString() ?? "anonymous");
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("userId", userId);
-    const response = await fetch(`${API_URL}/scan-upload`, {
+    formData.append("userId", uid);
+    return fetchWithTimeout<ScanResultType>(`${API_URL}/scan-upload`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` }, // Do NOT set Content-Type with FormData
       body: formData,
     });
-    if (!response.ok) {
-      const e = await response.text();
-      throw new Error(e || "Failed to upload audio");
-    }
-    return response.json();
   };
 
-  const getHistory = async (userId: string): Promise<ScanResultType[]> => {
-    const token = await getToken();
-    const response = await fetch(`${API_URL}/scans?userId=${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) throw new Error("Failed to fetch history");
-    return response.json();
-  };
-
-  const submitFeedback = async (
-    scanId: string,
-    feedback: "thumbsup" | "thumbsdown",
-  ) => {
-    const token = await getToken();
-    await fetch(`${API_URL}/scans/${scanId}/feedback`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ feedback }),
-    });
-  };
-
-  const enrollSpeaker = async (file: File, name: string, userId: string) => {
-    const token = await getToken();
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("name", name);
-    formData.append("userId", userId);
-    const response = await fetch(`${API_URL}/api/speaker/enroll`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
-    if (!response.ok) {
-      const d = await response.json();
-      throw new Error(d.error || "Enrollment failed");
-    }
-    return response.json();
-  };
-
-  const verifySpeaker = async (file: File, userId: string) => {
-    const token = await getToken();
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("userId", userId);
-    const response = await fetch(`${API_URL}/api/speaker/verify`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
-    if (!response.ok) {
-      const d = await response.json();
-      throw new Error(d.error || "Verification failed");
-    }
-    return response.json();
-  };
-
+  // Scan image (FormData)
   const scanImage = async (file: File): Promise<ScanResultType> => {
     const token = await getToken();
+    const uid =
+      typeof userId === "string" ? userId : (userId?.toString() ?? "anonymous");
     const formData = new FormData();
     formData.append("file", file, file.name || "uploaded_image.png");
-    formData.append("userId", userId ?? "anonymous");
-
-    const API_URL = (
-      import.meta.env.VITE_API_URL || "http://localhost:3000"
-    ).replace(/\/+$/, "");
-
-    const response = await fetch(`${API_URL}/scan-image`, {
+    formData.append("userId", uid);
+    return fetchWithTimeout<ScanResultType>(`${API_URL}/scan-image`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
+  };
 
-    if (!response.ok) {
-      let errorMessage = "Unknown server error";
-      try {
-        const json = await response.clone().json();
-        errorMessage = json.message || json.error || JSON.stringify(json);
-      } catch {
-        try {
-          errorMessage = await response.text();
-        } catch {
-          errorMessage = "Server unavailable";
-        }
-      }
-      throw new Error(errorMessage);
-    }
+  // Get scans/history
+  const getScans = async (): Promise<ScanResultType[]> => {
+    const token = await getToken();
+    const uid =
+      typeof userId === "string" ? userId : (userId?.toString() ?? "anonymous");
+    return fetchWithTimeout<ScanResultType[]>(
+      `${API_URL}/scans?userId=${uid}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  };
 
-    return response.json();
+  // Get audio by scan id
+  const getAudio = async (scanId: string): Promise<ScanResultType> => {
+    const token = await getToken();
+    return fetchWithTimeout<ScanResultType>(`${API_URL}/audio/${scanId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
   };
 
   return {
     scanAudio,
     scanUpload,
-    getHistory,
-    submitFeedback,
-    enrollSpeaker,
-    verifySpeaker,
     scanImage,
+    getScans,
+    getAudio,
   };
 };

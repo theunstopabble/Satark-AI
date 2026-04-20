@@ -209,8 +209,10 @@ export function DeepfakeGame() {
                     : "WRONG! ❌"}
                 </h4>
                 <p className="text-muted-foreground">
-                  {/* @ts-ignore */}
-                  {currentData.explanation["en"]}{" "}
+                  {typeof currentData.explanation === "object" &&
+                  currentData.explanation !== null
+                    ? currentData.explanation["en"]
+                    : String(currentData.explanation)}{" "}
                   {/* Fix properly with language context later */}
                 </p>
                 <button

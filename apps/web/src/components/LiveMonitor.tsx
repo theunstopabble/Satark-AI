@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 // Fix for NodeJS.Timeout type in browser context
-// @ts-ignore
 type NodeJSTimeout = ReturnType<typeof setTimeout>;
 import { motion } from "framer-motion";
 import { Mic, Activity, AlertTriangle, Save } from "lucide-react";
@@ -22,20 +21,17 @@ export function LiveMonitor() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
   const animationFrameRef = useRef<number>();
   const isListeningRef = useRef(false);
 
   // Recording Interval (5 seconds)
   const RECORDING_INTERVAL_MS = 5000;
-  // Use the locally defined NodeJSTimeout type to avoid NodeJS namespace error
-  const intervalRef = useRef<NodeJSTimeout | null>(null);
 
   useEffect(() => {
     return () => {
       stopListening();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startListening = async () => {
@@ -57,123 +53,83 @@ export function LiveMonitor() {
         audioContextRef.current.createMediaStreamSource(stream);
       sourceRef.current.connect(analyserRef.current);
 
-      // 2. Setup Recording (MediaRecorder)
-      // Check supported mime types
-      let mimeType = "audio/webm";
-      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-        mimeType = "audio/webm;codecs=opus";
-      } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-        mimeType = "audio/mp4";
-      }
-
-      const recorder = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = recorder;
-      chunksRef.current = [];
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
-        }
-      };
-
-      // When 5s chunk is finished (stop called or manual cycle)
-      recorder.onstop = async () => {
-        // This is only called when we explicitly stop,
-        // BUT we want periodic checks.
-        // Strategy: We will stop/start recorder every 5s OR use timeslice.
-        // Better Strategy: Use periodic processing function.
-      };
-
-      // Start recording
-      recorder.start();
-      // We will actually grab data periodically manually?
-      // MediaRecorder with timeslice fires ondataavailable periodically.
-      // Let's restart the recorder implementation below for robustness.
-
       setIsListening(true);
       isListeningRef.current = true;
       setStatus("analyzing");
       drawVisualizer();
 
-      // 3. Start Analysis Loop
-      startAnalysisLoop(stream, mimeType);
+      // 2. Start recursive chunk processing
+      processNextChunk(stream);
     } catch (err) {
       console.error("Microphone access denied:", err);
       alert("Microphone access is required for Live Monitor.");
     }
   };
 
-  const startAnalysisLoop = (stream: MediaStream, mimeType: string) => {
-    // We need a separate MediaRecorder for chunks to ensure clean headers for each file
+  // Refactored: strictly sequential, one MediaRecorder per chunk, no setInterval
+  const processNextChunk = async (stream: MediaStream) => {
+    if (!isListeningRef.current) return;
 
-    const processNextChunk = () => {
-      if (!isListeningRef.current && intervalRef.current === null) return;
-      // Create a new recorder for this 5s chunk
-      const chunkRecorder = new MediaRecorder(stream, { mimeType });
-      const localChunks: Blob[] = [];
+    // Pick best mime type
+    let mimeType = "audio/webm";
+    if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+      mimeType = "audio/webm;codecs=opus";
+    } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+      mimeType = "audio/mp4";
+    }
 
-      chunkRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) localChunks.push(e.data);
-      };
+    const localChunks: Blob[] = [];
+    const recorder = new MediaRecorder(stream, { mimeType });
 
-      chunkRecorder.onstop = async () => {
-        // Create File from blob
-        const blob = new Blob(localChunks, { type: mimeType });
-        // If blob is too small, ignore
-        if (blob.size < 1000) return;
-
-        const file = new File([blob], `live_segment_${Date.now()}.webm`, {
-          type: mimeType,
-        });
-
-        // Send to API
-        try {
-          // console.log("Sending Live Chunk for Analysis...");
-          const result = await client.scanUpload(file, userId || "guest-live");
-          // console.log("Live Analysis Result:", result);
-
-          // Update UI based on Result
-          if (result.isDeepfake) {
-            setStatus("danger");
-            setThreatLevel(Math.floor(result.confidenceScore * 100));
-            setLastResult("Deepfake Detected!");
-          } else {
-            setStatus("safe");
-            setThreatLevel(Math.floor(result.confidenceScore * 100));
-            setLastResult("Audio seems Real.");
-          }
-
-          // If safe for > 3 seconds, switch back to analyzing visual
-          setTimeout(() => {
-            // Only revert if we haven't found another danger
-            // Simplified logic for demo
-          }, 3000);
-        } catch (e) {
-          console.error("Live Analysis Failed:", e);
-        }
-      };
-
-      chunkRecorder.start();
-
-      // Stop this recorder after INTERVAL
-      setTimeout(() => {
-        if (chunkRecorder.state === "recording") {
-          chunkRecorder.stop();
-        }
-        // Loop: Call next content if still listening
-        // We use setInterval for the Loop Trigger instead of recursive timeout
-        // to prevent drift, but recursive is safer for async.
-        // Actually, let's use a single setInterval in the parent.
-      }, RECORDING_INTERVAL_MS);
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) localChunks.push(e.data);
     };
 
-    // Call immediately
-    processNextChunk();
-    // Set interval
-    intervalRef.current = setInterval(
-      processNextChunk,
-      RECORDING_INTERVAL_MS + 200,
-    ); // Buffer
+    recorder.onstop = async () => {
+      // Create File from blob
+      const blob = new Blob(localChunks, { type: mimeType });
+      if (blob.size < 1000) {
+        // Too small, skip
+        if (isListeningRef.current) {
+          setTimeout(() => processNextChunk(stream), 200);
+        }
+        return;
+      }
+
+      const file = new File([blob], `live_segment_${Date.now()}.webm`, {
+        type: mimeType,
+      });
+
+      try {
+        const result = await client.scanUpload(file);
+        if (result.isDeepfake) {
+          setStatus("danger");
+          setThreatLevel(Math.floor(result.confidenceScore * 100));
+          setLastResult("Deepfake Detected!");
+        } else {
+          setStatus("safe");
+          setThreatLevel(Math.floor(result.confidenceScore * 100));
+          setLastResult("Audio seems Real.");
+        }
+        setTimeout(() => {
+          // Only revert if we haven't found another danger
+        }, 3000);
+      } catch (e) {
+        console.error("Live Analysis Failed:", e);
+      }
+
+      // Recursively process next chunk if still listening
+      if (isListeningRef.current) {
+        setTimeout(() => processNextChunk(stream), 200);
+      }
+    };
+
+    recorder.start();
+    setTimeout(() => {
+      if (recorder.state === "recording") {
+        recorder.stop();
+      }
+    }, RECORDING_INTERVAL_MS);
   };
 
   const stopListening = () => {
@@ -183,21 +139,10 @@ export function LiveMonitor() {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
 
     // Stop tracks
     if (sourceRef.current?.mediaStream) {
       sourceRef.current.mediaStream.getTracks().forEach((t) => t.stop());
-    }
-
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state === "recording"
-    ) {
-      mediaRecorderRef.current.stop();
     }
 
     setIsListening(false);
