@@ -2,20 +2,7 @@ import { AudioUploadType, ScanResultType } from "@repo/shared";
 import { useAuth } from "@clerk/clerk-react";
 
 export const useApiClient = () => {
-  // Defensive extraction to avoid 'never' type errors
-  const auth = useAuth() || {};
-  const getToken = auth.getToken || (async () => undefined);
-  // userId can be string | null | undefined | never, so cast safely
-  let userId: string = "anonymous";
-  const rawUserId = (auth as Record<string, unknown>)?.userId;
-  if (typeof rawUserId === "string") {
-    userId = rawUserId;
-  } else if (
-    rawUserId != null &&
-    typeof (rawUserId as any).toString === "function"
-  ) {
-    userId = (rawUserId as any).toString();
-  }
+  const { getToken, userId } = useAuth();
   const API_URL = (
     import.meta.env.VITE_API_URL || "http://localhost:3000"
   ).replace(/\/+$/, "");
@@ -58,38 +45,47 @@ export const useApiClient = () => {
     });
   };
 
-  // Scan audio by URL (wrapper)
-  const scanAudioUrl = async (audioUrl: string): Promise<ScanResultType> => {
+  // Scan upload (FormData) - Fixed for 2 args: (file, userId)
+  const scanUpload = async (
+    file: File,
+    uid?: string,
+  ): Promise<ScanResultType> => {
     const token = await getToken();
-    return fetchWithTimeout<ScanResultType>(`${API_URL}/scan`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ audioUrl, userId }),
-    });
-  };
+    const targetUserId =
+      typeof uid === "string" && uid !== ""
+        ? uid
+        : typeof userId === "string"
+          ? userId
+          : "anonymous";
 
-  // Scan upload (FormData)
-  const scanUpload = async (file: File): Promise<ScanResultType> => {
-    const token = await getToken();
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("userId", userId);
+    formData.append("userId", targetUserId);
+
     return fetchWithTimeout<ScanResultType>(`${API_URL}/scan-upload`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` }, // Do NOT set Content-Type with FormData
+      headers: { Authorization: `Bearer ${token}` }, // Let browser set boundary
       body: formData,
     });
   };
 
-  // Scan image (FormData)
-  const scanImage = async (file: File): Promise<ScanResultType> => {
+  // Scan image (FormData) - Fixed for 2 args: (file, userId)
+  const scanImage = async (
+    file: File,
+    uid?: string,
+  ): Promise<ScanResultType> => {
     const token = await getToken();
+    const targetUserId =
+      typeof uid === "string" && uid !== ""
+        ? uid
+        : typeof userId === "string"
+          ? userId
+          : "anonymous";
+
     const formData = new FormData();
-    formData.append("file", file, file.name || "uploaded_image.png");
-    formData.append("userId", userId);
+    formData.append("file", file, file.name || "image.png");
+    formData.append("userId", targetUserId);
+
     return fetchWithTimeout<ScanResultType>(`${API_URL}/scan-image`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
@@ -97,91 +93,93 @@ export const useApiClient = () => {
     });
   };
 
-  // Get scans/history (wrapper)
-  const getScans = async (): Promise<ScanResultType[]> => {
+  // Get scans/history - Fixed for getHistory requirement
+  const getHistory = async (uid: string): Promise<ScanResultType[]> => {
     const token = await getToken();
     return fetchWithTimeout<ScanResultType[]>(
-      `${API_URL}/scans?userId=${userId}`,
+      `${API_URL}/scans?userId=${uid}`,
       {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
   };
 
-  // Submit feedback for a scan
-  const submitFeedback = async (
-    scanId: string,
-    feedback: string,
-  ): Promise<{ success: boolean }> => {
-    const token = await getToken();
-    return fetchWithTimeout<{ success: boolean }>(
-      `${API_URL}/scans/${encodeURIComponent(scanId)}/feedback`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ feedback, userId }),
-      },
-    );
-  };
+  // Backward compatibility
+  const getScans = getHistory;
 
-  // Enroll speaker
-  const enrollSpeaker = async (
-    file: File,
-    name: string,
-  ): Promise<{ success: boolean; speakerId?: string }> => {
+  // Enroll Speaker - Fixed for 3 args: (file, name, userId)
+  const enrollSpeaker = async (file: File, name: string, uid?: string) => {
     const token = await getToken();
+    const targetUserId =
+      typeof uid === "string" && uid !== ""
+        ? uid
+        : typeof userId === "string"
+          ? userId
+          : "anonymous";
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("name", name);
-    formData.append("userId", userId);
-    return fetchWithTimeout<{ success: boolean; speakerId?: string }>(
-      `${API_URL}/api/speaker/enroll`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      },
-    );
+    formData.append("userId", targetUserId);
+
+    return fetch(`${API_URL}/api/speaker/enroll`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    }).then((r) => r.json());
   };
 
-  // Verify speaker
-  const verifySpeaker = async (
-    file: File,
-  ): Promise<{ match: boolean; score: number }> => {
+  // Verify Speaker - Fixed for 2 args: (file, userId)
+  const verifySpeaker = async (file: File, uid?: string) => {
     const token = await getToken();
+    const targetUserId =
+      typeof uid === "string" && uid !== ""
+        ? uid
+        : typeof userId === "string"
+          ? userId
+          : "anonymous";
+
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("userId", userId);
-    return fetchWithTimeout<{ match: boolean; score: number }>(
-      `${API_URL}/api/speaker/verify`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      },
-    );
+    formData.append("userId", targetUserId);
+
+    return fetch(`${API_URL}/api/speaker/verify`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    }).then((r) => r.json());
   };
 
   // Get audio by scan id
-  const getAudio = async (scanId: string): Promise<ScanResultType> => {
+  const getAudio = async (scanId: string) => {
     const token = await getToken();
-    return fetchWithTimeout<ScanResultType>(`${API_URL}/audio/${scanId}`, {
+    return fetch(`${API_URL}/audio/${scanId}`, {
       headers: { Authorization: `Bearer ${token}` },
+    }).then((r) => r.blob());
+  };
+
+  // Submit Feedback
+  const submitFeedback = async (scanId: string, feedback: string) => {
+    const token = await getToken();
+    return fetch(`${API_URL}/scans/${scanId}/feedback`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ feedback }),
     });
   };
 
   return {
     scanAudio,
-    scanAudioUrl,
     scanUpload,
     scanImage,
+    getHistory,
     getScans,
-    getAudio,
-    submitFeedback,
     enrollSpeaker,
     verifySpeaker,
+    getAudio,
+    submitFeedback,
   };
 };
