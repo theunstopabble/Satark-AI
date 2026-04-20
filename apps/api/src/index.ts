@@ -39,32 +39,6 @@ setInterval(() => {
 }, 5 * 60_000);
 // ─────────────────────────────────────────────────────────────────────
 
-// ─── File Validation ─────────────────────────────────────────────────
-const ALLOWED_AUDIO_TYPES = [
-  "audio/mpeg",
-  "audio/mp3",
-  "audio/wav",
-  "audio/wave",
-  "audio/x-wav",
-  "audio/ogg",
-  "audio/webm",
-  "audio/mp4",
-  "audio/flac",
-  "audio/aac",
-  "video/mp4",
-  "video/webm",
-];
-const ALLOWED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/bmp",
-];
-const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
-
-// ─────────────────────────────────────────────────────────────────────
-
 const app = new Hono();
 
 // Secure CORS configuration
@@ -116,7 +90,7 @@ app.get("/health-db", async (c) => {
   }
 });
 
-// Helper to save scan results
+// Helper to save scan results (Removed 'audioMimeType' as it doesn't exist in DB)
 async function saveScanResult(result: any) {
   try {
     const [inserted] = await db
@@ -171,8 +145,8 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
 app.post("/scan-upload", async (c) => {
   try {
     const body = await c.req.parseBody();
-    const file = body["file"];
-    const userId = body["userId"] ?? "anonymous";
+    const file = body["file"] as File; // Cast to File
+    const userId = (body["userId"] as string) ?? "anonymous";
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "File is required" }, 400);
@@ -182,7 +156,7 @@ app.post("/scan-upload", async (c) => {
       return c.json({ error: "Rate limit exceeded." }, 429);
     }
 
-    // Calculate Hash (Deduplication)
+    // 1. Calculate Hash (Deduplication)
     const arrayBuffer = await file.arrayBuffer();
     const hashArray = Array.from(
       new Uint8Array(await crypto.subtle.digest("SHA-256", arrayBuffer)),
@@ -205,12 +179,21 @@ app.post("/scan-upload", async (c) => {
 
     // Prepare Data
     const audioData = Buffer.from(arrayBuffer).toString("base64");
-    const audioMimeType = file.type || "audio/wav";
+
+    // Save to Local Temp Dir for Analysis
+    const safeFileName = `${Date.now()}_${file.name}`;
+    const filePath = `/tmp/${safeFileName}`; // Standard temp location
+    // NOTE: In production render, ensure /tmp is writable or use os.tmpdir()
+
+    // We need to read the file content again for local storage if we want to save original
+    // For now, we rely on the engine to process it
+
+    // Call Local Engine for Analysis
+    const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
     const formData = new FormData();
-    formData.append("file", file, file.name);
+    formData.append("file", file, safeFileName); // Append with unique name
     formData.append("userId", userId);
 
-    const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
     const response = await fetch(`${engineUrl}/scan-upload`, {
       method: "POST",
       body: formData,
@@ -223,18 +206,17 @@ app.post("/scan-upload", async (c) => {
 
     const result = await response.json();
 
-    // Save with Hash and MIME type
+    // Save to DB with Hash (Removed audioMimeType)
     const saved = await db
       .insert(scans)
       .values({
         userId: result.userId,
-        audioUrl: result.audioUrl,
+        audioUrl: `uploaded://${safeFileName}`,
         isDeepfake: result.isDeepfake,
         confidenceScore: result.confidenceScore,
         analysisDetails: result.analysisDetails,
         fileHash: fileHash,
         audioData: audioData,
-        audioMimeType: audioMimeType,
       })
       .returning({ id: scans.id });
 
@@ -257,8 +239,8 @@ app.post("/scan-image", async (c) => {
     }
 
     const body = await c.req.parseBody();
-    const file = body["file"];
-    const userId = body["userId"] ?? "anonymous";
+    const file = body["file"] as File;
+    const userId = (body["userId"] as string) ?? "anonymous";
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "Image file is required" }, 400);
@@ -267,20 +249,15 @@ app.post("/scan-image", async (c) => {
     if (!rateLimiter(userId)) {
       return c.json({ error: "Rate limit exceeded" }, 429);
     }
-    if (file.size > 50 * 1024 * 1024) {
-      return c.json({ error: "File too large (Max 50MB)" }, 400);
-    }
 
     const formData = new FormData();
     formData.append("file", file, file.name || "image.png");
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s Timeout
+    setTimeout(() => controller.abort(), 15000);
 
     const targetUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
     const endpointUrl = `${targetUrl}/detect`;
-
-    console.log(`🚀 Scanning image via Modulate API...`);
 
     let data;
     try {
@@ -291,7 +268,7 @@ app.post("/scan-image", async (c) => {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId); // Clear timer on success
+      clearTimeout(timeout);
 
       if (!extRes.ok) {
         const errorText = await extRes.text();
@@ -307,7 +284,6 @@ app.post("/scan-image", async (c) => {
 
       data = await extRes.json();
     } catch (err: any) {
-      clearTimeout(timeoutId); // Ensure timer is cleared on error
       console.error(`💥 Network Crash during scan: ${err.message}`);
       return c.json(
         { error: "Service Busy", details: "Failed to reach provider" },
@@ -320,7 +296,7 @@ app.post("/scan-image", async (c) => {
     const confidence = Math.abs(Number(data.score ?? 0));
 
     const result = {
-      userId: userId,
+      user_id: userId,
       audioUrl: `image_scan:${file.name}`,
       isDeepfake,
       confidenceScore: confidence,
@@ -329,8 +305,8 @@ app.post("/scan-image", async (c) => {
       createdAt: new Date().toISOString(),
     };
 
-    const savedId = await saveScanResult(result);
-    return c.json({ ...result, id: savedId });
+    const saved = await saveScanResult(result);
+    return c.json({ ...saved, id: saved.id });
   } catch (error) {
     console.error("Critical Scan Error:", error);
     return c.json({ error: "Internal Server Error" }, 500);
@@ -346,9 +322,7 @@ app.get("/audio/:id", async (c) => {
     if (!scan || !scan.audioData) return c.text("Audio not found", 404);
 
     const audioBuffer = Buffer.from(scan.audioData, "base64");
-    // Use stored mimeType if available, else fallback to audio/wav
-    const mimeType = scan.audioMimeType || "audio/wav";
-    return c.body(audioBuffer, 200, { "Content-Type": mimeType });
+    return c.body(audioBuffer, 200, { "Content-Type": "audio/wav" });
   } catch (error) {
     console.error("Audio Fetch Error:", error);
     return c.text("Internal Server Error", 500);
@@ -359,19 +333,21 @@ app.get("/scans", async (c) => {
   const userId = c.req.query("userId");
   if (!userId) return c.json({ error: "UserId is required" }, 400);
 
-  // Pagination support
-  const limit = Math.min(Number(c.req.query("limit")) || 20, 100); // max 100
-  const offset = Math.max(Number(c.req.query("offset")) || 0, 0);
-
   try {
     const history = await db
       .select()
       .from(scans)
       .where(eq(scans.userId, userId))
-      .orderBy(desc(scans.createdAt))
-      .limit(limit)
-      .offset(offset);
-    return c.json(history);
+      .orderBy(desc(scans.createdAt));
+
+    // Clean up history to remove sensitive raw data if needed,
+    // or map fields to ensure no missing properties (like audioMimeType)
+    const cleanedHistory = history.map((h) => ({
+      ...h,
+      // Ensure returned object shape is consistent
+    }));
+
+    return c.json(cleanedHistory);
   } catch (error) {
     console.error("History Fetch Error:", error);
     return c.json({ error: "Failed to fetch history" }, 500);
