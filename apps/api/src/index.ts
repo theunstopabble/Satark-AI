@@ -70,7 +70,8 @@ app.use("/scan", clerkMiddleware(), authMiddleware);
 app.use("/scan-upload", clerkMiddleware(), authMiddleware);
 app.use("/scans/*", clerkMiddleware(), authMiddleware);
 app.use("/scans", clerkMiddleware(), authMiddleware);
-app.use("/scan-image", clerkMiddleware(), authMiddleware);
+
+// app.use("/scan-image", clerkMiddleware(), authMiddleware);
 
 app.route("/api/speaker", speakerRouter);
 
@@ -249,8 +250,8 @@ app.post("/scan-image", async (c) => {
       const extRes = await fetch(apiUrl, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey || "proxy-handled"}`,
-          "Content-Type": "multipart/form-data", // Let browser/worker set boundary
+          "X-API-Key": apiKey || "proxy-handled", // 🔥 Modulate X-API-Key expect karta hai
+          // 🔥 Content-Type yahan se hata do. FormData automatically correct boundary set karega.
         },
         body: formData,
         signal: controller.signal,
