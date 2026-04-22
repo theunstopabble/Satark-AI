@@ -216,17 +216,19 @@ app.post("/scan-upload", async (c) => {
 
 app.post("/scan-image", async (c) => {
   try {
-    const apiKey = process.env.IMAGE_API_KEY;
     const apiUrl = process.env.IMAGE_API_URL;
+    const apiKey = process.env.IMAGE_API_KEY; // Optional, Worker overrides it
 
-    if (!apiKey || !apiUrl) {
-      console.error("❌ Config Missing");
-      return c.json({ error: "Server Configuration Error" }, 500);
+    if (!apiUrl) {
+      return c.json(
+        { error: "Server Configuration Error: IMAGE_API_URL missing" },
+        500,
+      );
     }
 
     const body = await c.req.parseBody();
     const file = body["file"];
-    const userId = body["userId"] ?? "anonymous";
+    const userId = (body["userId"] as string) ?? "anonymous";
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "Image file is required" }, 400);
@@ -240,20 +242,16 @@ app.post("/scan-image", async (c) => {
     formData.append("file", file, file.name || "image.png");
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // ⬆️ 30s for AI processing
 
-    // --- Enhanced URL Construction ---
-    let finalUrl = apiUrl;
-    if (!/detect/i.test(apiUrl)) {
-      finalUrl = apiUrl.replace(/\/+$/, "") + "/detect";
-    }
-
-    let data;
     try {
-      console.log(`Attempting scan to: ${finalUrl}`);
-      const extRes = await fetch(finalUrl, {
+      console.log(`📡 Forwarding image scan to: ${apiUrl}`);
+      const extRes = await fetch(apiUrl, {
         method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}` },
+        headers: {
+          Authorization: `Bearer ${apiKey || "proxy-handled"}`,
+          "Content-Type": "multipart/form-data", // Let browser/worker set boundary
+        },
         body: formData,
         signal: controller.signal,
       });
@@ -261,7 +259,9 @@ app.post("/scan-image", async (c) => {
 
       if (!extRes.ok) {
         const errorText = await extRes.text();
-        console.error(`⛔ Modulate Rejected: ${errorText}`);
+        console.error(
+          `⛔ External API Rejected: ${extRes.status} - ${errorText}`,
+        );
         return c.json(
           {
             error: "Analysis Unavailable",
@@ -271,14 +271,44 @@ app.post("/scan-image", async (c) => {
         );
       }
 
-      data = await extRes.json();
+      const data = await extRes.json();
+      console.log(
+        "✅ Modulate/Proxy Response:",
+        JSON.stringify(data).slice(0, 200),
+      );
+
+      // 🔥 Resilient Field Mapping (Handles is_deepfake, is_fake, fake, etc.)
+      const isDeepfake = !!(
+        data.is_deepfake ||
+        data.is_fake ||
+        data.fake ||
+        data.prediction === "fake"
+      );
+      const confidence = Math.abs(
+        Number(data.score ?? data.confidence ?? data.probability ?? 0),
+      );
+
+      const mappedResult = {
+        userId: String(userId),
+        audioUrl: `image_scan:${file.name}`,
+        isDeepfake,
+        confidenceScore: Math.min(confidence, 1.0), // Ensure 0-1 range
+        analysisDetails:
+          data.message || data.reason || "Image verification complete",
+        features: {},
+        createdAt: new Date().toISOString(),
+      };
+
+      const savedId = await saveScanResult(mappedResult);
+
+      return c.json({ ...mappedResult, id: savedId ?? Date.now() });
     } catch (err: any) {
       clearTimeout(timeoutId);
       if (err?.name === "AbortError") {
         return c.json(
           {
             error: "Scan Timeout",
-            details: "Provider did not respond in time.",
+            details: "AI provider did not respond in 30s.",
           },
           504,
         );
@@ -289,27 +319,6 @@ app.post("/scan-image", async (c) => {
         500,
       );
     }
-
-    // Safe Mapping
-    const isDeepfake = !!data.is_deepfake;
-    const confidence = Math.abs(Number(data.score ?? 0));
-
-    const mappedResult = {
-      userId: String(userId),
-      audioUrl: `image_scan:${file.name}`,
-      isDeepfake,
-      confidenceScore: confidence,
-      analysisDetails: data.message || "Verification Complete",
-      features: {},
-      createdAt: new Date().toISOString(),
-    };
-
-    const savedId = await saveScanResult(mappedResult);
-
-    return c.json({
-      ...mappedResult,
-      id: savedId ?? Date.now(),
-    });
   } catch (error: any) {
     console.error("Critical Scan Error:", error?.message || error);
     return c.json(
