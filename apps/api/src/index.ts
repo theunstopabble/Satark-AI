@@ -71,7 +71,7 @@ app.use("/scan-upload", clerkMiddleware(), authMiddleware);
 app.use("/scans/*", clerkMiddleware(), authMiddleware);
 app.use("/scans", clerkMiddleware(), authMiddleware);
 
-// app.use("/scan-image", clerkMiddleware(), authMiddleware);
+app.use("/scan-image", clerkMiddleware(), authMiddleware);
 
 app.route("/api/speaker", speakerRouter);
 
