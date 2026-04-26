@@ -124,3 +124,11 @@ MS Elevate AICTE Internship - Project template - Jan 2026.pptx
 extract_ppt.py
 
 test.png
+
+# 🎵 Audio test files (optional - large files)
+*.mp3
+*.wav
+*.flac
+*.ogg
+!apps/engine/test_samples/
+!apps/web/public/game-audio/
