@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 if not hasattr(torchaudio, "list_audio_backends"):
     torchaudio.list_audio_backends = lambda: ["soundfile"]  # Mock backend
 
-import soundfile as sf
+import librosa
 import huggingface_hub
 from speechbrain.inference.speaker import EncoderClassifier
 
@@ -66,11 +66,11 @@ def load_classifier():
 def get_embedding(wav_path):
     """Generates speaker embedding vector from audio file."""
     load_classifier()
-    
-    # Use soundfile directly to avoid torchaudio issues
-    signal, fs = sf.read(wav_path)
+
+    # Use librosa to load audio, supports webm/mp4 via ffmpeg
+    signal, fs = librosa.load(wav_path, sr=16000)
     signal = torch.from_numpy(signal).float()
-    
+
     # Handle optional channels (SpeechBrain expects mono or batch)
     if len(signal.shape) > 1:
         signal = signal[:, 0]

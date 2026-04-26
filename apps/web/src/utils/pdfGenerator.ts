@@ -48,7 +48,7 @@ export const generateScanReport = async (
   doc.setFontSize(12);
   doc.text(`Subject: ${userName}`, 14, 63);
   doc.text(
-    `Audio Source: ${scan.audioUrl.startsWith("uploaded://") ? "File Upload" : "URL Scan"}`,
+    `Source: ${scan.audioUrl?.startsWith("uploaded://") ? "File Upload" : scan.audioUrl?.includes("image_scan") ? "Image Scan" : "URL Scan"}`,
     14,
     69,
   );
@@ -57,7 +57,7 @@ export const generateScanReport = async (
   doc.setFontSize(16);
   doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
   doc.setFont("helvetica", "bold");
-  doc.text(isFake ? "DEEPFAKE DETECTED" : "AUTHENTIC AUDIO", 55, 77);
+  doc.text(isFake ? "DEEPFAKE DETECTED" : "AUTHENTIC", 55, 77);
 
   doc.setFontSize(12);
   doc.setTextColor(0);
@@ -72,45 +72,78 @@ export const generateScanReport = async (
   doc.setFontSize(14);
   doc.text("Technical Feature Breakdown", 14, 97);
 
-  const analysisData = [
-    ["Metric", "Value", "Description"],
-    [
-      "Zero Crossing Rate",
-      scan.features?.zcr?.toFixed(4) || "N/A",
-      "Rate of sign-changes in signal.",
-    ],
-    [
-      "Spectral Rolloff",
-      `${scan.features?.rolloff?.toFixed(0) || "N/A"} Hz`,
-      "Frequency below which 85% of energy lies.",
-    ],
-    [
-      "Silence Ratio",
-      `${((scan.features?.silence_ratio || 0) * 100).toFixed(1)}%`,
-      "Percentage of silence in audio.",
-    ],
-    [
-      "MFCC Mean",
-      scan.features?.mfcc_mean !== undefined
-        ? scan.features.mfcc_mean.toFixed(2)
-        : "N/A",
-      "Mean of Mel-frequency cepstral coefficients.",
-    ],
-    [
-      "Duration",
-      `${(scan.features?.duration || 0).toFixed(2)}s`,
-      "Total length of audio sample.",
-    ],
-  ];
-
-  autoTable(doc, {
-    startY: 102,
-    head: [["Metric", "Value", "Description"]],
-    body: analysisData.slice(1),
-    theme: "striped",
-    headStyles: { fillColor: [41, 128, 185] },
-    styles: { fontSize: 10 },
-  });
+  const isImageScan = scan.audioUrl?.includes("image_scan");
+  if (isImageScan) {
+    const imageAnalysisData = [
+      ["Metric", "Value", "Description"],
+      [
+        "Image Integrity",
+        scan.features?.integrity !== undefined
+          ? scan.features.integrity
+          : "N/A",
+        "Assessment of image authenticity.",
+      ],
+      [
+        "Artifact Detection",
+        scan.features?.artifacts !== undefined
+          ? scan.features.artifacts
+          : "N/A",
+        "Detection of visual artifacts or manipulations.",
+      ],
+      [
+        "Summary",
+        scan.analysisDetails || "No additional details.",
+        "General analysis summary.",
+      ],
+    ];
+    autoTable(doc, {
+      startY: 102,
+      head: [["Metric", "Value", "Description"]],
+      body: imageAnalysisData.slice(1),
+      theme: "striped",
+      headStyles: { fillColor: [41, 128, 185] },
+      styles: { fontSize: 10 },
+    });
+  } else {
+    const analysisData = [
+      ["Metric", "Value", "Description"],
+      [
+        "Zero Crossing Rate",
+        scan.features?.zcr?.toFixed(4) || "N/A",
+        "Rate of sign-changes in signal.",
+      ],
+      [
+        "Spectral Rolloff",
+        `${scan.features?.rolloff?.toFixed(0) || "N/A"} Hz`,
+        "Frequency below which 85% of energy lies.",
+      ],
+      [
+        "Silence Ratio",
+        `${((scan.features?.silence_ratio || 0) * 100).toFixed(1)}%`,
+        "Percentage of silence in audio.",
+      ],
+      [
+        "MFCC Mean",
+        scan.features?.mfcc_mean !== undefined
+          ? scan.features.mfcc_mean.toFixed(2)
+          : "N/A",
+        "Mean of Mel-frequency cepstral coefficients.",
+      ],
+      [
+        "Duration",
+        `${(scan.features?.duration || 0).toFixed(2)}s`,
+        "Total length of audio sample.",
+      ],
+    ];
+    autoTable(doc, {
+      startY: 102,
+      head: [["Metric", "Value", "Description"]],
+      body: analysisData.slice(1),
+      theme: "striped",
+      headStyles: { fillColor: [41, 128, 185] },
+      styles: { fontSize: 10 },
+    });
+  }
 
   // --- Footer with SHA-256 hash ---
   const pageHeight = doc.internal.pageSize.height;

@@ -126,9 +126,11 @@ app.post("/verify", async (c) => {
       await db.insert(scans).values({
         userId,
         audioUrl: "Speaker Verification (File Upload)",
-        isDeepfake: !isMatch, // No match = potential fake/impersonator
+        isDeepfake: false, // Always false for verification route
         confidenceScore: bestMatch.score,
-        analysisDetails: `Identity: ${details}`,
+        analysisDetails: isMatch
+          ? `Identity: ${details}`
+          : "Identity Mismatch - Unknown Speaker",
       });
     } catch (dbErr) {
       console.error("Values logging failed", dbErr);

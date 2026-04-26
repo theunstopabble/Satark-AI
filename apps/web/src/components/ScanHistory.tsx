@@ -106,7 +106,13 @@ export function ScanHistory() {
                           : "bg-green-50 text-green-700 border-green-200"
                       }`}
                     >
-                      {scan.isDeepfake ? "FAKE 🚨" : "REAL ✅"}
+                      {scan.audioUrl?.includes("image_scan")
+                        ? scan.isDeepfake
+                          ? "Fake Image"
+                          : "Real Image"
+                        : scan.isDeepfake
+                          ? "Fake Audio"
+                          : "Real Audio"}
                     </span>
                   </div>
                 </div>

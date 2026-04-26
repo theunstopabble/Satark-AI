@@ -13,11 +13,15 @@ import { clerkMiddleware } from "@hono/clerk-auth";
 import crypto from "node:crypto";
 
 // ─── Rate Limiter ────────────────────────────────────────────────────
+// Per-route rate limits
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10;
+const RATE_LIMITS = {
+  default: 10,
+  scanUpload: 60,
+};
 const RATE_WINDOW_MS = 60_000;
 
-function rateLimiter(userId: string): boolean {
+function rateLimiter(userId: string, limit: number): boolean {
   const now = Date.now();
   const entry = rateLimitMap.get(userId);
 
@@ -25,7 +29,7 @@ function rateLimiter(userId: string): boolean {
     rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_WINDOW_MS });
     return true;
   }
-  if (entry.count >= RATE_LIMIT) return false;
+  if (entry.count >= limit) return false;
 
   entry.count++;
   return true;
@@ -98,6 +102,8 @@ async function saveScanResult(result: any): Promise<number | null> {
         isDeepfake: result.isDeepfake,
         confidenceScore: result.confidenceScore,
         analysisDetails: result.analysisDetails,
+        audioData: result.audioData ?? null,
+        fileHash: result.fileHash ?? null,
       })
       .returning({ id: scans.id });
 
@@ -113,7 +119,7 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
   const data = c.req.valid("json");
   const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
 
-  if (!rateLimiter(data.userId ?? "anonymous")) {
+  if (!rateLimiter(data.userId ?? "anonymous", RATE_LIMITS.default)) {
     return c.json({ error: "Rate limit exceeded." }, 429);
   }
 
@@ -150,7 +156,8 @@ app.post("/scan-upload", async (c) => {
       return c.json({ error: "File is required" }, 400);
     }
 
-    if (!rateLimiter(userId)) {
+    // Use higher rate limit for scan-upload
+    if (!rateLimiter(userId, RATE_LIMITS.scanUpload)) {
       return c.json({ error: "Rate limit exceeded." }, 429);
     }
 
@@ -202,6 +209,7 @@ app.post("/scan-upload", async (c) => {
       userId: result.userId,
       audioUrl: `uploaded://${file.name}`,
       fileHash: fileHash,
+      audioData: audioData,
     });
 
     return c.json({ ...result, id: savedId });
@@ -216,7 +224,6 @@ app.post("/scan-upload", async (c) => {
 app.post("/scan-image", async (c) => {
   try {
     const apiUrl = process.env.IMAGE_API_URL;
-    
 
     if (!apiUrl) {
       return c.json(
@@ -233,7 +240,7 @@ app.post("/scan-image", async (c) => {
       return c.json({ error: "Image file is required" }, 400);
     }
 
-    if (!rateLimiter(String(userId))) {
+    if (!rateLimiter(String(userId), RATE_LIMITS.default)) {
       return c.json({ error: "Rate limit exceeded" }, 429);
     }
 
