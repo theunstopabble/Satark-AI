@@ -11,7 +11,6 @@ import { desc, eq, sql } from "drizzle-orm";
 import { authMiddleware } from "./middleware/auth";
 import { clerkMiddleware } from "@hono/clerk-auth";
 import crypto from "node:crypto";
-import { randomUUID } from "crypto";
 
 // ─── Rate Limiter ────────────────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -70,7 +69,6 @@ app.use("/scan", clerkMiddleware(), authMiddleware);
 app.use("/scan-upload", clerkMiddleware(), authMiddleware);
 app.use("/scans/*", clerkMiddleware(), authMiddleware);
 app.use("/scans", clerkMiddleware(), authMiddleware);
-
 app.use("/scan-image", clerkMiddleware(), authMiddleware);
 
 app.route("/api/speaker", speakerRouter);
@@ -218,7 +216,7 @@ app.post("/scan-upload", async (c) => {
 app.post("/scan-image", async (c) => {
   try {
     const apiUrl = process.env.IMAGE_API_URL;
-    const apiKey = process.env.IMAGE_API_KEY; // Optional, Worker overrides it
+    const apiKey = process.env.IMAGE_API_KEY;
 
     if (!apiUrl) {
       return c.json(
@@ -243,15 +241,14 @@ app.post("/scan-image", async (c) => {
     formData.append("file", file, file.name || "image.png");
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // ⬆️ 30s for AI processing
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
       console.log(`📡 Forwarding image scan to: ${apiUrl}`);
       const extRes = await fetch(apiUrl, {
         method: "POST",
         headers: {
-          "X-API-Key": apiKey || "proxy-handled", // 🔥 Modulate X-API-Key expect karta hai
-          // 🔥 Content-Type yahan se hata do. FormData automatically correct boundary set karega.
+          "X-API-Key": apiKey || "proxy-handled",
         },
         body: formData,
         signal: controller.signal,
@@ -278,15 +275,42 @@ app.post("/scan-image", async (c) => {
         JSON.stringify(data).slice(0, 200),
       );
 
-      // 🔥 Resilient Field Mapping (Handles is_deepfake, is_fake, fake, etc.)
+      // ✅ FIX: Protect Database from Corrupted/Loading states from HF Cloudflare
+      if (
+        data.details?.toLowerCase().includes("updating") ||
+        data.details?.toLowerCase().includes("loading") ||
+        (data.confidenceScore === 0 &&
+          !data.isDeepfake &&
+          data.details?.includes("Unknown"))
+      ) {
+        return c.json(
+          {
+            error: "Model Loading",
+            details:
+              data.details ||
+              "Analysis Model is currently updating. Please scan again in 15 seconds.",
+            retryAfter: 15,
+          },
+          503, // Send 503 so frontend shows loading UI, and DB save is bypassed
+        );
+      }
+
+      // 🔥 Resilient Field Mapping
       const isDeepfake = !!(
         data.is_deepfake ||
         data.is_fake ||
         data.fake ||
-        data.prediction === "fake"
+        data.prediction === "fake" ||
+        data.isDeepfake
       );
       const confidence = Math.abs(
-        Number(data.score ?? data.confidence ?? data.probability ?? 0),
+        Number(
+          data.confidenceScore ??
+            data.score ??
+            data.confidence ??
+            data.probability ??
+            0,
+        ),
       );
 
       const mappedResult = {
@@ -295,7 +319,10 @@ app.post("/scan-image", async (c) => {
         isDeepfake,
         confidenceScore: Math.min(confidence, 1.0), // Ensure 0-1 range
         analysisDetails:
-          data.message || data.reason || "Image verification complete",
+          data.details ||
+          data.message ||
+          data.reason ||
+          "Image verification complete",
         features: {},
         createdAt: new Date().toISOString(),
       };

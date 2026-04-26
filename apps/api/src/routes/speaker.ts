@@ -40,7 +40,8 @@ app.post("/enroll", async (c) => {
 
     // 1. Send to Engine to get Embedding
     const formData = new FormData();
-    formData.append("file", file);
+    // ✅ FALLBACK FILENAME ADDED HERE
+    formData.append("file", file, file.name || "audio_record.wav");
 
     const engineRes = await fetch(`${ENGINE_URL}/embed`, {
       method: "POST",
@@ -78,7 +79,8 @@ app.post("/verify", async (c) => {
 
     // 1. Get Embedding
     const formData = new FormData();
-    formData.append("file", file);
+    // ✅ FIX: FALLBACK FILENAME ADDED HERE TOO TO PREVENT ENGINE CRASH
+    formData.append("file", file, file.name || "audio_verify.wav");
 
     const engineRes = await fetch(`${ENGINE_URL}/embed`, {
       method: "POST",
@@ -89,7 +91,6 @@ app.post("/verify", async (c) => {
     const { embedding } = (await engineRes.json()) as { embedding: number[] };
 
     // 2. Fetch all speakers
-    // Optimization: In production, use pgvector. Here, fetch all (assuming < 1000)
     const allSpeakers = await db.select().from(speakers);
 
     if (!allSpeakers || allSpeakers.length === 0) {
@@ -104,7 +105,6 @@ app.post("/verify", async (c) => {
     let bestMatch = { name: "Unknown", score: 0 };
 
     for (const spk of allSpeakers) {
-      // Type casting for JSON field
       const storedEmbedding = spk.embedding as number[];
       const score = cosineSimilarity(embedding, storedEmbedding);
 
