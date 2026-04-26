@@ -1,19 +1,21 @@
 # Satark-AI: Defending Truth in the Age of Generative AI 🛡️
 
 <div align="center">
-  <img src="apps/web/public/satark-banner.png" alt="Satark-AI Banner" width="400" />
+  <img src="apps/web/public/satark-banner.webp" alt="Satark-AI Banner" width="480" />
 </div>
 
 <div align="center">
 
-[![PWA Ready](https://img.shields.io/badge/PWA-Ready-blue?style=for-the-badge&logo=pwa)](https://satark-ai.vercel.app)
+[![Live App](https://img.shields.io/badge/Live%20App-satark--deepfake.vercel.app-0A0A0A?style=for-the-badge&logo=vercel)](https://satark-deepfake.vercel.app)
+[![PWA Ready](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=for-the-badge&logo=pwa)](https://satark-deepfake.vercel.app)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
-[![Hono](https://img.shields.io/badge/Hono-4.0-E36002?style=for-the-badge&logo=hono)](https://hono.dev)
-[![SpeechBrain](https://img.shields.io/badge/SpeechBrain-ECAPA--TDNN-FFD700?style=for-the-badge)](https://speechbrain.github.io)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.2-EE4C2C?style=for-the-badge&logo=pytorch)](https://pytorch.org)
+[![SpeechBrain](https://img.shields.io/badge/SpeechBrain-1.0-FFD700?style=for-the-badge)](https://speechbrain.github.io)
 [![Turborepo](https://img.shields.io/badge/Turborepo-Monorepo-EF4444?style=for-the-badge&logo=turborepo)](https://turbo.build)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)](docker-compose.yml)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com)
+[![License](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)](LICENSE)
 
 </div>
 
@@ -21,225 +23,292 @@
 
 ## 🌐 Live Demo
 
-👉 **[Open Live App → satark-deepfake.vercel.app](https://satark-deepfake.vercel.app/)**
+👉 **[Open App → satark-deepfake.vercel.app](https://satark-deepfake.vercel.app/)**
 
-**Satark-AI** is a production-grade, full-stack deepfake detection and voice biometrics platform. It uses a dual-model AI pipeline combining **Wav2Vec2 transformer inference** with **spectral heuristic analysis** for audio deepfake detection, and **ECAPA-TDNN embeddings** via SpeechBrain for speaker identity verification — all served through a secure, authenticated microservice architecture.
+**Satark-AI** is a production-grade, full-stack **deepfake detection and speaker verification platform**. Built as a scalable microservices monorepo, it combines advanced audio forensics — MFCC, Spectral Analysis, Zero Crossing Rate — with state-of-the-art deep learning models (Wav2Vec2, ECAPA-TDNN) to identify synthetic media and verify speaker identities in real time.
 
 ---
 
 ## 📸 Screenshots
 
-|                     Dashboard                      |                   Mobile View                    |
-| :------------------------------------------------: | :----------------------------------------------: |
-| ![Dashboard Layout](apps/web/public/dashboard.png) | ![Mobile Responsive](apps/web/public/mobile.png) |
+| Dashboard | Mobile View |
+| :---: | :---: |
+| ![Dashboard](apps/web/public/dashboard.webp) | ![Mobile](apps/web/public/mobile.webp) |
 
-|                 Live Monitor                 |              Speaker Identity               |
-| :------------------------------------------: | :-----------------------------------------: |
-| ![Live Monitor](apps/web/public/monitor.png) | ![Speaker ID](apps/web/public/identity.png) |
+| Live Monitor | Speaker Identity |
+| :---: | :---: |
+| ![Live Monitor](apps/web/public/monitor.webp) | ![Speaker ID](apps/web/public/identity.webp) |
 
 ---
 
-## 🌟 Key Features
+## 🌟 Feature Overview
 
-### 🕵️‍♂️ Audio Deepfake Detection
+### 🕵️ Deepfake Audio Detection
+- **Wav2Vec2 Model**: Transformer-based deep learning model fine-tuned for synthetic speech detection.
+- **Multi-Feature Forensics**: Analyzes MFCC coefficients, Spectral Rolloff, and Zero Crossing Rate (ZCR) for composite risk scoring.
+- **Multi-Format Support**: Upload **MP3**, **WAV**, or extract audio from **MP4** video files — handled via `moviepy` fallback.
+- **Explainable AI (XAI)**: Returns structured `analysisDetails` with per-feature reasoning (e.g., `"Anomalous zero crossing rate (0.214)"`).
+- **Confidence Scoring**: 4-decimal precision confidence score returned per scan.
+- **Smart Deduplication**: SHA-256 file hashing prevents redundant re-processing of identical files.
 
-- **Dual-Model AI Pipeline**: Primary Wav2Vec2 transformer (70% weight) combined with spectral heuristics (30% weight) for composite confidence scoring.
-- **Multi-Format Support**: Upload MP3, WAV, OGG, WebM, or extract audio from MP4/MOV video files (via MoviePy).
-- **URL & File Modes**: Scan audio directly from public URLs or upload local files up to 50MB.
-- **Explainable AI (XAI)**: Detailed per-segment heatmap, MFCC spectral chart, ZCR / Silence Ratio / Rolloff forensic metrics.
-- **Smart Deduplication**: SHA-256 file hashing prevents redundant AI processing — cached results load instantly.
+### 🖼️ Deepfake Image Detection
+- Dedicated `/analyze` image endpoint via `detect_image.py`.
+- Supports direct image file uploads through the `ImageUpload` component.
 
-### 🖼️ Image Deepfake Detection
-
-- **Cloud-Powered**: Proxied through a Cloudflare Worker to **NVIDIA NIM Vision API (Llama 3.2 90B)** for visual deepfake analysis.
-- **Model Loading Awareness**: Handles cold-start delays with user-friendly retry prompts (`503` with `retryAfter: 15`).
-
-### 🆔 Voice Biometrics (Speaker Identity)
-
-- **Enrollment System**: Record or upload audio to create a 192-dimensional voice embedding (ECAPA-TDNN).
-- **Verification**: Cosine similarity matching (threshold: `0.75`) against all enrolled identities for the authenticated user.
-- **Isolated Profiles**: Each user can only match against their own enrolled speakers — zero cross-user data leakage.
+### 🆔 Voice Biometrics — Speaker Identity
+- **Enrollment System**: Enroll a speaker by uploading a reference audio sample. ECAPA-TDNN extracts a 192-dim voice embedding stored securely in PostgreSQL.
+- **Verification**: Match an unknown voice against all enrolled speakers using **Cosine Similarity** (threshold: **0.75**).
+- **Scoped Isolation**: Users only verify against their **own** enrolled speakers — cross-user data access is prevented at the query level.
+- **Auto-History Logging**: Every verification attempt is saved to the scan history table with identity details.
 
 ### 🎙️ Live Monitor
+- **Real-Time Protection**: Continuously captures microphone input and processes it in **5-second chunks**.
+- **Instant Feedback**: Each chunk is scanned and flagged as real or synthetic with confidence score.
+- **Auto-Persistence**: All detected threats are saved to the history database automatically.
 
-- **Real-Time Protection**: Continuously captures microphone input and analyzes it in **5-second chunks**.
-- **Auto-Retry**: Up to 3 automatic retries on connection failures before graceful shutdown.
-- **Auto-Persistence**: All detected threats are automatically saved to scan history in PostgreSQL.
-- **Visual Threat Indicator**: Canvas-based oscilloscope with color-coded threat level bar.
+### 📊 Analytics Dashboard
+- **Detection Ratio Chart**: Donut chart (Recharts PieChart) visualizing Real vs. Fake scan breakdown.
+- **Confidence Bucketing**: Bar chart grouping scans into High (>80%), Medium (50–80%), and Low (<50%) confidence bands.
+- **Summary Cards**: Total Scans, Deepfakes Detected, Real Audio count, and Average Confidence — animated with Framer Motion.
 
-### 📱 Experience & Accessibility
+### 🎮 Deepfake Game (Interactive)
+- `DeepfakeGame` component — an interactive challenge mode that tests the user's ability to distinguish real from AI-generated audio samples.
 
-- **Progressive Web App (PWA)**: Installable on mobile and desktop — works offline with Workbox caching.
-- **Bilingual UI**: Full English 🇬🇧 and Hindi 🇮🇳 language support with `localStorage` persistence.
-- **Dark / Light / System Theme**: Persistent theme toggle via CSS variables and Tailwind dark mode.
-- **History & Playback**: Review all past scans, play back uploaded audio (authenticated streaming), and export PDF forensic reports.
-- **Deepfake Quiz Game**: Interactive challenge mode — test your ears against real/fake audio samples.
+### 💬 Feedback System
+- Users can submit feedback on any scan via `FeedbackWidget`.
+- Stored in the `scans.feedback` column and retrievable via `/scans/:id/feedback`.
+
+### 📱 PWA & Accessibility
+- **Progressive Web App**: Installable on Android/iOS and Desktop via `InstallPWA` component. Powered by **Workbox** service worker with precaching and network-only strategies.
+- **Dark / Light Mode**: Full theme toggle via `theme-provider` and `mode-toggle`.
+- **Multilingual Support**: Language context (`LanguageContext.tsx`) with a language toggle component.
+- **History & Playback**: Review all past scans, listen back to saved audio, and export detailed **PDF reports**.
 
 ---
 
 ## 🏗️ Architecture
 
-The project is a **3-tier microservice monorepo** orchestrated with **Turborepo**:
+Satark-AI is structured as a **Turborepo monorepo** with three independent microservices and one shared package:
 
 ```
-Browser (PWA — React + Vite)
-          │
-          │  HTTPS + Clerk JWT Auth
-          ▼
-  ┌─────────────────────────┐
-  │   Hono API Gateway      │  (Node.js — apps/api)
-  │   Port 3000             │
-  └──────┬──────────────────┘
-         │                 │
-         ▼                 ▼
-  ┌─────────────┐   ┌──────────────────┐
-  │ FastAPI AI  │   │  PostgreSQL DB   │
-  │ Engine      │   │  (Supabase)      │
-  │ Port 8000   │   └──────────────────┘
-  └──────┬──────┘
-         │
-         ├── Wav2Vec2 (HuggingFace Transformers)
-         ├── SpeechBrain ECAPA-TDNN
-         └── Cloudflare Worker → NVIDIA NIM (Image)
-```
-
-### Monorepo Layout
-
-```
-Satark-AI/
-├── .github/
-│   └── workflows/
-│       └── keep-alive.yml        # Pings Render services every 14 min
+satark-ai/
 ├── apps/
-│   ├── api/                      # Node.js API Gateway
-│   │   └── src/
-│   │       ├── db/
-│   │       │   ├── index.ts      # PostgreSQL connection pool (max 20)
-│   │       │   └── schema.ts     # Drizzle ORM: scans + speakers tables
-│   │       ├── middleware/
-│   │       │   └── auth.ts       # Clerk auth middleware + requireAuth
-│   │       ├── routes/
-│   │       │   └── speaker.ts    # Enroll/Verify voice biometrics
-│   │       ├── index.ts          # Main app: 6 routes + rate limiter + CORS
-│   │       └── types.d.ts        # Hono context types (userId injection)
-│   │
-│   ├── engine/                   # Python AI Engine
-│   │   ├── main.py               # FastAPI app: 5 endpoints + lifespan
-│   │   ├── detect.py             # Wav2Vec2 + heuristic deepfake pipeline
-│   │   ├── speaker.py            # ECAPA-TDNN embedding generation
-│   │   ├── schemas.py            # Pydantic models: AudioUpload, ScanResult
-│   │   ├── detect-image.py       # Stub (migrated to Cloudflare Worker)
-│   │   ├── dummy-custom.py       # SpeechBrain HuggingFace 404 fallback
-│   │   ├── Dockerfile            # python:3.11-slim, non-root user
-│   │   └── requirements.txt      # fastapi, torch (CPU), speechbrain, librosa
-│   │
-│   └── web/                      # React Frontend
-│       ├── src/
-│       │   ├── api/
-│       │   │   └── client.ts     # TanStack Query + Clerk token API client
-│       │   ├── components/       # 18 feature components
-│       │   ├── context/
-│       │   │   └── LanguageContext.tsx  # EN/HI i18n context provider
-│       │   ├── pages/
-│       │   │   ├── Landing.tsx   # Public landing page
-│       │   │   └── History.tsx   # Scan history page
-│       │   ├── utils/
-│       │   │   └── pdfGenerator.ts  # jsPDF forensic report generator
-│       │   ├── App.tsx           # Router + AuthGate + lazy imports
-│       │   └── AuthenticatedShell.tsx  # Dashboard layout + mode tabs
-│       ├── public/               # Static assets + PWA icons + OG images
-│       ├── dev-dist/             # Workbox SW + precache manifest
-│       ├── vite.config.ts        # Vite + vite-plugin-pwa config
-│       └── vercel.json           # SPA fallback routing
-│
+│   ├── web/          → React + Vite  (Frontend)
+│   ├── api/          → Hono + Node.js (API Gateway)
+│   └── engine/       → FastAPI + Python (AI Engine)
 ├── packages/
-│   └── shared/
-│       └── src/
-│           └── index.ts          # Zod: AudioUploadSchema + ScanResultSchema
-│
-├── docs/
-│   └── credentials-setup.md     # Clerk + Supabase onboarding guide
-├── docker-compose.yml            # Full local stack orchestration
-├── turbo.json                    # Turborepo build pipeline + global env
-└── package.json                  # npm workspaces root config
+│   └── shared/       → Shared Zod schemas & TypeScript types
+├── docker-compose.yml
+└── turbo.json
 ```
 
-### Frontend Component Map (`apps/web/src/components/`)
+### Service Responsibilities
 
-| Component | Function |
-|---|---|
-| `AudioUpload.tsx` | Core scan UI — URL/File tabs, SHA cache detection, forensic metrics, PDF/JSON export |
-| `AudioVisualizer.tsx` | WaveSurfer.js interactive waveform player with play/pause |
-| `ConfidenceMeter.tsx` | Animated SVG circular confidence gauge (Framer Motion) |
-| `FakeHeatmap.tsx` | Per-0.5s segment deepfake probability heatmap |
-| `FeatureChart.tsx` | MFCC spectral analysis bar chart (Recharts) |
-| `AnalyticsStats.tsx` | Dashboard pie + bar charts for scan analytics |
-| `LiveMonitor.tsx` | Real-time mic capture → 5s AI chunks → canvas oscilloscope |
-| `SpeakerIdentity.tsx` | Voice enrollment + cosine-similarity verification UI |
-| `DeepfakeGame.tsx` | Interactive real/fake audio quiz with score tracking |
-| `ImageUpload.tsx` | Image deepfake scan via cloud AI proxy |
-| `ScanHistory.tsx` | History list with auth-gated audio playback + PDF download |
-| `FeedbackWidget.tsx` | Per-scan thumbs up/down feedback submission |
-| `InstallPWA.tsx` | PWA install prompt banner for mobile/desktop |
-| `ErrorBoundary.tsx` | React class error boundary with one-click recovery |
-| `Navbar.tsx` | Authenticated dashboard nav (Clerk UserButton) |
-| `LandingNavbar.tsx` | Public landing nav with auth-state awareness |
-| `Footer.tsx` | Landing page footer |
-| `theme-provider.tsx` | Dark/Light/System theme context provider |
+| Service | Runtime | Role | Port |
+|---|---|---|---|
+| `apps/web` | React 18 + Vite | User interface, PWA shell | 5173 |
+| `apps/api` | Node.js + Hono | Auth, DB, orchestration | 3000 |
+| `apps/engine` | Python 3.11 + FastAPI | AI inference (deepfake + speaker) | 8000 |
 
----
-
-## 🤖 AI Pipeline Details
-
-### Audio Deepfake Detection
+### Request Flow
 
 ```
-Input Audio (URL or File)
-        │
-        ▼
-   Librosa Load (16kHz for ML / 22050Hz for features)
-        │
-        ├──► Wav2Vec2 Inference ──────────────────────► P(fake)  [70% weight]
-        │    garystafford/wav2vec2-deepfake-voice-detector
-        │    Max 30s window (OOM prevention)
-        │
-        └──► Heuristic Feature Extraction
-                ├── Zero Crossing Rate (ZCR)       anomaly > 0.08
-                ├── Spectral Rolloff               anomaly < 3000 Hz
-                ├── MFCC (128 coefficients)
-                ├── Silence Ratio                  risk if > 0.25
-                └── Per-Segment Scoring (0.5s)  ──► Heuristic Score [30% weight]
-
-Final Score:  confidence = 0.7 × ML_score + 0.3 × heuristic_score
-              isDeepfake  = confidence > 0.50
-```
-
-### Speaker Identity Verification
-
-```
-Reference Audio ──► SpeechBrain ECAPA-TDNN ──► 192-dim embedding ──► Stored in PostgreSQL
-Test Audio      ──► SpeechBrain ECAPA-TDNN ──► 192-dim embedding ──┐
-                                                                    ▼
-                                                          Cosine Similarity
-                                                          (per enrolled speaker)
-                                                                    │
-                                                    score ≥ 0.75 → ✅ VERIFIED
-                                                    score < 0.75 → ❌ UNKNOWN
+Browser (React) ──► Hono API Gateway ──► FastAPI AI Engine
+                          │                     │
+                          ▼                     ▼
+                      PostgreSQL         PyTorch Models
+                     (Drizzle ORM)    (Wav2Vec2, ECAPA-TDNN)
 ```
 
 ---
 
-## 🔐 Security Model
+## 🧠 AI Models & Algorithms
 
-| Layer | Mechanism |
-|---|---|
-| **Authentication** | Clerk JWT verified on every protected route via middleware |
-| **Authorization** | `userId` injected server-side from Clerk context — never trusted from request body |
-| **Data Isolation** | Scan history and speaker embeddings scoped strictly to authenticated `userId` |
-| **Audio Ownership** | `/audio/:id` verifies record ownership before serving Base64-decoded WAV stream |
-| **Rate Limiting** | In-memory per-user: 10 req/min (default), 60 req/min (file uploads) |
-| **CORS** | Strict origin whitelist via `ALLOWED_ORIGINS` env — unknown origins rejected |
-| **Container Security** | Non-root `appuser` in Docker, `no-new-privileges` security opt in Compose |
+### Deepfake Detection Pipeline (`detect.py`)
+
+| Signal | Feature Extracted | Anomaly Trigger |
+|---|---|---|
+| Raw waveform | Wav2Vec2 classifier | Model confidence > threshold |
+| Frequency domain | Spectral Rolloff | Rolloff < 2500 Hz |
+| Time domain | Zero Crossing Rate | ZCR > 0.12 |
+| Combined | Composite risk score | Weighted multi-feature fusion |
+
+### Speaker Verification Pipeline (`speaker.py`)
+
+| Step | Technology | Detail |
+|---|---|---|
+| Audio loading | Librosa | Resampled to 16 kHz mono |
+| Embedding extraction | SpeechBrain ECAPA-TDNN | 192-dimensional vector |
+| Similarity scoring | Cosine Similarity (TypeScript) | Computed server-side in API |
+| Match decision | Threshold (0.75) | `score > 0.75` → Identity Confirmed |
+
+---
+
+## 🗂️ Codebase Deep Dive
+
+### `apps/web` — Frontend
+
+```
+src/
+├── api/
+│   └── client.ts            → Typed API client (scanAudio, scanUpload, scanImage,
+│                               enrollSpeaker, verifySpeaker, getHistory, submitFeedback)
+├── components/
+│   ├── AnalyticsStats.tsx   → Recharts pie + bar dashboard
+│   ├── AudioUpload.tsx      → File picker with drag-drop for audio
+│   ├── AudioVisualizer.tsx  → Real-time waveform canvas
+│   ├── ConfidenceMeter.tsx  → Animated confidence score bar
+│   ├── DeepfakeGame.tsx     → Interactive detection challenge game
+│   ├── ErrorBoundary.tsx    → React error boundary wrapper
+│   ├── FakeHeatmap.tsx      → Feature-level heatmap visualization
+│   ├── FeatureChart.tsx     → Per-feature forensic breakdown chart
+│   ├── FeedbackWidget.tsx   → User feedback submission UI
+│   ├── Footer.tsx
+│   ├── ImageUpload.tsx      → Image deepfake upload interface
+│   ├── InstallPWA.tsx       → PWA install prompt handler
+│   ├── LandingNavbar.tsx    → Public landing page navigation
+│   ├── language-toggle.tsx  → i18n language switcher
+│   ├── LiveMonitor.tsx      → Real-time mic monitoring (5s chunks)
+│   ├── mode-toggle.tsx      → Dark/light theme switch
+│   ├── Navbar.tsx           → Authenticated app navigation
+│   ├── ScanHistory.tsx      → History list with audio playback
+│   ├── SpeakerIdentity.tsx  → Enrollment + verification UI
+│   └── theme-provider.tsx   → Global theme context
+├── context/
+│   └── LanguageContext.tsx  → i18n context provider
+├── lib/
+│   └── utils.ts             → Shared utility helpers
+├── pages/
+│   ├── History.tsx          → Full scan history page
+│   └── Landing.tsx          → Public marketing landing
+├── utils/
+│   └── pdfGenerator.ts      → jsPDF-powered report generation
+├── App.tsx                  → Root router + Clerk provider
+└── AuthenticatedShell.tsx   → Protected app shell wrapper
+```
+
+**Key Libraries:**
+
+| Library | Version | Purpose |
+|---|---|---|
+| React | 18 | Core UI framework |
+| Vite | — | Build tool + HMR |
+| TypeScript | 5.3 | Type safety |
+| Tailwind CSS | — | Utility-first styling |
+| Framer Motion | — | Animations |
+| Clerk | — | Auth (JWT) |
+| Recharts | — | Analytics charts |
+| Lucide React | — | Icon set |
+| Workbox | 7.3 | PWA / Service Worker |
+
+---
+
+### `apps/api` — API Gateway
+
+```
+src/
+├── db/
+│   ├── index.ts    → Drizzle + pg connection pool (max 20, timeout 5s, idle 30s)
+│   └── schema.ts   → PostgreSQL schema definitions
+├── middleware/
+│   └── auth.ts     → Clerk JWT verification middleware (authMiddleware + requireAuth)
+├── routes/
+│   └── speaker.ts  → /speaker/enroll + /speaker/verify endpoints
+└── index.ts        → Main Hono app, all route registration
+```
+
+**Database Schema:**
+
+```typescript
+// scans table
+{
+  id: serial (PK),
+  userId: text (NOT NULL),         // Clerk user ID
+  audioUrl: text (NOT NULL),
+  isDeepfake: boolean,
+  confidenceScore: float8,
+  fileHash: text,                  // SHA-256 for deduplication
+  audioData: text,                 // Base64 encoded audio (for playback)
+  analysisDetails: text,           // Human-readable XAI output
+  createdAt: timestamp (default now),
+  feedback: text
+  // Indexes: userId, createdAt, fileHash
+}
+
+// speakers table
+{
+  id: uuid (PK, random),
+  userId: text (NOT NULL),         // Clerk user ID (scoped isolation)
+  name: text (NOT NULL),
+  embedding: json (NOT NULL),      // 192-dim ECAPA-TDNN float array
+  createdAt: timestamp (NOT NULL)
+  // Index: userId
+}
+```
+
+**API Endpoints:**
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/upload` | ✅ | Upload audio file for deepfake scan |
+| `POST` | `/scan` | ✅ | Scan audio from URL |
+| `GET` | `/scans` | ✅ | Get user's scan history |
+| `GET` | `/audio/:id` | ✅ | Stream audio blob for playback |
+| `POST` | `/scans/:id/feedback` | ✅ | Submit feedback on a scan |
+| `POST` | `/speaker/enroll` | ✅ | Enroll speaker voice print |
+| `POST` | `/speaker/verify` | ✅ | Verify speaker identity |
+
+---
+
+### `apps/engine` — AI Engine
+
+```
+apps/engine/
+├── main.py           → FastAPI app, endpoint definitions, lifespan context
+├── detect.py         → Deepfake detection pipeline (Wav2Vec2 + spectral)
+├── detect_image.py   → Image deepfake detection
+├── speaker.py        → ECAPA-TDNN embedding generation + HF patches
+├── schemas.py        → Pydantic models (AudioUpload, ScanResult)
+├── dummy_custom.py   → SpeechBrain HuggingFace 404 fallback patch
+├── requirements.txt  → Pinned Python dependencies
+└── Dockerfile        → Python 3.11-slim, non-root user (appuser)
+```
+
+**Engine Endpoints:**
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/` | Health check — `{"status": "AI Engine Running"}` |
+| `POST` | `/scan` | Scan audio via URL (async download → analyze) |
+| `POST` | `/scan-upload` | Scan uploaded audio file |
+| `POST` | `/analyze` | Video/audio analysis with moviepy fallback |
+| `POST` | `/embed` | Generate ECAPA-TDNN speaker embedding vector |
+
+**Performance Notes:**
+- **Lazy Model Loading**: Models load on first request (not at startup) to prevent OOM crashes on free-tier Render instances.
+- **Thread Executor**: CPU-bound inference runs in `loop.run_in_executor()` to keep FastAPI async event loop non-blocking.
+- **Temp File Cleanup**: All uploaded/extracted files are deleted in `finally` blocks — no disk leaks.
+
+---
+
+### `packages/shared`
+
+Shared Zod validation schemas and TypeScript types (`ScanResultType`, `AudioUploadSchema`, etc.) consumed by both `apps/api` and `apps/web`.
+
+---
+
+### `.github/workflows/keep-alive.yml`
+
+GitHub Actions cron job that pings both Render services **every 14 minutes** to prevent cold starts on the free tier.
+
+```yaml
+schedule:
+  - cron: "*/14 * * * *"
+```
+
+Pings:
+- API: `https://satark-ai-f5t7.onrender.com/`
+- Engine: `https://satark-ai-es1v.onrender.com/`
 
 ---
 
@@ -247,235 +316,178 @@ Test Audio      ──► SpeechBrain ECAPA-TDNN ──► 192-dim embedding ─
 
 ### Prerequisites
 
-- **Node.js** v18+
-- **Python** 3.10+
-- **PostgreSQL** (or [Supabase](https://supabase.com) free tier)
-- **Clerk** account (free tier at [clerk.com](https://clerk.com))
+| Requirement | Version |
+|---|---|
+| Node.js | v18+ |
+| Python | 3.11+ |
+| PostgreSQL | 14+ |
+| Docker (optional) | Latest |
 
-### 1. Clone the Repository
+---
+
+### Option A — Manual Setup (3 Terminals)
+
+**1. Clone the Repository**
 
 ```bash
 git clone https://github.com/theunstopabble/Satark-AI.git
 cd Satark-AI
 ```
 
-### 2. Install All Node Dependencies
+**2. Install Node.js Dependencies**
 
 ```bash
-npm install
+npm install   # installs all workspaces via Turborepo
 ```
 
-### 3. Setup Python AI Engine
+**3. Install Python Dependencies (AI Engine)**
 
 ```bash
 cd apps/engine
 python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# Mac / Linux
-source venv/bin/activate
-
-# Install CPU-only PyTorch first (smaller download)
+source venv/bin/activate       # Windows: venv\Scripts\activate
 pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
-
-# Install remaining dependencies
 pip install -r requirements.txt
 ```
 
-### 4. Configure Environment Variables
+**4. Configure Environment Variables**
 
-Create `.env` files in each service directory:
+Create `.env` files in each app directory:
 
-#### `apps/api/.env`
-
+`apps/web/.env`
 ```env
-DATABASE_URL=postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres
-CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
-ALLOWED_ORIGINS=http://localhost:5173,https://satark-deepfake.vercel.app
-ENGINE_URL=http://localhost:8000
-IMAGE_API_URL=https://your-cloudflare-worker.workers.dev
-```
-
-#### `apps/web/.env`
-
-```env
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxxx
 VITE_API_URL=http://localhost:3000
 ```
 
-> 📖 **First time?** Follow the step-by-step guide in [`docs/credentials-setup.md`](docs/credentials-setup.md) for Clerk and Supabase configuration.
+`apps/api/.env`
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/satark_db
+CLERK_SECRET_KEY=sk_test_xxxx
+CLERK_PUBLISHABLE_KEY=pk_test_xxxx
+ALLOWED_ORIGINS=http://localhost:5173
+ENGINE_URL=http://localhost:8000
+```
 
-### 5. Initialize the Database
+`apps/engine/.env`
+```env
+# No required vars — models download from HuggingFace on first run
+```
+
+**5. Run Database Migrations**
 
 ```bash
 cd apps/api
-npm run db:push
+npx drizzle-kit push
+```
+
+**6. Start All Services**
+
+| Terminal | Command |
+|---|---|
+| Terminal 1 — Frontend | `cd apps/web && npm run dev` |
+| Terminal 2 — API Gateway | `cd apps/api && npm run dev` |
+| Terminal 3 — AI Engine | `cd apps/engine && uvicorn main:app --reload --port 8000` |
+
+Or run everything at once from root:
+```bash
+npm run dev   # Turborepo orchestrates all three concurrently
 ```
 
 ---
 
-## ▶️ Running Locally
-
-### Option A — Manual (3 Terminals)
-
-**Terminal 1 — AI Engine:**
+### Option B — Docker Compose
 
 ```bash
-cd apps/engine
-source venv/bin/activate    # or venv\Scripts\activate on Windows
-uvicorn main:app --reload --port 8000
-```
+# Copy and fill in your .env values first
+cp .env.example .env
 
-**Terminal 2 — API Gateway:**
-
-```bash
-cd apps/api
-npm run dev
-```
-
-**Terminal 3 — Frontend:**
-
-```bash
-cd apps/web
-npm run dev
-```
-
-Open: [http://localhost:5173](http://localhost:5173)
-
----
-
-### Option B — Docker Compose (Recommended)
-
-```bash
-# Ensure apps/api/.env is configured first
 docker-compose up --build
 ```
 
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:5173 |
-| API Gateway | http://localhost:3000 |
-| AI Engine | http://localhost:8000 |
+Services will start at:
+- Frontend: `http://localhost:5173`
+- API Gateway: `http://localhost:3000`
+- AI Engine: `http://localhost:8000`
+
+**Docker security hardening included:**
+- Non-root user (`appuser`) in the engine container
+- `no-new-privileges:true` security option on all services
+- `tmpfs` mount for `/tmp` in API and web containers
 
 ---
 
-### Option C — Turborepo (All at Once)
+## ☁️ Deployment
 
-```bash
-npm run dev
-```
+| Service | Platform | URL |
+|---|---|---|
+| Frontend (`apps/web`) | Vercel | [satark-deepfake.vercel.app](https://satark-deepfake.vercel.app) |
+| API Gateway (`apps/api`) | Render | `satark-ai-f5t7.onrender.com` |
+| AI Engine (`apps/engine`) | Render | `satark-ai-es1v.onrender.com` |
+| Database | Supabase / Neon / Railway | PostgreSQL (SSL enabled) |
+
+**Vercel config** (`apps/web/vercel.json`) — SPA routing rewrites all paths to `index.html`.
 
 ---
 
-## 🧪 API Reference
+## 🔐 Security Architecture
 
-### API Gateway — `apps/api` (Port `3000`)
+| Layer | Mechanism | Detail |
+|---|---|---|
+| Authentication | Clerk JWT | All protected routes verify token server-side |
+| Authorization | Context-scoped userId | `userId` extracted from auth token — never trusted from request body |
+| Speaker isolation | DB-level scoping | Verify queries filter by `userId` — no cross-user voice data access |
+| Speaker threshold | Cosine similarity ≥ 0.75 | Strict match threshold prevents false identity confirmations |
+| File handling | UUID-prefixed temp files | Uploaded files stored with random UUID prefix, deleted post-processing |
+| Container | Non-root user | Engine runs as `appuser` — no root privileges inside Docker |
+| Connection pool | pg Pool | Max 20 connections, 5s timeout, graceful error recovery |
 
-| Method | Endpoint | Auth Required | Description |
+---
+
+## 📦 Environment Variables Reference
+
+| Variable | App | Required | Description |
 |---|---|---|---|
-| `POST` | `/scan` | ✅ | Scan audio from a public URL |
-| `POST` | `/scan-upload` | ✅ | Upload audio/video file (max 50MB) |
-| `POST` | `/scan-image` | ✅ | Upload image for deepfake detection |
-| `GET` | `/audio/:id` | ✅ | Stream owned audio by scan ID |
-| `GET` | `/scans` | ✅ | Get authenticated user's scan history |
-| `POST` | `/scans/:id/feedback` | ✅ | Submit thumbs up/down feedback for scan |
-| `POST` | `/api/speaker/enroll` | ✅ | Enroll a new speaker voice print |
-| `POST` | `/api/speaker/verify` | ✅ | Verify audio against enrolled speakers |
-| `GET` | `/health-db` | ❌ | Database connectivity health check |
-
-### AI Engine — `apps/engine` (Port `8000`)
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/` | Engine health check |
-| `POST` | `/scan` | Scan audio via URL (JSON body) |
-| `POST` | `/scan-upload` | Scan uploaded audio/video multipart file |
-| `POST` | `/analyze` | Analyze with MoviePy video extraction support |
-| `POST` | `/embed` | Generate 192-dim ECAPA-TDNN voice embedding |
+| `VITE_CLERK_PUBLISHABLE_KEY` | web | ✅ | Clerk frontend public key |
+| `VITE_API_URL` | web | ✅ | Backend API base URL |
+| `DATABASE_URL` | api | ✅ | PostgreSQL connection string |
+| `CLERK_SECRET_KEY` | api | ✅ | Clerk backend secret key |
+| `CLERK_PUBLISHABLE_KEY` | api | ✅ | Clerk public key (for validation) |
+| `ALLOWED_ORIGINS` | api | ✅ | CORS allowed origins (comma-separated) |
+| `ENGINE_URL` | api | ✅ | FastAPI engine base URL |
+| `IMAGE_API_URL` | api | ⚪ | Cloudflare image proxy (optional) |
 
 ---
 
-## 🌍 Deployment
+## 🤝 Contributing
 
-### Frontend → Vercel
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-```bash
-cd apps/web
-npm run build
-# Deploy the dist/ folder to Vercel
-```
-
-Set these environment variables in your Vercel project dashboard:
-
-```
-VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
-VITE_API_URL=https://your-api.onrender.com
-```
-
-### API Gateway → Render
-
-Deploy `apps/api` as a **Web Service** on Render:
-
-- **Build Command**: `npm install && npx tsc`
-- **Start Command**: `node dist/index.js`
-- **Environment variables**: `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `ENGINE_URL`, `ALLOWED_ORIGINS`, `IMAGE_API_URL`
-
-### AI Engine → Render (Docker)
-
-Deploy `apps/engine` as a **Web Service** on Render using Docker:
-
-- **Dockerfile Path**: `apps/engine/Dockerfile`
-- **Port**: `8000`
-
-> ⚠️ **Free Tier Note**: Render free services sleep after 15 minutes of inactivity. The `.github/workflows/keep-alive.yml` GitHub Action automatically pings both services every 14 minutes to prevent cold starts.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feat/your-feature`)
+3. Commit your changes (`git commit -m 'feat: add your feature'`)
+4. Push to the branch (`git push origin feat/your-feature`)
+5. Open a Pull Request
 
 ---
 
-## 🧰 Tech Stack
+## 👨‍💻 Author
 
-| Layer | Technology | Version |
-|---|---|---|
-| Frontend Framework | React | 18.2.0 |
-| Build Tool | Vite | 7.1.8 |
-| Styling | Tailwind CSS | 3.4.1 |
-| Animation | Framer Motion | 12.33.0 |
-| Authentication | Clerk | 4.30.0 |
-| Server State | TanStack Query | 5.17.19 |
-| Form Validation | React Hook Form + Zod | 7.50 + 3.22.4 |
-| Charts | Recharts | 3.7.0 |
-| Waveform Player | WaveSurfer.js | 7.12.1 |
-| PDF Export | jsPDF + jspdf-autotable | 4.1.0 |
-| PWA | vite-plugin-pwa (Workbox) | 0.19.8 |
-| API Gateway | Hono | 4.0.0 |
-| ORM | Drizzle ORM | 0.45.1 |
-| Database | PostgreSQL via Supabase | — |
-| AI Web Framework | FastAPI | 0.111.0 |
-| Deep Learning | PyTorch (CPU) | 2.2.0 |
-| Transformer Models | HuggingFace Transformers | 4.40.0 |
-| Speaker ID | SpeechBrain | 1.0.2 |
-| Audio DSP | Librosa | 0.10.2 |
-| Video Processing | MoviePy | 1.0.3 |
-| Monorepo Tooling | Turborepo | latest |
-| Containerization | Docker + Docker Compose | 3.8 |
+**Gautam Kumar** — Lead Developer
 
----
-
-## 🤝 Contributors
-
-- **Gautam Kumar** — *Lead Developer* — [LinkedIn](https://www.linkedin.com/in/gautamkr62/) | [GitHub](https://github.com/theunstopabble)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-gautamkr62-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/gautamkr62/)
+[![GitHub](https://img.shields.io/badge/GitHub-theunstopabble-181717?style=for-the-badge&logo=github)](https://github.com/theunstopabble)
+[![Portfolio](https://img.shields.io/badge/Portfolio-gautam--kr.vercel.app-000000?style=for-the-badge&logo=vercel)](https://gautam-kr.vercel.app)
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
-  <strong>Made with ❤️ in India 🇮🇳</strong><br/>
-  <sub>Built to protect truth in the age of synthetic media.</sub>
+  <strong>Built with ❤️ in India 🇮🇳</strong><br/>
+  <sub>Satark-AI — Because the truth still matters.</sub>
 </div>
