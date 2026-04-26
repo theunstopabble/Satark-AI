@@ -7,6 +7,7 @@ import {
   Gamepad2,
   FileText,
   Users,
+  Image as ImageIcon, // ← ye add karo
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -84,7 +85,8 @@ export function Landing() {
             <h2 className="text-3xl font-bold text-center mb-12 text-foreground">
               {t("landing.features.title")}
             </h2>
-            <div className="grid md:grid-cols-4 gap-8">
+            {/* // grid cols: 4 → 3 (2 rows of 3) */}
+            <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
                   icon: <FileAudio className="text-blue-500" size={32} />,
@@ -97,6 +99,16 @@ export function Landing() {
                   ),
                   title: t("landing.features.live"),
                   desc: t("landing.features.live.desc"),
+                },
+                {
+                  icon: <Users className="text-violet-500" size={32} />,
+                  title: t("landing.features.speaker"),
+                  desc: t("landing.features.speaker.desc"),
+                },
+                {
+                  icon: <ImageIcon className="text-pink-500" size={32} />,
+                  title: t("landing.features.image"),
+                  desc: t("landing.features.image.desc"),
                 },
                 {
                   icon: <Gamepad2 className="text-purple-500" size={32} />,

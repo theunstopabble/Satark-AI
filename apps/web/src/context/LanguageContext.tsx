@@ -86,8 +86,8 @@ const translations: Translations = {
     hi: "सत्य की रक्षा करें",
   },
   "landing.hero.subheading": {
-    en: "Detect AI-generated audio with scientifically validated precision.",
-    hi: "वैज्ञानिक रूप से मान्यता प्राप्त सटीकता के साथ AI-जनित ऑडियो का पता लगाएं।",
+    en: "Audio. Images. Voices. Detect deepfakes across every format — in real time.",
+    hi: "ऑडियो। छवियां। आवाज़ें। हर फॉर्मेट में डीपफेक का पता लगाएं — रियल टाइम में।",
   },
   "landing.hero.cta1": { en: "Start Free Scan", hi: "मुफ्त स्कैन शुरू करें" },
   "landing.hero.cta2": { en: "How it Works", hi: "यह कैसे काम करता है" },
@@ -116,6 +116,23 @@ const translations: Translations = {
   "landing.features.pdf.desc": {
     en: "Generate detailed forensic PDF certificates.",
     hi: "विस्तृत फोरेंसिक PDF प्रमाणपत्र उत्पन्न करें।",
+  },
+
+  "landing.features.speaker": {
+    en: "Speaker Identity",
+    hi: "वक्ता पहचान",
+  },
+  "landing.features.speaker.desc": {
+    en: "Enroll and verify voices using biometric embeddings.",
+    hi: "बायोमेट्रिक एम्बेडिंग से आवाज़ पहचान सत्यापित करें।",
+  },
+  "landing.features.image": {
+    en: "Image Scan",
+    hi: "इमेज स्कैन",
+  },
+  "landing.features.image.desc": {
+    en: "Detect AI-generated images via NVIDIA NIM Vision (90B).",
+    hi: "NVIDIA NIM Vision से AI-जनित छवियों का पता लगाएं।",
   },
 
   // Landing - Trust
