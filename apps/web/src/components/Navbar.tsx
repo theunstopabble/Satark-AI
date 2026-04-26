@@ -52,26 +52,8 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-6">
           <SignedIn>
             <nav className="flex gap-2">
-              <Link
-                to="/features"
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  location.pathname.startsWith("/features")
-                    ? "bg-background text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                Features
-              </Link>
-              <Link
-                to="/about"
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  location.pathname.startsWith("/about")
-                    ? "bg-background text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                About
-              </Link>
+              {/* FIX: /features aur /about routes exist nahi karte — hata diye.
+                  Agar future mein add karoge toh wapas daal dena. */}
               <Link
                 to="/dashboard"
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
@@ -81,6 +63,16 @@ export function Navbar() {
                 }`}
               >
                 Dashboard
+              </Link>
+              <Link
+                to="/dashboard/history"
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  location.pathname.startsWith("/dashboard/history")
+                    ? "bg-background text-primary shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                History
               </Link>
             </nav>
             <div className="pl-4 flex items-center gap-4 border-l">
@@ -124,26 +116,6 @@ export function Navbar() {
             <SignedIn>
               <div className="flex flex-col gap-2">
                 <Link
-                  to="/features"
-                  className={`flex items-center justify-between p-4 rounded-xl transition-colors ${
-                    location.pathname.startsWith("/features")
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "hover:bg-muted"
-                  }`}
-                >
-                  <span>Features</span>
-                </Link>
-                <Link
-                  to="/about"
-                  className={`flex items-center justify-between p-4 rounded-xl transition-colors ${
-                    location.pathname.startsWith("/about")
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "hover:bg-muted"
-                  }`}
-                >
-                  <span>About</span>
-                </Link>
-                <Link
                   to="/dashboard"
                   className={`flex items-center justify-between p-4 rounded-xl transition-colors ${
                     location.pathname.startsWith("/dashboard")
@@ -152,6 +124,16 @@ export function Navbar() {
                   }`}
                 >
                   <span>Dashboard</span>
+                </Link>
+                <Link
+                  to="/dashboard/history"
+                  className={`flex items-center justify-between p-4 rounded-xl transition-colors ${
+                    location.pathname.startsWith("/dashboard/history")
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <span>History</span>
                 </Link>
                 <div className="pt-4 mt-2 border-t flex justify-between items-center px-2">
                   <span className="text-sm text-muted-foreground">Profile</span>

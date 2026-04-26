@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { ModeToggle } from "./mode-toggle";
 import { LanguageToggle } from "./language-toggle";
@@ -7,7 +7,11 @@ import { useLanguage } from "../context/LanguageContext";
 
 /**
  * Lightweight navbar for the public landing page.
- * NO Clerk imports - keeps Clerk auth SDK off the critical path.
+ * NO Clerk imports — keeps Clerk auth SDK off the critical path.
+ *
+ * FIX: Auth state check via localStorage flag set by AuthenticatedShell.
+ * If user is already signed in, show "Dashboard" instead of "Sign In".
+ * This prevents the confusing "click sign-in → auto-login" UX.
  */
 
 const mobileMenuStyles = `
@@ -21,9 +25,45 @@ const mobileMenuStyles = `
   }
 `;
 
+// ── FIX: Check auth state without importing Clerk ──
+// Clerk stores session in cookies, but we also set a flag in localStorage
+// from AuthenticatedShell so LandingNavbar can check it instantly.
+function useIsSignedIn(): boolean {
+  const [signedIn, setSignedIn] = useState(() => {
+    try {
+      return localStorage.getItem("satark_auth_flag") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  // Listen for storage changes (e.g., sign-in in another tab)
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key === "satark_auth_flag") {
+        setSignedIn(e.newValue === "true");
+      }
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
+
+  // Also re-check on mount (in case flag was set in same tab before navigation)
+  useEffect(() => {
+    try {
+      setSignedIn(localStorage.getItem("satark_auth_flag") === "true");
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  return signedIn;
+}
+
 export function LandingNavbar() {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const isSignedIn = useIsSignedIn();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur-xl shadow-sm">
@@ -48,18 +88,30 @@ export function LandingNavbar() {
 
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-4">
-          <Link
-            to="/sign-in"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            {t("nav.signin")}
-          </Link>
-          <Link
-            to="/sign-up"
-            className="px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full hover:bg-primary/90 transition-all active:scale-95"
-          >
-            {t("nav.getstarted")}
-          </Link>
+          {/* FIX: Agar signed in hai toh Dashboard dikhao, nahi toh Sign In */}
+          {isSignedIn ? (
+            <Link
+              to="/dashboard"
+              className="px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full hover:bg-primary/90 transition-all active:scale-95"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/sign-in"
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                {t("nav.signin")}
+              </Link>
+              <Link
+                to="/sign-up"
+                className="px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full hover:bg-primary/90 transition-all active:scale-95"
+              >
+                {t("nav.getstarted")}
+              </Link>
+            </>
+          )}
           <LanguageToggle />
           <ModeToggle />
         </div>
@@ -81,18 +133,30 @@ export function LandingNavbar() {
       {isOpen && (
         <div className="lnav-menu-enter md:hidden border-b bg-background/95 backdrop-blur-xl">
           <div className="p-6 flex flex-col gap-3">
-            <Link
-              to="/sign-in"
-              className="w-full text-center py-3 rounded-xl hover:bg-muted transition-colors font-medium"
-            >
-              {t("nav.signin")}
-            </Link>
-            <Link
-              to="/sign-up"
-              className="w-full text-center py-3 bg-primary text-primary-foreground rounded-xl font-bold"
-            >
-              {t("nav.getstarted")}
-            </Link>
+            {/* FIX: Mobile menu mein bhi same logic */}
+            {isSignedIn ? (
+              <Link
+                to="/dashboard"
+                className="w-full text-center py-3 bg-primary text-primary-foreground rounded-xl font-bold"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/sign-in"
+                  className="w-full text-center py-3 rounded-xl hover:bg-muted transition-colors font-medium"
+                >
+                  {t("nav.signin")}
+                </Link>
+                <Link
+                  to="/sign-up"
+                  className="w-full text-center py-3 bg-primary text-primary-foreground rounded-xl font-bold"
+                >
+                  {t("nav.getstarted")}
+                </Link>
+              </>
+            )}
             <div className="flex justify-between items-center pt-3 border-t">
               <span className="text-sm font-medium">Language</span>
               <LanguageToggle />

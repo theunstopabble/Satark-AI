@@ -5,18 +5,14 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { Landing } from "./pages/Landing";
 import { LandingNavbar } from "@/components/LandingNavbar";
 import { Footer } from "@/components/Footer";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, Component, type ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
 /**
- * Core strategy:
- * - Landing page ("/") renders IMMEDIATELY with zero Clerk JS on the critical path.
- * - Clerk + all auth components are lazy-loaded in AuthenticatedShell, which only
- *   activates when user navigates to /dashboard, /sign-in, /sign-up, etc.
- * - This removes ~200KB of Clerk JS from the landing page's initial load.
+ * FIX #1: ErrorBoundary added — agar Clerk ya koi bhi lazy chunk fail ho,
+ * app crash nahi hoga, graceful error screen dikhega.
  */
 
-// Heavy authenticated subtree - Clerk + entire dashboard - loaded on demand only
 const AuthenticatedShell = lazy(() => import("./AuthenticatedShell"));
 
 const queryClient = new QueryClient({
@@ -27,6 +23,50 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// ── FIX: Error Boundary for lazy-loaded route chunks ──
+class RouteErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("Route Error:", error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen gap-4 p-4 text-center">
+          <h1 className="text-4xl font-bold text-destructive">
+            Something went wrong
+          </h1>
+          <p className="text-muted-foreground max-w-md">
+            {this.state.error?.message || "An unexpected error occurred."}
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.href = "/";
+            }}
+            className="text-primary hover:underline mt-2"
+          >
+            Go Home
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function LandingPageShell() {
   return (
@@ -61,9 +101,11 @@ function App() {
               <Route
                 path="/*"
                 element={
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <AuthenticatedShell />
-                  </Suspense>
+                  <RouteErrorBoundary>
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <AuthenticatedShell />
+                    </Suspense>
+                  </RouteErrorBoundary>
                 }
               />
             </Routes>

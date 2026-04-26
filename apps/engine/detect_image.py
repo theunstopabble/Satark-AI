@@ -1,8 +1,9 @@
 """
 Image Deepfake Detection Logic.
 
-Note: This logic has been migrated to the external Modulate.ai API
-to optimize performance and prevent Render Free Tier memory crashes.
-This file is kept for documentation purposes only.
+Image detection has been migrated to the Cloudflare Worker
+which proxies to NVIDIA NIM Vision API (Llama 3.2 90B).
+
+This module is intentionally empty.
+See: Cloudflare Worker for image analysis endpoints.
 """
-pass

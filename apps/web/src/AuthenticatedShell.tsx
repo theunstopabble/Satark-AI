@@ -1,11 +1,9 @@
-const ImageUpload = lazy(() =>
-  import("@/components/ImageUpload").then((m) => ({ default: m.ImageUpload })),
-);
 import {
   ClerkProvider,
   SignedIn,
   SignedOut,
   RedirectToSignIn,
+  useSession,
 } from "@clerk/clerk-react";
 import { Route, Routes, useNavigate, Navigate, Link } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
@@ -13,7 +11,10 @@ import { Footer } from "@/components/Footer";
 import { useState, lazy, Suspense } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 
-// All heavy dashboard components are lazy loaded
+// ── All heavy dashboard components lazy loaded ──
+const ImageUpload = lazy(() =>
+  import("@/components/ImageUpload").then((m) => ({ default: m.ImageUpload })),
+);
 const AudioUpload = lazy(() =>
   import("@/components/AudioUpload").then((m) => ({ default: m.AudioUpload })),
 );
@@ -49,6 +50,27 @@ function LoadingSpinner({ label = "Loading..." }: { label?: string }) {
   );
 }
 
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  FIX: AuthGate — THE CORE FIX FOR "REFRESH = LOGOUT" BUG  ║
+// ║                                                              ║
+// ║  Problem: ClerkProvider session check is ASYNC. During the   ║
+// ║  loading phase, SignedOut fires → RedirectToSignIn triggers  ║
+// ║  BEFORE Clerk finishes verifying the session cookie.         ║
+// ║                                                              ║
+// ║  Solution: useSession() ka isLoaded flag check karo. Jab     ║
+// ║  tak Clerk fully loaded nahi, kuch mat render karo — sirf   ║
+// ║  loading spinner dikhao.                                     ║
+// ╚══════════════════════════════════════════════════════════════╝
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { isLoaded } = useSession();
+
+  if (!isLoaded) {
+    return <LoadingSpinner label="Verifying session..." />;
+  }
+
+  return <>{children}</>;
+}
+
 function Dashboard() {
   const [mode, setMode] = useState<
     "analysis" | "identity" | "monitor" | "game" | "image"
@@ -77,13 +99,13 @@ function Dashboard() {
               onClick={() => setMode("monitor")}
               className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "monitor" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
             >
-              🎙️ Live Monitor
+              Live Monitor
             </button>
             <button
               onClick={() => setMode("game")}
               className={`px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 flex items-center gap-2 ${mode === "game" ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
             >
-              🎮 Challenge
+              Challenge
             </button>
             <button
               onClick={() => setMode("image")}
@@ -93,7 +115,7 @@ function Dashboard() {
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }`}
             >
-              🖼️ Image Scan
+              Image Scan
             </button>
           </div>
         </div>
@@ -136,80 +158,89 @@ function ClerkRoutes() {
     <ClerkProvider
       publishableKey={PUBLISHABLE_KEY}
       navigate={(to) => navigate(to)}
+      // FIX: Sign out ke baad landing page pe bhejo, warna undefined behavior
+      afterSignOutUrl="/"
     >
       <Navbar />
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
-          <Route
-            path="/sign-in/*"
-            element={
-              <>
-                <SignedIn>
-                  <Navigate to="/dashboard" replace />
-                </SignedIn>
-                <SignedOut>
-                  <RedirectToSignIn afterSignInUrl="/dashboard" />
-                </SignedOut>
-              </>
-            }
-          />
-          <Route
-            path="/sign-up/*"
-            element={
-              <>
-                <SignedIn>
-                  <Navigate to="/dashboard" replace />
-                </SignedIn>
-                <SignedOut>
-                  <RedirectToSignIn afterSignInUrl="/dashboard" />
-                </SignedOut>
-              </>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <>
-                <SignedIn>
-                  <Dashboard />
-                </SignedIn>
-                <SignedOut>
-                  <RedirectToSignIn />
-                </SignedOut>
-              </>
-            }
-          />
-          <Route
-            path="/dashboard/history"
-            element={
-              <>
-                <SignedIn>
-                  <History />
-                </SignedIn>
-                <SignedOut>
-                  <RedirectToSignIn />
-                </SignedOut>
-              </>
-            }
-          />
-          <Route
-            path="*"
-            element={
-              <div className="flex flex-col items-center justify-center h-screen gap-4">
-                <h1 className="text-4xl font-bold">404</h1>
-                <p className="text-muted-foreground">Page not found</p>
-                <Link to="/dashboard" className="text-primary hover:underline">
-                  Go to Dashboard →
-                </Link>
-              </div>
-            }
-          />
-        </Routes>
-      </Suspense>
+
+      {/* FIX: AuthGate wraps all routes — Clerk ke load hone tak koi auth decision nahi hoga */}
+      <AuthGate>
+        <Suspense fallback={<LoadingSpinner />}>
+          <Routes>
+            <Route
+              path="/sign-in/*"
+              element={
+                <>
+                  <SignedIn>
+                    <Navigate to="/dashboard" replace />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn afterSignInUrl="/dashboard" />
+                  </SignedOut>
+                </>
+              }
+            />
+            <Route
+              path="/sign-up/*"
+              element={
+                <>
+                  <SignedIn>
+                    <Navigate to="/dashboard" replace />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn afterSignInUrl="/dashboard" />
+                  </SignedOut>
+                </>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <>
+                  <SignedIn>
+                    <Dashboard />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn />
+                  </SignedOut>
+                </>
+              }
+            />
+            <Route
+              path="/dashboard/history"
+              element={
+                <>
+                  <SignedIn>
+                    <History />
+                  </SignedIn>
+                  <SignedOut>
+                    <RedirectToSignIn />
+                  </SignedOut>
+                </>
+              }
+            />
+            <Route
+              path="*"
+              element={
+                <div className="flex flex-col items-center justify-center h-screen gap-4">
+                  <h1 className="text-4xl font-bold">404</h1>
+                  <p className="text-muted-foreground">Page not found</p>
+                  <Link
+                    to="/dashboard"
+                    className="text-primary hover:underline"
+                  >
+                    Go to Dashboard
+                  </Link>
+                </div>
+              }
+            />
+          </Routes>
+        </Suspense>
+      </AuthGate>
+
       <Footer />
     </ClerkProvider>
   );
 }
 
-// Default export - this whole file is lazy-imported in App.tsx
 export default ClerkRoutes;
