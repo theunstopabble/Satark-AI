@@ -42,7 +42,12 @@ export function Footer() {
               </li>
               <li>
                 <Link to="/dashboard" className="hover:text-primary transition">
-                  Voice Identity
+                  Speaker Identity
+                </Link>
+              </li>
+              <li>
+                <Link to="/dashboard" className="hover:text-primary transition">
+                  Image Scan
                 </Link>
               </li>
             </ul>
