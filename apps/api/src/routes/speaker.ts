@@ -1,4 +1,3 @@
-import "./types";
 import { Hono } from "hono";
 import { db } from "../db";
 import { speakers, scans } from "../db/schema";
