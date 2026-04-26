@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApiClient } from "@/api/client";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { ScanResultType } from "@repo/shared";
 import { AnalyticsStats } from "./AnalyticsStats";
 
-// Date formatter for nice display
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "short",
@@ -16,6 +15,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 
 export function ScanHistory() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { getHistory } = useApiClient();
 
   const {
@@ -24,7 +24,12 @@ export function ScanHistory() {
     error,
   } = useQuery({
     queryKey: ["scans", user?.id],
-    queryFn: () => getHistory(user?.id || ""),
+    // ╔════════════════════════════════════════════════════════════╗
+    // ║  FIX: getHistory now takes 0 arguments                   ║
+    // ║  OLD: getHistory(user?.id || "")                          ║
+    // ║  Problem: client API updated, userId now from auth token  ║
+    // ╚════════════════════════════════════════════════════════════╝
+    queryFn: () => getHistory(),
     enabled: !!user?.id,
   });
 
@@ -34,14 +39,12 @@ export function ScanHistory() {
 
   return (
     <div className="space-y-8">
-      {/* Analytics Section */}
       {scans && scans.length > 0 && <AnalyticsStats scans={scans} />}
 
-      {/* History List */}
       <div className="border rounded-xl shadow-sm bg-card text-card-foreground overflow-hidden">
         <div className="p-6 border-b bg-muted/30">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            📜 Recent Activity
+            Recent Activity
           </h2>
         </div>
         <div className="p-0">
@@ -60,6 +63,8 @@ export function ScanHistory() {
                     <div className="bg-primary/10 p-2 rounded-lg mt-1">
                       {scan.audioUrl.startsWith("uploaded://") ? (
                         <span className="text-xl">📁</span>
+                      ) : scan.audioUrl.startsWith("image_scan") ? (
+                        <span className="text-xl">🖼️</span>
                       ) : (
                         <span className="text-xl">🔗</span>
                       )}
@@ -69,23 +74,20 @@ export function ScanHistory() {
                         className="font-medium text-sm md:text-base truncate max-w-[200px] md:max-w-[400px]"
                         title={scan.audioUrl}
                       >
-                        {scan.audioUrl.replace("uploaded://", "")}
+                        {scan.audioUrl
+                          .replace("uploaded://", "")
+                          .replace("image_scan:", "")}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {dateFormatter.format(new Date(scan.createdAt))}
                       </p>
-                      {/* Audio Player for Uploads */}
+                      {/* ╔══════════════════════════════════════════════╗ */}
+                      {/* ║  FIX: Audio player with auth token           ║ */}
+                      {/* ║  OLD: src without auth → 401 Unauthorized    ║ */}
+                      {/* ║  FIX: Fetch with auth header via blob URL    ║ */}
+                      {/* ╚══════════════════════════════════════════════╝ */}
                       {scan.audioUrl.startsWith("uploaded://") && (
-                        <div className="mt-2">
-                          <audio
-                            controls
-                            src={`${
-                              import.meta.env.VITE_API_URL ||
-                              "http://localhost:3000"
-                            }/audio/${scan.id}`}
-                            className="h-8 w-48"
-                          />
-                        </div>
+                        <AudioPlayer scanId={scan.id} getToken={getToken} />
                       )}
                     </div>
                   </div>
@@ -121,6 +123,82 @@ export function ScanHistory() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  NEW: AudioPlayer component with authenticated fetch           ║
+// ║  Problem: <audio src="..."> doesn't send auth headers.         ║
+// ║  Backend now requires auth on /audio/:id → audio won't load.   ║
+// ║  FIX: Fetch audio as blob with auth, create object URL.        ║
+// ╚══════════════════════════════════════════════════════════════════╝
+import { useState, useEffect } from "react";
+
+function AudioPlayer({
+  scanId,
+  getToken,
+}: {
+  scanId: number;
+  getToken: () => Promise<string | null>;
+}) {
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    let cancelled = false;
+
+    async function loadAudio() {
+      try {
+        const token = await getToken();
+        const API_URL = (
+          import.meta.env.VITE_API_URL || "http://localhost:3000"
+        ).replace(/\/+$/, "");
+
+        const res = await fetch(`${API_URL}/audio/${scanId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          if (!cancelled) setFailed(true);
+          return;
+        }
+
+        const blob = await res.blob();
+        objectUrl = URL.createObjectURL(blob);
+        if (!cancelled) {
+          setAudioUrl(objectUrl);
+        }
+      } catch {
+        if (!cancelled) setFailed(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadAudio();
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [scanId, getToken]);
+
+  if (loading) {
+    return (
+      <div className="mt-2 text-xs text-muted-foreground">Loading audio...</div>
+    );
+  }
+
+  if (failed || !audioUrl) {
+    return null; // Silently skip if audio unavailable
+  }
+
+  return (
+    <div className="mt-2">
+      <audio controls src={audioUrl} className="h-8 w-48" />
     </div>
   );
 }

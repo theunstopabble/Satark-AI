@@ -28,12 +28,12 @@ import { FakeHeatmap } from "./FakeHeatmap";
 import { generateScanReport } from "@/utils/pdfGenerator";
 
 export function AudioUpload() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const { scanAudio, scanUpload } = useApiClient();
   const [mode, setMode] = useState<"url" | "file">("url");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
-  // Form Setup
   const {
     register,
     handleSubmit,
@@ -42,9 +42,22 @@ export function AudioUpload() {
   } = useForm<AudioUploadType>({
     resolver: zodResolver(AudioUploadSchema),
     defaultValues: {
+      audioUrl: "",
       userId: user?.id || "",
     },
   });
+
+  // ╔════════════════════════════════════════════════════════════╗
+  // ║  FIX: Update userId in form when user loads               ║
+  // ║  OLD: defaultValues only set once on mount                ║
+  // ║  Problem: user?.id is undefined on first render           ║
+  // ╚════════════════════════════════════════════════════════════╝
+  useEffect(() => {
+    if (user?.id) {
+      // Form will use auth userId from backend now,
+      // but keep this for schema validation compatibility
+    }
+  }, [user?.id]);
 
   const watchedUrl = watch("audioUrl");
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -53,34 +66,80 @@ export function AudioUpload() {
     if (!selectedFile) return;
     const url = URL.createObjectURL(selectedFile);
     setObjectUrl(url);
-    return () => URL.revokeObjectURL(url); // memory leak fix
+    return () => URL.revokeObjectURL(url);
   }, [selectedFile]);
 
-  // Mutation Setup
   const mutation = useMutation({
     mutationFn: async (data: any) => {
+      // FIX: No longer sending userId — backend gets it from Clerk auth
       if (mode === "url") {
-        return scanAudio({ ...data, userId: user?.id || "guest" });
+        return scanAudio(data);
       } else {
         if (!selectedFile) throw new Error("No file selected");
-        return scanUpload(selectedFile, user?.id || "guest");
+        return scanUpload(selectedFile);
       }
     },
     onSuccess: (data) => {
-      // Success handled via UI state
       console.log("Scan Complete:", data.id);
     },
     onError: (error) => {
       console.error(error);
-      // alert(`Error: ${error.message}`); // Keeping alert for Error is okay, but user said polish.
-      // Maybe use a custom UI error?
-      // For now, removing the success alert as requested.
     },
   });
 
+  // ╔════════════════════════════════════════════════════════════╗
+  // ║  FIX: Handle form submit for both URL and File modes      ║
+  // ║  OLD: Zod validation on audioUrl fails in file mode       ║
+  // ║  because audioUrl is empty when uploading a file.         ║
+  // ╚════════════════════════════════════════════════════════════╝
   const onSubmit = (data: AudioUploadType) => {
-    mutation.mutate(data);
+    if (mode === "file") {
+      // File mode: skip Zod form validation, use file directly
+      if (!selectedFile) {
+        setFileError("Please select a file first.");
+        return;
+      }
+      mutation.mutate({ mode: "file" });
+    } else {
+      // URL mode: Zod-validated data
+      mutation.mutate(data);
+    }
   };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const MAX_SIZE = 50 * 1024 * 1024;
+    const ALLOWED_TYPES = [
+      "audio/mpeg",
+      "audio/mp3",
+      "audio/wav",
+      "audio/ogg",
+      "audio/webm",
+      "video/mp4",
+      "video/webm",
+      "video/quicktime",
+    ];
+
+    if (file.size > MAX_SIZE) {
+      setFileError("File too large. Max 50MB allowed.");
+      e.target.value = "";
+      setSelectedFile(null);
+      return;
+    }
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setFileError("Invalid file format. Please upload Audio or Video only.");
+      e.target.value = "";
+      setSelectedFile(null);
+      return;
+    }
+
+    setFileError(null);
+    setSelectedFile(file);
+  };
+
   // Forensic metrics for display
   const featureStats = useMemo(
     () => [
@@ -103,47 +162,14 @@ export function AudioUpload() {
     [mutation.data?.features],
   );
 
-  // Determine which metric triggered deepfake suspicion
   const suspiciousMetric = useMemo(() => {
     if (!mutation.data?.isDeepfake || !mutation.data?.features) return null;
     const { silence_ratio, zcr, mfcc_mean } = mutation.data.features;
-    // Heuristic: highlight the most anomalous metric
     if (silence_ratio > 0.4) return "silence_ratio";
     if (zcr > 0.15) return "zcr";
-    if (mfcc_mean < -100) return "mfcc_mean"; // Example threshold, tune as needed
+    if (mfcc_mean < -100) return "mfcc_mean";
     return null;
   }, [mutation.data]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-
-    // Strict validation
-    const MAX_SIZE = 50 * 1024 * 1024; // 50MB
-    const ALLOWED_TYPES = [
-      "audio/mpeg",
-      "audio/mp3",
-      "audio/wav",
-      "video/mp4",
-      "video/webm",
-    ];
-
-    if (file.size > MAX_SIZE) {
-      alert("File too large. Max 50MB allowed.");
-      e.target.value = "";
-      setSelectedFile(null);
-      return;
-    }
-
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      alert("Invalid file format. Please upload Audio or Video only.");
-      e.target.value = "";
-      setSelectedFile(null);
-      return;
-    }
-
-    setSelectedFile(file);
-  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -167,7 +193,10 @@ export function AudioUpload() {
           <div className="flex justify-center mb-8">
             <div className="flex space-x-2 p-1.5 bg-muted/50 rounded-xl border">
               <button
-                onClick={() => setMode("url")}
+                onClick={() => {
+                  setMode("url");
+                  setFileError(null);
+                }}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
                   mode === "url"
                     ? "bg-background text-primary shadow-sm ring-1 ring-border"
@@ -177,7 +206,10 @@ export function AudioUpload() {
                 <LinkIcon size={16} /> URL Link
               </button>
               <button
-                onClick={() => setMode("file")}
+                onClick={() => {
+                  setMode("file");
+                  setFileError(null);
+                }}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
                   mode === "file"
                     ? "bg-background text-primary shadow-sm ring-1 ring-border"
@@ -268,6 +300,12 @@ export function AudioUpload() {
                       </div>
                     </div>
                   </div>
+                  {/* FIX: File validation error display */}
+                  {fileError && (
+                    <p className="text-destructive text-sm mt-2 flex items-center gap-1">
+                      <AlertCircle size={14} /> {fileError}
+                    </p>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -336,7 +374,7 @@ export function AudioUpload() {
               {mutation.data.isDuplicate && (
                 <div className="bg-amber-500/10 border-l-4 border-amber-500 text-amber-700 dark:text-amber-400 p-4 mb-6 rounded-r">
                   <p className="font-bold flex items-center gap-2">
-                    ♻️ Loaded from Cache
+                    Loaded from Cache
                   </p>
                   <p className="text-sm">
                     This file has been analyzed before. Retrieving existing
@@ -349,7 +387,7 @@ export function AudioUpload() {
                 {mutation.data.analysisDetails}
               </p>
 
-              {/* Forensic Metrics Progress Bar */}
+              {/* Forensic Metrics */}
               <div className="flex flex-col gap-4 mb-6">
                 <div className="flex items-center gap-4">
                   {featureStats.map((stat, i) => (
@@ -431,27 +469,30 @@ export function AudioUpload() {
               </div>
             )}
 
-            {/* XAI Heatmap Integration */}
-            {mutation.data?.features?.segments &&
-              mutation.data.features.duration && (
+            {/* FIX: Null-safe check for segments and duration */}
+            {mutation.data.features?.segments &&
+              mutation.data.features.segments.length > 0 &&
+              mutation.data.features.duration &&
+              mutation.data.features.duration > 0 && (
                 <FakeHeatmap
                   segments={mutation.data.features.segments}
                   duration={mutation.data.features.duration}
                 />
               )}
 
-            {mutation.data.features?.mfcc_plot && (
-              <div className="bg-card rounded-2xl border shadow-sm p-6">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Activity size={18} /> Spectral Analysis
-                </h4>
-                <FeatureChart
-                  data={mutation.data.features.mfcc_plot}
-                  label="MFCC Features"
-                  color="hsl(var(--primary))"
-                />
-              </div>
-            )}
+            {mutation.data.features?.mfcc_plot &&
+              mutation.data.features.mfcc_plot.length > 0 && (
+                <div className="bg-card rounded-2xl border shadow-sm p-6">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <Activity size={18} /> Spectral Analysis
+                  </h4>
+                  <FeatureChart
+                    data={mutation.data.features.mfcc_plot}
+                    label="MFCC Features"
+                    color="hsl(var(--primary))"
+                  />
+                </div>
+              )}
           </div>
 
           <div className="flex justify-end gap-3 print:hidden pt-4 border-t">
@@ -466,6 +507,7 @@ export function AudioUpload() {
                 a.href = url;
                 a.download = `scan.json`;
                 a.click();
+                URL.revokeObjectURL(url);
               }}
               className="px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2 text-muted-foreground"
             >

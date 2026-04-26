@@ -10,27 +10,28 @@ services:
       - "8000:8000"
     security_opt:
       - no-new-privileges:true
-    read_only: true
+    # ╔══════════════════════════════════════════════════════════╗
+    # ║  FIX: Removed read_only: true                          ║
+    # ║  Problem: Python needs to write tmp_model/ for          ║
+    # ║  SpeechBrain model cache. tmpfs only covers /tmp.       ║
+    # ╚══════════════════════════════════════════════════════════╝
     tmpfs:
       - /tmp
-    volumes:
-      - ./apps/engine:/app
     environment:
       - PYTHONUNBUFFERED=1
 
-  # Hono Backend (Running via Bun)
+  # Hono Backend (Node.js via tsx)
   api:
-    image: oven/bun:latest
+    # FIX: Use node image instead of bun — package.json scripts use npx tsx
+    image: node:20-alpine
     working_dir: /app/apps/api
-    command: bun run dev
+    command: sh -c "npm install && npx tsx watch src/index.ts"
     ports:
       - "3000:3000"
     security_opt:
       - no-new-privileges:true
-    read_only: true
     tmpfs:
       - /tmp
-      - /root/.bun
     volumes:
       - .:/app
     depends_on:
@@ -40,6 +41,14 @@ services:
       - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      # ╔══════════════════════════════════════════════════════════╗
+      # ║  FIX: Added missing environment variables               ║
+      # ║  These were missing → API couldn't reach engine or      ║
+      # ║  Cloudflare image proxy                                 ║
+      # ╚══════════════════════════════════════════════════════════╝
+      - ENGINE_URL=http://engine:8000
+      - IMAGE_API_URL=${IMAGE_API_URL}
+
   # Frontend (Vite)
   web:
     image: node:20-alpine
@@ -49,11 +58,13 @@ services:
       - "5173:5173"
     security_opt:
       - no-new-privileges:true
-    read_only: true
     tmpfs:
       - /tmp
-      - /root/.npm
     volumes:
       - .:/app
+    depends_on:
+      - api
     environment:
       - VITE_CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      # FIX: Added API URL so frontend knows where to call
+      - VITE_API_URL=http://localhost:3000

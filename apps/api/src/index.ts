@@ -8,12 +8,11 @@ import { scans } from "./db/schema";
 import speakerRouter from "./routes/speaker";
 import { serve } from "@hono/node-server";
 import { desc, eq, sql } from "drizzle-orm";
-import { authMiddleware } from "./middleware/auth";
+import { authMiddleware, requireAuth } from "./middleware/auth";
 import { clerkMiddleware } from "@hono/clerk-auth";
 import crypto from "node:crypto";
 
 // ─── Rate Limiter ────────────────────────────────────────────────────
-// Per-route rate limits
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMITS = {
   default: 10,
@@ -60,7 +59,12 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         return origin || "*";
       }
-      return "https://satark-deepfake.vercel.app";
+      // ╔════════════════════════════════════════════════════════════╗
+      // ║  FIX: Return undefined to REJECT unknown origins          ║
+      // ║  OLD: return "https://satark-deepfake.vercel.app"         ║
+      // ║  Problem: Silently allowing unknown origins via fallback   ║
+      // ╚════════════════════════════════════════════════════════════╝
+      return undefined;
     },
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
@@ -68,17 +72,25 @@ app.use(
   }),
 );
 
-// Apply Clerk Middleware
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  FIX: Auth middleware on ALL protected routes                   ║
+// ║  OLD: Speaker routes had NO auth at all                         ║
+// ║  /api/speaker/* now requires Clerk authentication               ║
+// ╚══════════════════════════════════════════════════════════════════╝
 app.use("/scan", clerkMiddleware(), authMiddleware);
 app.use("/scan-upload", clerkMiddleware(), authMiddleware);
-app.use("/scans/*", clerkMiddleware(), authMiddleware);
-app.use("/scans", clerkMiddleware(), authMiddleware);
+app.use("/scans/*", clerkMiddleware(), requireAuth);
+app.use("/scans", clerkMiddleware(), requireAuth);
 app.use("/scan-image", clerkMiddleware(), authMiddleware);
+app.use("/audio/*", clerkMiddleware(), requireAuth);
+
+// FIX: Speaker routes now require auth too
+app.use("/api/speaker/*", clerkMiddleware(), authMiddleware);
 
 app.route("/api/speaker", speakerRouter);
 
 app.get("/", (c) => {
-  return c.text("Satark-AI API is Running! 🚀");
+  return c.text("Satark-AI API is Running!");
 });
 
 app.get("/health-db", async (c) => {
@@ -91,7 +103,6 @@ app.get("/health-db", async (c) => {
   }
 });
 
-// Helper to save scan results (Returns the Numeric ID from Database)
 async function saveScanResult(result: any): Promise<number | null> {
   try {
     const [inserted] = await db
@@ -109,7 +120,7 @@ async function saveScanResult(result: any): Promise<number | null> {
 
     return inserted?.id ?? null;
   } catch (dbError) {
-    console.error("❌ Failed to save scan to DB:", dbError);
+    console.error("Failed to save scan to DB:", dbError);
     return null;
   }
 }
@@ -119,7 +130,10 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
   const data = c.req.valid("json");
   const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
 
-  if (!rateLimiter(data.userId ?? "anonymous", RATE_LIMITS.default)) {
+  // FIX: Use auth userId, not client-supplied
+  const userId = c.get("userId") as string;
+
+  if (!rateLimiter(userId || data.userId || "anonymous", RATE_LIMITS.default)) {
     return c.json({ error: "Rate limit exceeded." }, 429);
   }
 
@@ -127,7 +141,7 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
     const response = await fetch(`${engineUrl}/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, userId }),
     });
 
     if (!response.ok) {
@@ -136,7 +150,7 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
     }
 
     const result = await response.json();
-    const scanId = await saveScanResult(result);
+    const scanId = await saveScanResult({ ...result, userId });
 
     return c.json({ ...result, id: scanId });
   } catch (error) {
@@ -150,13 +164,14 @@ app.post("/scan-upload", async (c) => {
   try {
     const body = await c.req.parseBody();
     const file = body["file"] as File;
-    const userId = (body["userId"] as string) ?? "anonymous";
+
+    // FIX: Use auth userId
+    const userId = (c.get("userId") as string) || "anonymous";
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "File is required" }, 400);
     }
 
-    // Use higher rate limit for scan-upload
     if (!rateLimiter(userId, RATE_LIMITS.scanUpload)) {
       return c.json({ error: "Rate limit exceeded." }, 429);
     }
@@ -182,10 +197,8 @@ app.post("/scan-upload", async (c) => {
       });
     }
 
-    // Base64 Data
     const audioData = Buffer.from(arrayBuffer).toString("base64");
 
-    // Call Local Engine
     const engineUrl = process.env.ENGINE_URL || "http://127.0.0.1:8000";
     const formData = new FormData();
     formData.append("file", file, `upload_${Date.now()}`);
@@ -203,13 +216,12 @@ app.post("/scan-upload", async (c) => {
 
     const result = await response.json();
 
-    // Save with Hash & ID
     const savedId = await saveScanResult({
       ...result,
-      userId: result.userId,
+      userId,
       audioUrl: `uploaded://${file.name}`,
-      fileHash: fileHash,
-      audioData: audioData,
+      fileHash,
+      audioData,
     });
 
     return c.json({ ...result, id: savedId });
@@ -220,7 +232,6 @@ app.post("/scan-upload", async (c) => {
 });
 
 // --- 3. Image Deepfake Scan Route (Cloud) ---
-
 app.post("/scan-image", async (c) => {
   try {
     const apiUrl = process.env.IMAGE_API_URL;
@@ -234,7 +245,9 @@ app.post("/scan-image", async (c) => {
 
     const body = await c.req.parseBody();
     const file = body["file"];
-    const userId = (body["userId"] as string) ?? "anonymous";
+
+    // FIX: Use auth userId
+    const userId = (c.get("userId") as string) || "anonymous";
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "Image file is required" }, 400);
@@ -251,7 +264,6 @@ app.post("/scan-image", async (c) => {
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      console.log(`📡 Forwarding image scan to Cloudflare Proxy: ${apiUrl}`);
       const extRes = await fetch(apiUrl, {
         method: "POST",
         body: formData,
@@ -261,9 +273,7 @@ app.post("/scan-image", async (c) => {
 
       if (!extRes.ok) {
         const errorText = await extRes.text();
-        console.error(
-          `⛔ External API Rejected: ${extRes.status} - ${errorText}`,
-        );
+        console.error(`External API Rejected: ${extRes.status} - ${errorText}`);
         return c.json(
           {
             error: "Analysis Unavailable",
@@ -274,12 +284,7 @@ app.post("/scan-image", async (c) => {
       }
 
       const data = await extRes.json();
-      console.log(
-        "✅ Modulate/Proxy Response:",
-        JSON.stringify(data).slice(0, 200),
-      );
 
-      // ✅ FIX: Protect Database from Corrupted/Loading states from HF Cloudflare
       if (
         data.details?.toLowerCase().includes("updating") ||
         data.details?.toLowerCase().includes("loading") ||
@@ -295,11 +300,10 @@ app.post("/scan-image", async (c) => {
               "Analysis Model is currently updating. Please scan again in 15 seconds.",
             retryAfter: 15,
           },
-          503, // Send 503 so frontend shows loading UI, and DB save is bypassed
+          503,
         );
       }
 
-      // 🔥 Resilient Field Mapping
       const isDeepfake = !!(
         data.is_deepfake ||
         data.is_fake ||
@@ -321,7 +325,7 @@ app.post("/scan-image", async (c) => {
         userId: String(userId),
         audioUrl: `image_scan:${file.name}`,
         isDeepfake,
-        confidenceScore: Math.min(confidence, 1.0), // Ensure 0-1 range
+        confidenceScore: Math.min(confidence, 1.0),
         analysisDetails:
           data.details ||
           data.message ||
@@ -345,7 +349,7 @@ app.post("/scan-image", async (c) => {
           504,
         );
       }
-      console.error(`💥 Network Crash: ${err?.message || err}`);
+      console.error(`Network Crash: ${err?.message || err}`);
       return c.json(
         { error: "Service Busy", details: String(err?.message || err) },
         500,
@@ -366,12 +370,25 @@ app.post("/scan-image", async (c) => {
 // --- 4. Helpers ---
 
 app.get("/audio/:id", async (c) => {
+  // ╔════════════════════════════════════════════════════════════╗
+  // ║  FIX: Auth already applied via middleware above.           ║
+  // ║  Now also verify the audio belongs to the requesting user.║
+  // ║  OLD: Anyone could access any user's audio by ID.         ║
+  // ╚════════════════════════════════════════════════════════════╝
   const id = c.req.param("id");
+  const userId = c.get("userId") as string;
+
   try {
     const scan = await db.query.scans.findFirst({
       where: eq(scans.id, Number(id)),
     });
+
     if (!scan || !scan.audioData) return c.text("Not found", 404);
+
+    // FIX: Only allow users to access their own audio
+    if (scan.userId !== userId) {
+      return c.json({ error: "Forbidden" }, 403);
+    }
 
     const audioBuffer = Buffer.from(scan.audioData, "base64");
     return c.body(audioBuffer, 200, { "Content-Type": "audio/wav" });
@@ -381,8 +398,14 @@ app.get("/audio/:id", async (c) => {
 });
 
 app.get("/scans", async (c) => {
-  const userId = c.req.query("userId");
-  if (!userId) return c.json({ error: "UserId is required" }, 400);
+  // ╔════════════════════════════════════════════════════════════╗
+  // ║  FIX: Use auth userId instead of query parameter           ║
+  // ║  OLD: const userId = c.req.query("userId")                ║
+  // ║  Problem: Anyone could query any user's scan history       ║
+  // ╚════════════════════════════════════════════════════════════╝
+  const userId = c.get("userId") as string;
+
+  if (!userId) return c.json({ error: "Unauthorized" }, 401);
 
   try {
     const history = await db
@@ -398,8 +421,20 @@ app.get("/scans", async (c) => {
 
 app.post("/scans/:id/feedback", async (c) => {
   const id = c.req.param("id");
+  const userId = c.get("userId") as string;
   const { feedback } = await c.req.json();
+
+  // FIX: Verify scan belongs to user before allowing feedback
   try {
+    const scan = await db.query.scans.findFirst({
+      where: eq(scans.id, Number(id)),
+    });
+
+    if (!scan) return c.json({ error: "Scan not found" }, 404);
+    if (scan.userId !== userId) {
+      return c.json({ error: "Forbidden" }, 403);
+    }
+
     await db
       .update(scans)
       .set({ feedback })

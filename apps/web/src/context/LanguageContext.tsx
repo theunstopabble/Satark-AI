@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 type Language = "en" | "hi";
 
@@ -17,12 +23,18 @@ const translations: Translations = {
   "nav.signin": { en: "Sign In", hi: "लॉग इन करें" },
   "nav.getstarted": { en: "Get Started", hi: "शुरू करें" },
   "nav.newscan": { en: "New Scan", hi: "नया स्कैन" },
-  "nav.history": { en: "History", hi: "पुराना इतिहास" },
+  "nav.history": { en: "History", hi: "इतिहास" },
   "nav.profile": { en: "Profile", hi: "प्रोफाइल" },
+  "nav.dashboard": { en: "Dashboard", hi: "डैशबोर्ड" },
+  "nav.features": { en: "Features", hi: "सुविधाएं" },
+  "nav.about": { en: "About", hi: "हमारे बारे में" },
 
   // Dashboard Toggles
   "toggle.detector": { en: "🛡️ Deepfake Detector", hi: "🛡️ डीपफेक डिटेक्टर" },
   "toggle.identity": { en: "🆔 Speaker Identity", hi: "🆔 आवाज़ पहचान" },
+  "toggle.monitor": { en: "🎙️ Live Monitor", hi: "🎙️ लाइव मॉनिटर" },
+  "toggle.game": { en: "🎮 Challenge", hi: "🎮 चुनौती" },
+  "toggle.image": { en: "🖼️ Image Scan", hi: "🖼️ इमेज स्कैन" },
 
   // Deepfake Detector
   "hero.title": { en: "New Analysis", hi: "नई विश्लेषण" },
@@ -66,7 +78,7 @@ const translations: Translations = {
   "si.result.noconfidence": { en: "Low Confidence", hi: "कम विश्वास" },
   "si.result.mismatch": { en: "Identity Mismatch", hi: "पहचान मेल नहीं खाई" },
 
-  // Home/Landing - Hero Section
+  // Landing - Hero
   "landing.hero.badge": {
     en: "Advanced Deepfake Detection System",
     hi: "उन्नत डीपफेक सेंसिंग प्रणाली",
@@ -86,7 +98,7 @@ const translations: Translations = {
   "landing.hero.cta1": { en: "Start Free Scan", hi: "मुफ्त स्कैन शुरू करें" },
   "landing.hero.cta2": { en: "How it Works", hi: "यह कैसे काम करता है" },
 
-  // Home/Landing - Features Section
+  // Landing - Features
   "landing.features.title": {
     en: "How Satark Works",
     hi: "Satark कैसे काम करता है",
@@ -112,7 +124,7 @@ const translations: Translations = {
     hi: "विस्तृत फोरेंसिक PDF प्रमाणपत्र उत्पन्न करें।",
   },
 
-  // Home/Landing - Trust Signals
+  // Landing - Trust
   "landing.trust.title": {
     en: "Trusted by Security Professionals",
     hi: "सुरक्षा पेशेवरों द्वारा भरोसेमंद",
@@ -121,7 +133,7 @@ const translations: Translations = {
   "landing.trust.uptime": { en: "Uptime Guarantee", hi: "अपटाइम वारंटी" },
   "landing.trust.orgs": { en: "Organizations", hi: "संगठन" },
 
-  // Home/Landing - Footer
+  // Footer
   "landing.footer.rights": {
     en: "All rights reserved.",
     hi: "सर्वाधिकार सुरक्षित हैं।",
@@ -139,9 +151,31 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 );
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>("en");
+  // ╔══════════════════════════════════════════════════════════════╗
+  // ║  FIX: Persist language preference to localStorage           ║
+  // ║  OLD: useState("en") — resets to English on every refresh   ║
+  // ║  FIX: Read from localStorage on init, write on change       ║
+  // ╚══════════════════════════════════════════════════════════════╝
+  const [language, setLanguageState] = useState<Language>(() => {
+    try {
+      const stored = localStorage.getItem("satark-language");
+      if (stored === "en" || stored === "hi") return stored;
+    } catch {
+      // localStorage not available
+    }
+    return "en";
+  });
 
-  const t = (key: string) => {
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    try {
+      localStorage.setItem("satark-language", lang);
+    } catch {
+      // localStorage not available
+    }
+  };
+
+  const t = (key: string): string => {
     return translations[key]?.[language] || key;
   };
 

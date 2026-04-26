@@ -2,7 +2,6 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { ScanResultType } from "@repo/shared";
 
-// Helper: SHA-256 hash as hex string
 async function sha256Hex(obj: any): Promise<string> {
   const str = typeof obj === "string" ? obj : JSON.stringify(obj);
   const buf = new TextEncoder().encode(str);
@@ -17,6 +16,7 @@ export const generateScanReport = async (
   userName: string = "User",
 ) => {
   const doc = new jsPDF();
+  const currentYear = new Date().getFullYear();
 
   // --- Official Verification Header ---
   doc.setFontSize(24);
@@ -34,7 +34,7 @@ export const generateScanReport = async (
   doc.setTextColor(100);
   doc.setFont("helvetica", "normal");
   doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 38);
-  doc.text(`Scan ID: ${scan.id}`, 14, 43);
+  doc.text(`Scan ID: ${String(scan.id)}`, 14, 43); // FIX: Ensure string conversion
   doc.line(14, 46, 196, 46);
 
   // --- Scan Summary ---
@@ -79,14 +79,14 @@ export const generateScanReport = async (
       [
         "Image Integrity",
         (scan.features as any)?.integrity !== undefined
-          ? (scan.features as any).integrity
+          ? String((scan.features as any).integrity)
           : "N/A",
         "Assessment of image authenticity.",
       ],
       [
         "Artifact Detection",
         (scan.features as any)?.artifacts !== undefined
-          ? (scan.features as any).artifacts
+          ? String((scan.features as any).artifacts)
           : "N/A",
         "Detection of visual artifacts or manipulations.",
       ],
@@ -155,7 +155,10 @@ export const generateScanReport = async (
     14,
     pageHeight - 16,
   );
-  doc.text("Satark AI © 2024", 180, pageHeight - 16, { align: "right" });
+  // FIX: Dynamic year instead of hardcoded "2024"
+  doc.text(`Satark AI \u00A9 ${currentYear}`, 180, pageHeight - 16, {
+    align: "right",
+  });
   doc.setFontSize(8);
   doc.setTextColor(41, 128, 185);
   doc.text(`Verification Hash: ${hash.slice(0, 48)}...`, 14, pageHeight - 8);

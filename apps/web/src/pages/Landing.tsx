@@ -124,7 +124,11 @@ export function Landing() {
           </div>
         </section>
 
-        {/* Trust Signals */}
+        {/* ╔══════════════════════════════════════════════════════════╗ */}
+        {/* ║  FIX: Trust signals — removed hardcoded fake stats     ║ */}
+        {/* ║  OLD: "10M+", "99.9%", "50+" were misleading           ║ */}
+        {/* ║  Replaced with honest feature highlights                ║ */}
+        {/* ╚══════════════════════════════════════════════════════════╝ */}
         <section className="py-12 bg-background border-t border-b">
           <div className="max-w-4xl mx-auto flex flex-col items-center gap-4">
             <div className="flex items-center gap-2 text-lg font-semibold text-muted-foreground">
@@ -133,23 +137,25 @@ export function Landing() {
             </div>
             <div className="flex gap-8 mt-2">
               <div className="text-center">
-                <div className="text-3xl font-extrabold text-primary">10M+</div>
+                <div className="text-3xl font-extrabold text-primary">
+                  Wav2Vec2
+                </div>
                 <div className="text-sm text-muted-foreground">
-                  {t("landing.trust.files")}
+                  ML Model Powered
                 </div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-extrabold text-primary">
-                  99.9%
+                  NVIDIA
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {t("landing.trust.uptime")}
+                  Vision AI Engine
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-extrabold text-primary">50+</div>
+                <div className="text-3xl font-extrabold text-primary">PWA</div>
                 <div className="text-sm text-muted-foreground">
-                  {t("landing.trust.orgs")}
+                  Offline Ready
                 </div>
               </div>
             </div>

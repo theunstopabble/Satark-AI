@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db";
 import { speakers, scans } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const app = new Hono();
 
@@ -21,7 +21,6 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return Math.round(result * 10000) / 10000;
 }
 
-// Engine URL
 const ENGINE_URL = process.env.ENGINE_URL || "http://127.0.0.1:8000";
 
 app.post("/enroll", async (c) => {
@@ -29,7 +28,14 @@ app.post("/enroll", async (c) => {
     const body = await c.req.parseBody();
     const file = body["file"];
     const name = body["name"] as string;
-    const userId = (body["userId"] as string) || "guest"; // Should be from Auth
+
+    // ╔════════════════════════════════════════════════════════════╗
+    // ║  FIX: Get userId from auth context, NOT from request body ║
+    // ║  OLD: const userId = (body["userId"] as string) || "guest" ║
+    // ║  This was a security vulnerability — any user could        ║
+    // ║  impersonate any other user by sending their userId.       ║
+    // ╚════════════════════════════════════════════════════════════╝
+    const userId = c.get("userId") as string;
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "File required" }, 400);
@@ -40,7 +46,6 @@ app.post("/enroll", async (c) => {
 
     // 1. Send to Engine to get Embedding
     const formData = new FormData();
-    // ✅ FALLBACK FILENAME ADDED HERE
     formData.append("file", file, file.name || "audio_record.wav");
 
     const engineRes = await fetch(`${ENGINE_URL}/embed`, {
@@ -49,6 +54,8 @@ app.post("/enroll", async (c) => {
     });
 
     if (!engineRes.ok) {
+      const errText = await engineRes.text();
+      console.error("Engine embed failed:", errText);
       throw new Error("Engine embedding failed");
     }
 
@@ -58,7 +65,7 @@ app.post("/enroll", async (c) => {
     await db.insert(speakers).values({
       userId,
       name,
-      embedding: embedding, // Stored as JSON
+      embedding: embedding,
     });
 
     return c.json({ success: true, message: "Speaker enrolled successfully" });
@@ -73,13 +80,15 @@ app.post("/verify", async (c) => {
     const body = await c.req.parseBody();
     const file = body["file"];
 
+    // FIX: Get userId from auth context
+    const userId = c.get("userId") as string;
+
     if (!file || !(file instanceof File)) {
       return c.json({ error: "File required" }, 400);
     }
 
     // 1. Get Embedding
     const formData = new FormData();
-    // ✅ FIX: FALLBACK FILENAME ADDED HERE TOO TO PREVENT ENGINE CRASH
     formData.append("file", file, file.name || "audio_verify.wav");
 
     const engineRes = await fetch(`${ENGINE_URL}/embed`, {
@@ -90,10 +99,17 @@ app.post("/verify", async (c) => {
     if (!engineRes.ok) throw new Error("Engine embedding failed");
     const { embedding } = (await engineRes.json()) as { embedding: number[] };
 
-    // 2. Fetch all speakers
-    const allSpeakers = await db.select().from(speakers);
+    // ╔════════════════════════════════════════════════════════════╗
+    // ║  FIX: Only fetch THIS user's speakers, not ALL speakers   ║
+    // ║  OLD: const allSpeakers = await db.select().from(speakers) ║
+    // ║  Problem: User A's voice could match User B's speaker.     ║
+    // ╚════════════════════════════════════════════════════════════╝
+    const userSpeakers = await db
+      .select()
+      .from(speakers)
+      .where(eq(speakers.userId, userId));
 
-    if (!allSpeakers || allSpeakers.length === 0) {
+    if (!userSpeakers || userSpeakers.length === 0) {
       return c.json({
         success: true,
         isMatch: false,
@@ -104,7 +120,7 @@ app.post("/verify", async (c) => {
 
     let bestMatch = { name: "Unknown", score: 0 };
 
-    for (const spk of allSpeakers) {
+    for (const spk of userSpeakers) {
       const storedEmbedding = spk.embedding as number[];
       const score = cosineSimilarity(embedding, storedEmbedding);
 
@@ -113,27 +129,25 @@ app.post("/verify", async (c) => {
       }
     }
 
-    // Threshold
-    const MATCH_THRESHOLD = 0.75; // Tunable
+    const MATCH_THRESHOLD = 0.75;
     const isMatch = bestMatch.score > MATCH_THRESHOLD;
     const details = isMatch
       ? `Matched with ${bestMatch.name} (${(bestMatch.score * 100).toFixed(1)}%)`
       : "No matching speaker found.";
 
     // Log to History
-    const userId = (body["userId"] as string) || "guest";
     try {
       await db.insert(scans).values({
         userId,
         audioUrl: "Speaker Verification (File Upload)",
-        isDeepfake: false, // Always false for verification route
+        isDeepfake: false,
         confidenceScore: bestMatch.score,
         analysisDetails: isMatch
           ? `Identity: ${details}`
           : "Identity Mismatch - Unknown Speaker",
       });
     } catch (dbErr) {
-      console.error("Values logging failed", dbErr);
+      console.error("History logging failed", dbErr);
     }
 
     return c.json({

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Mic, Activity, AlertTriangle, Save } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
@@ -9,31 +9,37 @@ export function LiveMonitor() {
   const client = useApiClient();
 
   const [isListening, setIsListening] = useState(false);
-  const [threatLevel, setThreatLevel] = useState(0); // 0-100
+  const [threatLevel, setThreatLevel] = useState(0);
   const [status, setStatus] = useState<
     "safe" | "analyzing" | "danger" | "idle"
   >("idle");
   const [lastResult, setLastResult] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number>();
   const isListeningRef = useRef(false);
+  const statusRef = useRef<string>("idle");
 
-  // Recording Interval (5 seconds)
   const RECORDING_INTERVAL_MS = 5000;
+  const MAX_RETRIES = 3;
 
-  // Persistent AbortController for API requests
   const controllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     return () => {
       stopListening();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // FIX: Sync status to ref so canvas draw loop reads current value
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   const startListening = async () => {
     if (!userId) {
@@ -43,8 +49,8 @@ export function LiveMonitor() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
 
-      // 1. Setup Visualizer (AudioContext)
       audioContextRef.current = new (
         window.AudioContext || (window as any).webkitAudioContext
       )();
@@ -57,9 +63,9 @@ export function LiveMonitor() {
       setIsListening(true);
       isListeningRef.current = true;
       setStatus("analyzing");
+      setRetryCount(0);
       drawVisualizer();
 
-      // 2. Start recursive chunk processing
       processNextChunk(stream);
     } catch (err) {
       console.error("Microphone access denied:", err);
@@ -67,18 +73,14 @@ export function LiveMonitor() {
     }
   };
 
-  // Refactored: strictly sequential, one MediaRecorder per chunk, no setInterval
-
   const processNextChunk = async (stream: MediaStream) => {
     if (!isListeningRef.current) return;
 
-    // Abort previous API request if still running
     if (controllerRef.current) {
       controllerRef.current.abort();
     }
     controllerRef.current = new AbortController();
 
-    // Pick best mime type
     let mimeType = "audio/webm";
     if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
       mimeType = "audio/webm;codecs=opus";
@@ -94,10 +96,8 @@ export function LiveMonitor() {
     };
 
     recorder.onstop = async () => {
-      // Create File from blob
       const blob = new Blob(localChunks, { type: mimeType });
       if (blob.size < 1000) {
-        // Too small, skip
         if (isListeningRef.current) {
           setTimeout(() => processNextChunk(stream), 200);
         }
@@ -109,8 +109,13 @@ export function LiveMonitor() {
       });
 
       try {
-        // Pass userId as second argument (API expects userId, not options)
-        const result = await client.scanUpload(file, userId ?? "anonymous");
+        // ╔══════════════════════════════════════════════════════════╗
+        // ║  FIX: scanUpload now takes only 1 argument (file)       ║
+        // ║  OLD: client.scanUpload(file, userId ?? "anonymous")    ║
+        // ║  Problem: client API updated to not send userId,        ║
+        // ║  but LiveMonitor was still passing it → type error      ║
+        // ╚══════════════════════════════════════════════════════════╝
+        const result = await client.scanUpload(file);
         if (result.isDeepfake) {
           setStatus("danger");
           setThreatLevel(Math.floor(result.confidenceScore * 100));
@@ -120,31 +125,44 @@ export function LiveMonitor() {
           setThreatLevel(Math.floor(result.confidenceScore * 100));
           setLastResult("Audio seems Real.");
         }
-        setTimeout(() => {
-          // Only revert if we haven't found another danger
-        }, 3000);
-        // Recursively process next chunk if still listening
+        setRetryCount(0); // Reset on success
+
         if (isListeningRef.current) {
           setTimeout(() => processNextChunk(stream), 200);
         }
       } catch (e: any) {
         if (controllerRef.current && e?.name === "AbortError") {
-          // Request was aborted, just exit
           return;
         }
-        // 1. Log error clearly
-        console.error("Live Analysis Failed (connection dropped):", e);
-        // 2. Show notification/toast (simple alert for now)
-        alert("Connection dropped. Retrying in 5 seconds...");
-        // 3. Stop all tracks and reset UI so user can restart
-        if (stream) {
-          stream.getTracks().forEach((t) => t.stop());
+
+        console.error("Live Analysis Failed:", e);
+
+        // ╔══════════════════════════════════════════════════════════╗
+        // ║  FIX: Auto-retry instead of alert() + stop             ║
+        // ║  OLD: alert("Connection dropped...") + stop all tracks  ║
+        // ║  Problem: User had to manually restart monitoring       ║
+        // ║  FIX: Retry up to MAX_RETRIES, then stop gracefully     ║
+        // ╚══════════════════════════════════════════════════════════╝
+        setRetryCount((prev) => prev + 1);
+
+        if (retryCount < MAX_RETRIES) {
+          setLastResult(
+            `Connection issue. Retrying (${retryCount + 1}/${MAX_RETRIES})...`,
+          );
+          if (isListeningRef.current) {
+            setTimeout(() => processNextChunk(stream), 5000);
+          }
+        } else {
+          setLastResult("Connection lost. Monitoring stopped.");
+          // Stop gracefully
+          if (stream) {
+            stream.getTracks().forEach((t) => t.stop());
+          }
+          setIsListening(false);
+          isListeningRef.current = false;
+          setStatus("idle");
+          setThreatLevel(0);
         }
-        setIsListening(false);
-        isListeningRef.current = false;
-        setStatus("idle");
-        setThreatLevel(0);
-        setLastResult(null);
       }
     };
 
@@ -157,20 +175,18 @@ export function LiveMonitor() {
   };
 
   const stopListening = () => {
-    // Abort any in-flight API request
     if (controllerRef.current) {
       controllerRef.current.abort();
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      audioContextRef.current.close().catch(() => {});
     }
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
-
-    // Stop tracks
-    if (sourceRef.current?.mediaStream) {
-      sourceRef.current.mediaStream.getTracks().forEach((t) => t.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
     }
 
     setIsListening(false);
@@ -180,6 +196,11 @@ export function LiveMonitor() {
     setLastResult(null);
   };
 
+  // ╔════════════════════════════════════════════════════════════╗
+  // ║  FIX: Stale closure in drawVisualizer                     ║
+  // ║  OLD: Used `status` directly — captured initial value     ║
+  // ║  FIX: Read from `statusRef.current` instead               ║
+  // ╚════════════════════════════════════════════════════════════╝
   const drawVisualizer = () => {
     if (!analyserRef.current || !canvasRef.current) return;
 
@@ -194,23 +215,24 @@ export function LiveMonitor() {
       animationFrameRef.current = requestAnimationFrame(draw);
       analyserRef.current!.getByteFrequencyData(dataArray);
 
-      ctx.fillStyle = "rgb(10, 10, 10)"; // Dark background
+      ctx.fillStyle = "rgb(10, 10, 10)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const barWidth = (canvas.width / bufferLength) * 2.5;
-      let barHeight;
       let x = 0;
 
-      for (let i = 0; i < bufferLength; i++) {
-        barHeight = dataArray[i];
+      // FIX: Read from ref, not closure variable
+      const currentStatus = statusRef.current;
 
-        // Dynamic Color based on status
-        if (status === "danger") {
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = dataArray[i];
+
+        if (currentStatus === "danger") {
           ctx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`;
-        } else if (status === "safe") {
-          ctx.fillStyle = `rgb(50, ${barHeight + 100}, 255)`; // Blue/Safe
+        } else if (currentStatus === "safe") {
+          ctx.fillStyle = `rgb(50, ${barHeight + 100}, 255)`;
         } else {
-          ctx.fillStyle = `rgb(50, ${barHeight + 100}, 50)`; // Green/Monitoring
+          ctx.fillStyle = `rgb(50, ${barHeight + 100}, 50)`;
         }
 
         ctx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
@@ -225,7 +247,7 @@ export function LiveMonitor() {
     <div className="w-full max-w-4xl mx-auto p-6 flex flex-col items-center gap-8 animate-in fade-in duration-500">
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold tracking-tight flex items-center justify-center gap-2">
-          Live "Satark" Monitor 🎙️
+          Live "Satark" Monitor
           <span className="text-xs font-normal px-2 py-1 bg-primary/10 rounded-full border border-primary/20 text-primary">
             History Enabled
           </span>
@@ -236,7 +258,6 @@ export function LiveMonitor() {
       </div>
 
       <div className="relative w-full aspect-video max-h-[400px] bg-black rounded-3xl border-2 border-primary/20 overflow-hidden shadow-2xl flex items-center justify-center">
-        {/* Status Overlay */}
         <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
           {status === "danger" ? (
             <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse flex items-center gap-1">
@@ -257,7 +278,6 @@ export function LiveMonitor() {
           )}
         </div>
 
-        {/* Visualizer Canvas */}
         <canvas
           ref={canvasRef}
           width={800}
@@ -265,7 +285,6 @@ export function LiveMonitor() {
           className="w-full h-full opacity-80"
         />
 
-        {/* Center Button if Idle */}
         {!isListening && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-20">
             <button
@@ -280,7 +299,6 @@ export function LiveMonitor() {
           </div>
         )}
 
-        {/* Live Finding Result Text */}
         {isListening && lastResult && (
           <div className="absolute bottom-16 left-0 right-0 text-center pointer-events-none">
             <motion.div
@@ -294,7 +312,6 @@ export function LiveMonitor() {
           </div>
         )}
 
-        {/* Threat Meter */}
         {isListening && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800">
             <motion.div
@@ -317,7 +334,6 @@ export function LiveMonitor() {
         )}
       </div>
 
-      {/* Logs / Info */}
       <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono text-muted-foreground opacity-70">
         <div className="p-3 bg-secondary rounded border border-border">
           <span className="block font-bold text-foreground">
@@ -329,7 +345,7 @@ export function LiveMonitor() {
           <span className="block font-bold text-foreground">
             Database Saving
           </span>
-          {isListening ? "✅ Auto-Saving to History" : "-"}
+          {isListening ? "Auto-Saving to History" : "-"}
         </div>
         <div className="p-3 bg-secondary rounded border border-border">
           <span className="block font-bold text-foreground">

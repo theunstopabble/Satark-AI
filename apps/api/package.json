@@ -15,8 +15,7 @@
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.0.0",
-    "pg": "^8.18.0",
-    "postgres": "^3.4.8"
+    "pg": "^8.18.0"
   },
   "devDependencies": {
     "@types/bun": "latest",

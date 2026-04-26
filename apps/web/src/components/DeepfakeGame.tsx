@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Play,
@@ -8,13 +8,20 @@ import {
   Trophy,
   RefreshCw,
   Volume2,
+  WifiOff,
 } from "lucide-react";
 
-// Sample Game Data (Simulated)
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  FIX: Game data — replaced external URLs with local assets      ║
+// ║  OLD: URLs pointed to www2.cs.uic.edu (external, unreliable)    ║
+// ║  Problem: External server may be slow, down, or CORS-blocked   ║
+// ║  FIX: Use local audio files in /public/game-audio/              ║
+// ║  Action needed: Add these files to apps/web/public/game-audio/  ║
+// ╚══════════════════════════════════════════════════════════════════╝
 const GAME_ROUNDS = [
   {
     id: 1,
-    audioUrl: "https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav", // Placeholder
+    audioUrl: "/game-audio/round1.mp3",
     isFake: true,
     difficulty: "Easy",
     explanation: {
@@ -24,7 +31,7 @@ const GAME_ROUNDS = [
   },
   {
     id: 2,
-    audioUrl: "https://www2.cs.uic.edu/~i101/SoundFiles/CantinaBand60.wav", // Placeholder
+    audioUrl: "/game-audio/round2.mp3",
     isFake: false,
     difficulty: "Medium",
     explanation: {
@@ -34,7 +41,7 @@ const GAME_ROUNDS = [
   },
   {
     id: 3,
-    audioUrl: "https://www2.cs.uic.edu/~i101/SoundFiles/StarWars60.wav", // Placeholder
+    audioUrl: "/game-audio/round3.mp3",
     isFake: true,
     difficulty: "Hard",
     explanation: {
@@ -52,18 +59,102 @@ export function DeepfakeGame() {
   >("start");
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
+  const [audioError, setAudioError] = useState(false);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [audioProgress, setAudioProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
 
   const currentData = GAME_ROUNDS[currentRound];
 
-  const handlePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
+  // FIX: Track real audio progress instead of hardcoded 10s animation
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleLoadedMetadata = () => {
+      setAudioDuration(audio.duration || 0);
+      setAudioError(false);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setAudioProgress(0);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
       }
-      setIsPlaying(!isPlaying);
+    };
+
+    const handleError = () => {
+      setAudioError(true);
+      setIsPlaying(false);
+    };
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("error", handleError);
+
+    return () => {
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("error", handleError);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // FIX: Update progress based on actual audio currentTime
+  useEffect(() => {
+    if (isPlaying && audioRef.current) {
+      progressIntervalRef.current = setInterval(() => {
+        if (audioRef.current && audioRef.current.duration) {
+          setAudioProgress(
+            (audioRef.current.currentTime / audioRef.current.duration) * 100,
+          );
+        }
+      }, 100);
+    } else {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    }
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, [isPlaying]);
+
+  // FIX: Reset audio state when round changes
+  useEffect(() => {
+    setAudioError(false);
+    setAudioProgress(0);
+    setIsPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, [currentRound]);
+
+  const handlePlayPause = async () => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      try {
+        // FIX: Handle autoplay policy — play() returns Promise
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch (err) {
+        console.error("Audio playback failed:", err);
+        setAudioError(true);
+      }
     }
   };
 
@@ -72,6 +163,13 @@ export function DeepfakeGame() {
     const isCorrect = isFakeVote === currentData.isFake;
     if (isCorrect) setScore(score + 100);
     setGameState("result");
+
+    // Stop audio on answer
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsPlaying(false);
   };
 
   const nextRound = () => {
@@ -80,6 +178,7 @@ export function DeepfakeGame() {
       setGameState("playing");
       setSelectedAnswer(null);
       setIsPlaying(false);
+      setAudioProgress(0);
     } else {
       setGameState("end");
     }
@@ -91,6 +190,8 @@ export function DeepfakeGame() {
     setGameState("start");
     setSelectedAnswer(null);
     setIsPlaying(false);
+    setAudioProgress(0);
+    setAudioError(false);
   };
 
   return (
@@ -98,7 +199,7 @@ export function DeepfakeGame() {
       {/* Header */}
       <div className="text-center space-y-4 mb-12">
         <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-500">
-          🎮 Spot the Deepfake
+          Spot the Deepfake
         </h2>
         <p className="text-lg text-muted-foreground">
           Test your ears against the AI. Can you tell what's real?
@@ -140,7 +241,8 @@ export function DeepfakeGame() {
             <div className="bg-secondary/80 p-6 rounded-2xl border flex items-center gap-6 shadow-inner">
               <button
                 onClick={handlePlayPause}
-                className="w-16 h-16 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors shadow-lg"
+                disabled={audioError}
+                className="w-16 h-16 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isPlaying ? (
                   <Pause className="text-white fill-current" />
@@ -150,19 +252,24 @@ export function DeepfakeGame() {
               </button>
               <div className="flex-1 space-y-2">
                 <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                  {/* FIX: Progress bar synced to actual audio currentTime */}
                   <motion.div
                     className="h-full bg-primary"
-                    initial={{ width: "0%" }}
-                    animate={{ width: isPlaying ? "100%" : "0%" }}
-                    transition={{
-                      duration: 10,
-                      ease: "linear",
-                      repeat: isPlaying ? Infinity : 0,
-                    }}
+                    style={{ width: `${audioProgress}%` }}
+                    transition={{ duration: 0.1, ease: "linear" }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Volume2 size={12} /> Listening...
+                  {audioError ? (
+                    <>
+                      <WifiOff size={12} /> Audio unavailable
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 size={12} />{" "}
+                      {isPlaying ? "Listening..." : "Press play"}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -170,7 +277,7 @@ export function DeepfakeGame() {
             <audio
               ref={audioRef}
               src={currentData.audioUrl}
-              onEnded={() => setIsPlaying(false)}
+              preload="auto"
               className="hidden"
             />
 
@@ -199,21 +306,25 @@ export function DeepfakeGame() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`p-6 rounded-2xl text-center space-y-4 border-2 ${selectedAnswer === currentData.isFake ? "bg-green-500/10 border-green-500" : "bg-red-500/10 border-red-500"}`}
+                className={`p-6 rounded-2xl text-center space-y-4 border-2 ${
+                  selectedAnswer === currentData.isFake
+                    ? "bg-green-500/10 border-green-500"
+                    : "bg-red-500/10 border-red-500"
+                }`}
               >
                 <h4
-                  className={`text-2xl font-extrabold ${selectedAnswer === currentData.isFake ? "text-green-500" : "text-red-500"}`}
+                  className={`text-2xl font-extrabold ${
+                    selectedAnswer === currentData.isFake
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
                 >
                   {selectedAnswer === currentData.isFake
-                    ? "CORRECT! 🎉"
-                    : "WRONG! ❌"}
+                    ? "CORRECT!"
+                    : "WRONG!"}
                 </h4>
                 <p className="text-muted-foreground">
-                  {typeof currentData.explanation === "object" &&
-                  currentData.explanation !== null
-                    ? currentData.explanation["en"]
-                    : String(currentData.explanation)}{" "}
-                  {/* Fix properly with language context later */}
+                  {currentData.explanation.en}
                 </p>
                 <button
                   onClick={nextRound}
@@ -232,7 +343,7 @@ export function DeepfakeGame() {
             <Trophy className="w-32 h-32 mx-auto text-yellow-400 animate-bounce" />
             <h3 className="text-4xl font-extrabold">Game Over!</h3>
             <div className="text-2xl font-mono p-4 bg-secondary/50 rounded-xl border inline-block">
-              Final Score: {score}
+              Final Score: {score}/{GAME_ROUNDS.length * 100}
             </div>
             <div className="flex justify-center">
               <button

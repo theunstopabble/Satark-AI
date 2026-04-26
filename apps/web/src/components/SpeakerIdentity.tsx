@@ -31,7 +31,12 @@ export function SpeakerIdentity() {
     setResult(null);
 
     try {
-      await enrollSpeaker(file, name, user?.id || "guest");
+      // ╔══════════════════════════════════════════════════════════╗
+      // ║  FIX: enrollSpeaker now takes only 2 args (file, name)  ║
+      // ║  OLD: enrollSpeaker(file, name, user?.id || "guest")    ║
+      // ║  Problem: client API updated, userId now from auth      ║
+      // ╚══════════════════════════════════════════════════════════╝
+      await enrollSpeaker(file, name);
 
       setResult({
         success: true,
@@ -53,7 +58,12 @@ export function SpeakerIdentity() {
     setResult(null);
 
     try {
-      const data = await verifySpeaker(file, user?.id || "guest");
+      // ╔══════════════════════════════════════════════════════════╗
+      // ║  FIX: verifySpeaker now takes only 1 arg (file)         ║
+      // ║  OLD: verifySpeaker(file, user?.id || "guest")          ║
+      // ║  Problem: client API updated, userId now from auth      ║
+      // ╚══════════════════════════════════════════════════════════╝
+      const data = await verifySpeaker(file);
       setResult(data);
     } catch (err) {
       setError(String(err));
@@ -103,7 +113,7 @@ export function SpeakerIdentity() {
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Narendra Modi"
+                  placeholder="e.g. John Doe"
                   className="w-full px-4 py-2 rounded-lg bg-background border border-border focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
@@ -121,7 +131,7 @@ export function SpeakerIdentity() {
               </div>
               <button
                 onClick={handleEnroll}
-                disabled={loading}
+                disabled={loading || !file || !name}
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all disabled:opacity-50"
               >
                 {loading ? (
@@ -154,7 +164,7 @@ export function SpeakerIdentity() {
               </div>
               <button
                 onClick={handleVerify}
-                disabled={loading}
+                disabled={loading || !file}
                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all disabled:opacity-50"
               >
                 {loading ? (
@@ -188,7 +198,7 @@ export function SpeakerIdentity() {
                     ? `Confirmed Match: ${result.name}`
                     : "Speaker does not match any enrolled identity.")}
               </p>
-              {result.score && (
+              {result.score !== undefined && (
                 <div className="mt-2 text-sm font-mono opacity-70">
                   Confidence Score: {(result.score * 100).toFixed(2)}%
                 </div>

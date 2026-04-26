@@ -7,7 +7,6 @@ export const useApiClient = () => {
     import.meta.env.VITE_API_URL || "http://localhost:3000"
   ).replace(/\/+$/, "");
 
-  // Helper for fetch with timeout and strict error parsing
   async function fetchWithTimeout<T>(
     input: RequestInfo,
     init: RequestInit = {},
@@ -22,8 +21,9 @@ export const useApiClient = () => {
         try {
           const err = await res.clone().json();
           throw new Error(err.message || err.error || JSON.stringify(err));
-        } catch {
-          throw new Error(await res.text());
+        } catch (e) {
+          if (e instanceof Error && e.message !== "Failed to fetch") throw e;
+          throw new Error((await res.text()) || `HTTP ${res.status}`);
         }
       }
       return res.json();
@@ -33,6 +33,7 @@ export const useApiClient = () => {
   }
 
   // Scan audio (JSON)
+  // FIX: No longer sending userId in body — backend gets it from Clerk auth
   const scanAudio = async (data: AudioUploadType): Promise<ScanResultType> => {
     const token = await getToken();
     return fetchWithTimeout<ScanResultType>(`${API_URL}/scan`, {
@@ -45,46 +46,28 @@ export const useApiClient = () => {
     });
   };
 
-  // Scan upload (FormData) - Fixed for 2 args: (file, userId)
-  const scanUpload = async (
-    file: File,
-    uid?: string,
-  ): Promise<ScanResultType> => {
+  // Scan upload (FormData)
+  // FIX: No longer appending userId — backend gets it from Clerk auth
+  const scanUpload = async (file: File): Promise<ScanResultType> => {
     const token = await getToken();
-    const targetUserId =
-      typeof uid === "string" && uid !== ""
-        ? uid
-        : typeof userId === "string"
-          ? userId
-          : "anonymous";
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("userId", targetUserId);
 
     return fetchWithTimeout<ScanResultType>(`${API_URL}/scan-upload`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` }, // Let browser set boundary
+      headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
   };
 
-  // Scan image (FormData) - Fixed for 2 args: (file, userId)
-  const scanImage = async (
-    file: File,
-    uid?: string,
-  ): Promise<ScanResultType> => {
+  // Scan image (FormData)
+  // FIX: No longer appending userId — backend gets it from Clerk auth
+  const scanImage = async (file: File): Promise<ScanResultType> => {
     const token = await getToken();
-    const targetUserId =
-      typeof uid === "string" && uid !== ""
-        ? uid
-        : typeof userId === "string"
-          ? userId
-          : "anonymous";
 
     const formData = new FormData();
     formData.append("file", file, file.name || "image.png");
-    formData.append("userId", targetUserId);
 
     return fetchWithTimeout<ScanResultType>(`${API_URL}/scan-image`, {
       method: "POST",
@@ -93,61 +76,46 @@ export const useApiClient = () => {
     });
   };
 
-  // Get scans/history - Fixed for getHistory requirement
-  const getHistory = async (uid: string): Promise<ScanResultType[]> => {
+  // Get scans/history
+  // FIX: No longer sending ?userId= query param — backend gets it from Clerk auth
+  const getHistory = async (): Promise<ScanResultType[]> => {
     const token = await getToken();
-    return fetchWithTimeout<ScanResultType[]>(
-      `${API_URL}/scans?userId=${uid}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
+    return fetchWithTimeout<ScanResultType[]>(`${API_URL}/scans`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
   };
 
-  // Backward compatibility
   const getScans = getHistory;
 
-  // Enroll Speaker - Fixed for 3 args: (file, name, userId)
-  const enrollSpeaker = async (file: File, name: string, uid?: string) => {
+  // Enroll Speaker
+  // FIX: No longer appending userId — backend gets it from Clerk auth
+  const enrollSpeaker = async (file: File, name: string) => {
     const token = await getToken();
-    const targetUserId =
-      typeof uid === "string" && uid !== ""
-        ? uid
-        : typeof userId === "string"
-          ? userId
-          : "anonymous";
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("name", name);
-    formData.append("userId", targetUserId);
 
-    return fetch(`${API_URL}/api/speaker/enroll`, {
+    return fetchWithTimeout<any>(`${API_URL}/api/speaker/enroll`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
-    }).then((r) => r.json());
+    });
   };
 
-  // Verify Speaker - Fixed for 2 args: (file, userId)
-  const verifySpeaker = async (file: File, uid?: string) => {
+  // Verify Speaker
+  // FIX: No longer appending userId — backend gets it from Clerk auth
+  const verifySpeaker = async (file: File) => {
     const token = await getToken();
-    const targetUserId =
-      typeof uid === "string" && uid !== ""
-        ? uid
-        : typeof userId === "string"
-          ? userId
-          : "anonymous";
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("userId", targetUserId);
 
-    return fetch(`${API_URL}/api/speaker/verify`, {
+    return fetchWithTimeout<any>(`${API_URL}/api/speaker/verify`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
-    }).then((r) => r.json());
+    });
   };
 
   // Get audio by scan id
@@ -155,7 +123,10 @@ export const useApiClient = () => {
     const token = await getToken();
     return fetch(`${API_URL}/audio/${scanId}`, {
       headers: { Authorization: `Bearer ${token}` },
-    }).then((r) => r.blob());
+    }).then((r) => {
+      if (!r.ok) throw new Error("Failed to fetch audio");
+      return r.blob();
+    });
   };
 
   // Submit Feedback

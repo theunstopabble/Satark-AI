@@ -5,32 +5,63 @@ import { motion } from "framer-motion";
 import { Image, Upload, ShieldCheck, ShieldAlert, Loader2 } from "lucide-react";
 import { ConfidenceMeter } from "./ConfidenceMeter";
 
+// FIX: Match Cloudflare Worker limit (5MB), not the old 50MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 export function ImageUpload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const { scanImage } = useApiClient();
 
   const mutation = useMutation({
     mutationFn: (file: File) => scanImage(file),
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // FIX: Centralized validation — both file input and drag-drop use this
+  const validateFile = (file: File): string | null => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "image/bmp",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      return "Invalid format. Please upload JPG, PNG, WEBP, GIF, or BMP.";
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max ${MAX_FILE_SIZE / (1024 * 1024)}MB allowed.`;
+    }
+    return null;
+  };
+
+  const processFile = (file: File) => {
+    const error = validateFile(file);
+    if (error) {
+      setValidationError(error);
+      setSelectedFile(null);
+      setPreview(null);
+      return;
+    }
+    setValidationError(null);
     setSelectedFile(file);
     const reader = new FileReader();
     reader.onloadend = () => setPreview(reader.result as string);
     reader.readAsDataURL(file);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processFile(file);
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
-    setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result as string);
-    reader.readAsDataURL(file);
+    processFile(file);
   };
 
   const handleSubmit = () => {
@@ -72,8 +103,9 @@ export function ImageUpload() {
                   Drop image here or{" "}
                   <span className="text-primary font-medium">browse</span>
                 </p>
+                {/* FIX: Correct size limit displayed */}
                 <p className="text-xs text-muted-foreground">
-                  Supports: JPG, PNG, WEBP, GIF, BMP (max 50MB)
+                  Supports: JPG, PNG, WEBP, GIF, BMP (max 5MB)
                 </p>
               </div>
             )}
@@ -85,6 +117,13 @@ export function ImageUpload() {
               className="hidden"
             />
           </div>
+
+          {/* FIX: Validation error display */}
+          {validationError && (
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+              {validationError}
+            </div>
+          )}
 
           {/* File Info */}
           {selectedFile && (
@@ -138,8 +177,8 @@ export function ImageUpload() {
             <div>
               <h3 className="font-bold text-xl">
                 {mutation.data.isDeepfake
-                  ? "⚠️ Deepfake Detected"
-                  : "✅ Image Appears Real"}
+                  ? "Deepfake Detected"
+                  : "Image Appears Real"}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {mutation.data.analysisDetails}

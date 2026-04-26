@@ -16,12 +16,19 @@ export function InstallPWA() {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  const onClick = (evt: any) => {
+  const onClick = async (evt: React.MouseEvent) => {
     evt.preventDefault();
-    if (!promptInstall) {
-      return;
+    if (!promptInstall) return;
+
+    try {
+      // FIX: Handle prompt() Promise and detect user choice
+      const result = await promptInstall.prompt();
+      console.log("PWA install prompt result:", result);
+      // After prompt, hide button if installed
+      setSupportsPWA(false);
+    } catch (err) {
+      console.error("PWA install failed:", err);
     }
-    promptInstall.prompt();
   };
 
   if (!supportsPWA) {
