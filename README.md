@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[![Live App](https://img.shields.io/badge/Live%20App-satark--deepfake.vercel.app-0A0A0A?style=for-the-badge&logo=vercel)](https://satark-deepfake.vercel.app)
+[![Live App](https://img.shields.io/badge/Live%20App-satark--deepfake.vercel.app-0A0A0A?style=for-the-badge&logo=vercel)]
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=for-the-badge&logo=pwa)](https://satark-deepfake.vercel.app)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
@@ -33,12 +33,12 @@
 
 ## 📸 Screenshots
 
-| Dashboard | Mobile View |
-| :---: | :---: |
+|                  Dashboard                   |              Mobile View               |
+| :------------------------------------------: | :------------------------------------: |
 | ![Dashboard](apps/web/public/dashboard.webp) | ![Mobile](apps/web/public/mobile.webp) |
 
-| Live Monitor | Speaker Identity |
-| :---: | :---: |
+|                 Live Monitor                  |               Speaker Identity               |
+| :-------------------------------------------: | :------------------------------------------: |
 | ![Live Monitor](apps/web/public/monitor.webp) | ![Speaker ID](apps/web/public/identity.webp) |
 
 ---
@@ -46,6 +46,7 @@
 ## 🌟 Feature Overview
 
 ### 🕵️ Deepfake Audio Detection
+
 - **Wav2Vec2 Model**: Transformer-based deep learning model fine-tuned for synthetic speech detection.
 - **Multi-Feature Forensics**: Analyzes MFCC coefficients, Spectral Rolloff, and Zero Crossing Rate (ZCR) for composite risk scoring.
 - **Multi-Format Support**: Upload **MP3**, **WAV**, or extract audio from **MP4** video files — handled via `moviepy` fallback.
@@ -54,6 +55,7 @@
 - **Smart Deduplication**: SHA-256 file hashing prevents redundant re-processing of identical files.
 
 ### 🖼️ Deepfake Image Detection — Powered by NVIDIA NIM
+
 Image analysis runs on an entirely separate, serverless pipeline — **independent of the Python engine**.
 
 - **Model**: `meta/llama-3.2-90b-vision-instruct` via **NVIDIA NIM API** — a 90B multimodal vision-language model analyzing spatial artifacts, blending edges, texture inconsistencies, asymmetric features, and lighting anomalies.
@@ -66,29 +68,35 @@ Image analysis runs on an entirely separate, serverless pipeline — **independe
 - **CORS Whitelisting**: Strict origin whitelist (`satark-deepfake.vercel.app`, `localhost:5173`, `localhost:3000`) — no wildcard `*`.
 
 ### 🆔 Voice Biometrics — Speaker Identity
+
 - **Enrollment System**: Enroll a speaker by uploading a reference audio sample. ECAPA-TDNN extracts a 192-dim voice embedding stored securely in PostgreSQL.
 - **Verification**: Match an unknown voice against all enrolled speakers using **Cosine Similarity** (threshold: **0.75**).
 - **Scoped Isolation**: Users only verify against their **own** enrolled speakers — cross-user data access is prevented at the query level.
 - **Auto-History Logging**: Every verification attempt is saved to the scan history table with identity details.
 
 ### 🎙️ Live Monitor
+
 - **Real-Time Protection**: Continuously captures microphone input and processes it in **5-second chunks**.
 - **Instant Feedback**: Each chunk is scanned and flagged as real or synthetic with confidence score.
 - **Auto-Persistence**: All detected threats are saved to the history database automatically.
 
 ### 📊 Analytics Dashboard
+
 - **Detection Ratio Chart**: Donut chart (Recharts PieChart) visualizing Real vs. Fake scan breakdown.
 - **Confidence Bucketing**: Bar chart grouping scans into High (>80%), Medium (50–80%), and Low (<50%) confidence bands.
 - **Summary Cards**: Total Scans, Deepfakes Detected, Real Audio count, and Average Confidence — animated with Framer Motion.
 
 ### 🎮 Deepfake Game (Interactive)
+
 - `DeepfakeGame` component — an interactive challenge mode that tests the user's ability to distinguish real from AI-generated audio samples.
 
 ### 💬 Feedback System
+
 - Users can submit feedback on any scan via `FeedbackWidget`.
 - Stored in the `scans.feedback` column and retrievable via `/scans/:id/feedback`.
 
 ### 📱 PWA & Accessibility
+
 - **Progressive Web App**: Installable on Android/iOS and Desktop via `InstallPWA` component. Powered by **Workbox** service worker with precaching and network-only strategies.
 - **Dark / Light Mode**: Full theme toggle via `theme-provider` and `mode-toggle`.
 - **Multilingual Support**: Language context (`LanguageContext.tsx`) with a language toggle component.
@@ -115,12 +123,12 @@ satark-ai/
 
 ### Service Responsibilities
 
-| Service | Runtime | Role | Port |
-|---|---|---|---|
-| `apps/web` | React 18 + Vite | User interface, PWA shell | 5173 |
-| `apps/api` | Node.js + Hono | Auth, DB, orchestration | 3000 |
-| `apps/engine` | Python 3.11 + FastAPI | Audio deepfake + speaker inference | 8000 |
-| `cloudflare-worker` | Cloudflare Workers (V8) | Image deepfake proxy → NVIDIA NIM | Edge |
+| Service             | Runtime                 | Role                               | Port |
+| ------------------- | ----------------------- | ---------------------------------- | ---- |
+| `apps/web`          | React 18 + Vite         | User interface, PWA shell          | 5173 |
+| `apps/api`          | Node.js + Hono          | Auth, DB, orchestration            | 3000 |
+| `apps/engine`       | Python 3.11 + FastAPI   | Audio deepfake + speaker inference | 8000 |
+| `cloudflare-worker` | Cloudflare Workers (V8) | Image deepfake proxy → NVIDIA NIM  | Edge |
 
 ### Request Flow
 
@@ -160,33 +168,33 @@ satark-ai/
 
 ### Deepfake Detection Pipeline (`detect.py`)
 
-| Signal | Feature Extracted | Anomaly Trigger |
-|---|---|---|
-| Raw waveform | Wav2Vec2 classifier | Model confidence > threshold |
-| Frequency domain | Spectral Rolloff | Rolloff < 2500 Hz |
-| Time domain | Zero Crossing Rate | ZCR > 0.12 |
-| Combined | Composite risk score | Weighted multi-feature fusion |
+| Signal           | Feature Extracted    | Anomaly Trigger               |
+| ---------------- | -------------------- | ----------------------------- |
+| Raw waveform     | Wav2Vec2 classifier  | Model confidence > threshold  |
+| Frequency domain | Spectral Rolloff     | Rolloff < 2500 Hz             |
+| Time domain      | Zero Crossing Rate   | ZCR > 0.12                    |
+| Combined         | Composite risk score | Weighted multi-feature fusion |
 
 ### Speaker Verification Pipeline (`speaker.py`)
 
-| Step | Technology | Detail |
-|---|---|---|
-| Audio loading | Librosa | Resampled to 16 kHz mono |
-| Embedding extraction | SpeechBrain ECAPA-TDNN | 192-dimensional vector |
-| Similarity scoring | Cosine Similarity (TypeScript) | Computed server-side in API |
-| Match decision | Threshold (0.75) | `score > 0.75` → Identity Confirmed |
+| Step                 | Technology                     | Detail                              |
+| -------------------- | ------------------------------ | ----------------------------------- |
+| Audio loading        | Librosa                        | Resampled to 16 kHz mono            |
+| Embedding extraction | SpeechBrain ECAPA-TDNN         | 192-dimensional vector              |
+| Similarity scoring   | Cosine Similarity (TypeScript) | Computed server-side in API         |
+| Match decision       | Threshold (0.75)               | `score > 0.75` → Identity Confirmed |
 
 ### Image Deepfake Pipeline (Cloudflare Worker)
 
-| Step | Component | Detail |
-|---|---|---|
-| Request intake | Cloudflare Worker | Accepts `multipart/form-data` or raw binary |
-| Size enforcement | Worker (double-check) | Pre-read via `content-length`, post-read via `byteLength` — 5MB cap |
-| Image encoding | Worker | `ArrayBuffer → Base64 → Data URI` |
-| Vision inference | NVIDIA NIM API | `meta/llama-3.2-90b-vision-instruct` analyzes artifacts, blending, texture |
-| Response parsing | `extractJSON()` | Strips markdown fences, extracts `{}`, clamps score to `[0,1]` |
-| Timeout control | `AbortController` | 30s hard timeout → 504 response |
-| Output | Normalized JSON | `{ isDeepfake, confidenceScore, details }` |
+| Step             | Component             | Detail                                                                     |
+| ---------------- | --------------------- | -------------------------------------------------------------------------- |
+| Request intake   | Cloudflare Worker     | Accepts `multipart/form-data` or raw binary                                |
+| Size enforcement | Worker (double-check) | Pre-read via `content-length`, post-read via `byteLength` — 5MB cap        |
+| Image encoding   | Worker                | `ArrayBuffer → Base64 → Data URI`                                          |
+| Vision inference | NVIDIA NIM API        | `meta/llama-3.2-90b-vision-instruct` analyzes artifacts, blending, texture |
+| Response parsing | `extractJSON()`       | Strips markdown fences, extracts `{}`, clamps score to `[0,1]`             |
+| Timeout control  | `AbortController`     | 30s hard timeout → 504 response                                            |
+| Output           | Normalized JSON       | `{ isDeepfake, confidenceScore, details }`                                 |
 
 ---
 
@@ -235,17 +243,17 @@ src/
 
 **Key Libraries:**
 
-| Library | Version | Purpose |
-|---|---|---|
-| React | 18 | Core UI framework |
-| Vite | — | Build tool + HMR |
-| TypeScript | 5.3 | Type safety |
-| Tailwind CSS | — | Utility-first styling |
-| Framer Motion | — | Animations |
-| Clerk | — | Auth (JWT) |
-| Recharts | — | Analytics charts |
-| Lucide React | — | Icon set |
-| Workbox | 7.3 | PWA / Service Worker |
+| Library       | Version | Purpose               |
+| ------------- | ------- | --------------------- |
+| React         | 18      | Core UI framework     |
+| Vite          | —       | Build tool + HMR      |
+| TypeScript    | 5.3     | Type safety           |
+| Tailwind CSS  | —       | Utility-first styling |
+| Framer Motion | —       | Animations            |
+| Clerk         | —       | Auth (JWT)            |
+| Recharts      | —       | Analytics charts      |
+| Lucide React  | —       | Icon set              |
+| Workbox       | 7.3     | PWA / Service Worker  |
 
 ---
 
@@ -294,15 +302,15 @@ src/
 
 **API Endpoints:**
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `POST` | `/upload` | ✅ | Upload audio file for deepfake scan |
-| `POST` | `/scan` | ✅ | Scan audio from URL |
-| `GET` | `/scans` | ✅ | Get user's scan history |
-| `GET` | `/audio/:id` | ✅ | Stream audio blob for playback |
-| `POST` | `/scans/:id/feedback` | ✅ | Submit feedback on a scan |
-| `POST` | `/speaker/enroll` | ✅ | Enroll speaker voice print |
-| `POST` | `/speaker/verify` | ✅ | Verify speaker identity |
+| Method | Path                  | Auth | Description                         |
+| ------ | --------------------- | ---- | ----------------------------------- |
+| `POST` | `/upload`             | ✅   | Upload audio file for deepfake scan |
+| `POST` | `/scan`               | ✅   | Scan audio from URL                 |
+| `GET`  | `/scans`              | ✅   | Get user's scan history             |
+| `GET`  | `/audio/:id`          | ✅   | Stream audio blob for playback      |
+| `POST` | `/scans/:id/feedback` | ✅   | Submit feedback on a scan           |
+| `POST` | `/speaker/enroll`     | ✅   | Enroll speaker voice print          |
+| `POST` | `/speaker/verify`     | ✅   | Verify speaker identity             |
 
 ---
 
@@ -322,15 +330,16 @@ apps/engine/
 
 **Engine Endpoints:**
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/` | Health check — `{"status": "AI Engine Running"}` |
-| `POST` | `/scan` | Scan audio via URL (async download → analyze) |
-| `POST` | `/scan-upload` | Scan uploaded audio file |
-| `POST` | `/analyze` | Video/audio analysis with moviepy fallback |
-| `POST` | `/embed` | Generate ECAPA-TDNN speaker embedding vector |
+| Method | Path           | Description                                      |
+| ------ | -------------- | ------------------------------------------------ |
+| `GET`  | `/`            | Health check — `{"status": "AI Engine Running"}` |
+| `POST` | `/scan`        | Scan audio via URL (async download → analyze)    |
+| `POST` | `/scan-upload` | Scan uploaded audio file                         |
+| `POST` | `/analyze`     | Video/audio analysis with moviepy fallback       |
+| `POST` | `/embed`       | Generate ECAPA-TDNN speaker embedding vector     |
 
 **Performance Notes:**
+
 - **Lazy Model Loading**: Models load on first request (not at startup) to prevent OOM crashes on free-tier Render instances.
 - **Thread Executor**: CPU-bound inference runs in `loop.run_in_executor()` to keep FastAPI async event loop non-blocking.
 - **Temp File Cleanup**: All uploaded/extracted files are deleted in `finally` blocks — no disk leaks.
@@ -353,6 +362,7 @@ schedule:
 ```
 
 Pings:
+
 - API: `https://satark-ai-f5t7.onrender.com/`
 - Engine: `https://satark-ai-es1v.onrender.com/`
 
@@ -362,12 +372,12 @@ Pings:
 
 ### Prerequisites
 
-| Requirement | Version |
-|---|---|
-| Node.js | v18+ |
-| Python | 3.11+ |
-| PostgreSQL | 14+ |
-| Docker (optional) | Latest |
+| Requirement       | Version |
+| ----------------- | ------- |
+| Node.js           | v18+    |
+| Python            | 3.11+   |
+| PostgreSQL        | 14+     |
+| Docker (optional) | Latest  |
 
 ---
 
@@ -401,12 +411,14 @@ pip install -r requirements.txt
 Create `.env` files in each app directory:
 
 `apps/web/.env`
+
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_xxxx
 VITE_API_URL=http://localhost:3000
 ```
 
 `apps/api/.env`
+
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/satark_db
 CLERK_SECRET_KEY=sk_test_xxxx
@@ -416,6 +428,7 @@ ENGINE_URL=http://localhost:8000
 ```
 
 `apps/engine/.env`
+
 ```env
 # No required vars — models download from HuggingFace on first run
 ```
@@ -429,13 +442,14 @@ npx drizzle-kit push
 
 **6. Start All Services**
 
-| Terminal | Command |
-|---|---|
-| Terminal 1 — Frontend | `cd apps/web && npm run dev` |
-| Terminal 2 — API Gateway | `cd apps/api && npm run dev` |
-| Terminal 3 — AI Engine | `cd apps/engine && uvicorn main:app --reload --port 8000` |
+| Terminal                 | Command                                                   |
+| ------------------------ | --------------------------------------------------------- |
+| Terminal 1 — Frontend    | `cd apps/web && npm run dev`                              |
+| Terminal 2 — API Gateway | `cd apps/api && npm run dev`                              |
+| Terminal 3 — AI Engine   | `cd apps/engine && uvicorn main:app --reload --port 8000` |
 
 Or run everything at once from root:
+
 ```bash
 npm run dev   # Turborepo orchestrates all three concurrently
 ```
@@ -452,11 +466,13 @@ docker-compose up --build
 ```
 
 Services will start at:
+
 - Frontend: `http://localhost:5173`
 - API Gateway: `http://localhost:3000`
 - AI Engine: `http://localhost:8000`
 
 **Docker security hardening included:**
+
 - Non-root user (`appuser`) in the engine container
 - `no-new-privileges:true` security option on all services
 - `tmpfs` mount for `/tmp` in API and web containers
@@ -465,13 +481,13 @@ Services will start at:
 
 ## ☁️ Deployment
 
-| Service | Platform | URL |
-|---|---|---|
-| Frontend (`apps/web`) | Vercel | [satark-deepfake.vercel.app](https://satark-deepfake.vercel.app) |
-| API Gateway (`apps/api`) | Render | `satark-ai-f5t7.onrender.com` |
-| AI Engine (`apps/engine`) | Render | `satark-ai-es1v.onrender.com` |
-| Image Proxy (Worker) | Cloudflare Workers | `satark-image-proxy.gautamkumar43421.workers.dev` |
-| Database | Supabase / Neon / Railway | PostgreSQL (SSL enabled) |
+| Service                   | Platform                  | URL                                                              |
+| ------------------------- | ------------------------- | ---------------------------------------------------------------- |
+| Frontend (`apps/web`)     | Vercel                    | [satark-deepfake.vercel.app](https://satark-deepfake.vercel.app) |
+| API Gateway (`apps/api`)  | Render                    | `satark-ai-f5t7.onrender.com`                                    |
+| AI Engine (`apps/engine`) | Render                    | `satark-ai-es1v.onrender.com`                                    |
+| Image Proxy (Worker)      | Cloudflare Workers        | `satark-image-proxy.gautamkumar43421.workers.dev`                |
+| Database                  | Supabase / Neon / Railway | PostgreSQL (SSL enabled)                                         |
 
 **Vercel config** (`apps/web/vercel.json`) — SPA routing rewrites all paths to `index.html`.
 
@@ -479,34 +495,34 @@ Services will start at:
 
 ## 🔐 Security Architecture
 
-| Layer | Mechanism | Detail |
-|---|---|---|
-| Authentication | Clerk JWT | All protected routes verify token server-side |
-| Authorization | Context-scoped userId | `userId` extracted from auth token — never trusted from request body |
-| Speaker isolation | DB-level scoping | Verify queries filter by `userId` — no cross-user voice data access |
-| Speaker threshold | Cosine similarity ≥ 0.75 | Strict match threshold prevents false identity confirmations |
-| File handling | UUID-prefixed temp files | Uploaded files stored with random UUID prefix, deleted post-processing |
-| Container | Non-root user | Engine runs as `appuser` — no root privileges inside Docker |
-| Connection pool | pg Pool | Max 20 connections, 5s timeout, graceful error recovery |
-| Image proxy CORS | Origin whitelist | Worker rejects requests from unlisted origins — no wildcard `*` |
-| Image size limit | Double-layer check | Enforced via `content-length` header + actual `byteLength` post-read (5MB cap) |
-| NVIDIA key isolation | Cloudflare Secrets | `NVIDIA_API_KEY` never exposed to frontend — stored in Worker environment only |
+| Layer                | Mechanism                | Detail                                                                         |
+| -------------------- | ------------------------ | ------------------------------------------------------------------------------ |
+| Authentication       | Clerk JWT                | All protected routes verify token server-side                                  |
+| Authorization        | Context-scoped userId    | `userId` extracted from auth token — never trusted from request body           |
+| Speaker isolation    | DB-level scoping         | Verify queries filter by `userId` — no cross-user voice data access            |
+| Speaker threshold    | Cosine similarity ≥ 0.75 | Strict match threshold prevents false identity confirmations                   |
+| File handling        | UUID-prefixed temp files | Uploaded files stored with random UUID prefix, deleted post-processing         |
+| Container            | Non-root user            | Engine runs as `appuser` — no root privileges inside Docker                    |
+| Connection pool      | pg Pool                  | Max 20 connections, 5s timeout, graceful error recovery                        |
+| Image proxy CORS     | Origin whitelist         | Worker rejects requests from unlisted origins — no wildcard `*`                |
+| Image size limit     | Double-layer check       | Enforced via `content-length` header + actual `byteLength` post-read (5MB cap) |
+| NVIDIA key isolation | Cloudflare Secrets       | `NVIDIA_API_KEY` never exposed to frontend — stored in Worker environment only |
 
 ---
 
 ## 📦 Environment Variables Reference
 
-| Variable | App | Required | Description |
-|---|---|---|---|
-| `VITE_CLERK_PUBLISHABLE_KEY` | web | ✅ | Clerk frontend public key |
-| `VITE_API_URL` | web | ✅ | Backend API base URL |
-| `DATABASE_URL` | api | ✅ | PostgreSQL connection string |
-| `CLERK_SECRET_KEY` | api | ✅ | Clerk backend secret key |
-| `CLERK_PUBLISHABLE_KEY` | api | ✅ | Clerk public key (for validation) |
-| `ALLOWED_ORIGINS` | api | ✅ | CORS allowed origins (comma-separated) |
-| `ENGINE_URL` | api | ✅ | FastAPI engine base URL |
-| `IMAGE_API_URL` | api | ✅ | Cloudflare Worker URL for image deepfake proxy |
-| `NVIDIA_API_KEY` | cloudflare-worker | ✅ | NVIDIA NIM API key — set as Cloudflare Worker Secret |
+| Variable                     | App               | Required | Description                                          |
+| ---------------------------- | ----------------- | -------- | ---------------------------------------------------- |
+| `VITE_CLERK_PUBLISHABLE_KEY` | web               | ✅       | Clerk frontend public key                            |
+| `VITE_API_URL`               | web               | ✅       | Backend API base URL                                 |
+| `DATABASE_URL`               | api               | ✅       | PostgreSQL connection string                         |
+| `CLERK_SECRET_KEY`           | api               | ✅       | Clerk backend secret key                             |
+| `CLERK_PUBLISHABLE_KEY`      | api               | ✅       | Clerk public key (for validation)                    |
+| `ALLOWED_ORIGINS`            | api               | ✅       | CORS allowed origins (comma-separated)               |
+| `ENGINE_URL`                 | api               | ✅       | FastAPI engine base URL                              |
+| `IMAGE_API_URL`              | api               | ✅       | Cloudflare Worker URL for image deepfake proxy       |
+| `NVIDIA_API_KEY`             | cloudflare-worker | ✅       | NVIDIA NIM API key — set as Cloudflare Worker Secret |
 
 > **Note on `NVIDIA_API_KEY`**: This is stored via `wrangler secret put NVIDIA_API_KEY` and is **never** in source code or `.env` files. It lives exclusively in Cloudflare's encrypted secret store.
 
@@ -528,9 +544,9 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 **Gautam Kumar** — Lead Developer
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-gautamkr62-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/gautamkr62/)
-[![GitHub](https://img.shields.io/badge/GitHub-theunstopabble-181717?style=for-the-badge&logo=github)](https://github.com/theunstopabble)
-[![Portfolio](https://img.shields.io/badge/Portfolio-gautam--kr.vercel.app-000000?style=for-the-badge&logo=vercel)](https://gautam-kr.vercel.app)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-gautamkr62-0A66C2?style=for-the-badge&logo=linkedin)]
+[![GitHub](https://img.shields.io/badge/GitHub-theunstopabble-181717?style=for-the-badge&logo=github)]
+[![Portfolio](https://img.shields.io/badge/Portfolio-gautam--kr.vercel.app-000000?style=for-the-badge&logo=vercel)]
 
 ---
 
