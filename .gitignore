@@ -102,15 +102,21 @@ coverage/
 *.temp
 .parcel-cache/
 
+# ============================================
 # 🎵 Audio test files (optional - large files)
+# ============================================
 *.mp3
 *.wav
 *.flac
 *.ogg
 !apps/engine/test_samples/
-!apps/engine/test_samples/**
 !apps/web/public/game-audio/
-!apps/web/public/game-audio/**
+!apps/web/public/game-audio/**  
+
+cmd.txt
+apps/engine/tmp_model/
+apps/engine/temp_embed_*.mp3
+apps/engine/temp_audio_*.wav
 
 
 project_status.md 
@@ -120,6 +126,4 @@ MS Elevate AICTE Internship - Project template - Jan 2026.pptx
 extract_ppt.py
 
 test.png
-
-cmd.txt
 
