@@ -11,7 +11,7 @@ type Translations = {
 
 const translations: Translations = {
   // Brand
-  "brand.name": { en: "Satark AI", hi: "सतर्क AI" },
+  "brand.name": { en: "Satark AI", hi: "Satark AI" },
 
   // Navbar
   "nav.signin": { en: "Sign In", hi: "लॉग इन करें" },
@@ -75,19 +75,19 @@ const translations: Translations = {
   // Landing - Hero
   "landing.hero.badge": {
     en: "Advanced Deepfake Detection System",
-    hi: "उन्नत डीपफेक सेंसिंग प्रणाली",
+    hi: "Advanced Deepfake Detection System",
   },
   "landing.hero.headline1": {
     en: "Defending Truth in the",
-    hi: "जनरेटिव AI के इस युग में",
+    hi: "Defending Truth in the",
   },
   "landing.hero.headline2": {
     en: "Age of Generative AI",
-    hi: "सत्य की रक्षा करें",
+    hi: "Age of Generative AI",
   },
   "landing.hero.subheading": {
     en: "Audio. Images. Voices. Detect deepfakes across every format — in real time.",
-    hi: "ऑडियो। छवियां। आवाज़ें। हर फॉर्मेट में डीपफेक का पता लगाएं — रियल टाइम में।",
+    hi: "Audio. Images. Voices. Detect deepfakes across every format — in real time.",
   },
   "landing.hero.cta1": { en: "Start Free Scan", hi: "मुफ्त स्कैन शुरू करें" },
   "landing.hero.cta2": { en: "How it Works", hi: "यह कैसे काम करता है" },
