@@ -216,7 +216,7 @@ app.post("/scan-upload", async (c) => {
 app.post("/scan-image", async (c) => {
   try {
     const apiUrl = process.env.IMAGE_API_URL;
-    const apiKey = process.env.IMAGE_API_KEY;
+    
 
     if (!apiUrl) {
       return c.json(
@@ -244,12 +244,9 @@ app.post("/scan-image", async (c) => {
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     try {
-      console.log(`📡 Forwarding image scan to: ${apiUrl}`);
+      console.log(`📡 Forwarding image scan to Cloudflare Proxy: ${apiUrl}`);
       const extRes = await fetch(apiUrl, {
         method: "POST",
-        headers: {
-          "X-API-Key": apiKey || "proxy-handled",
-        },
         body: formData,
         signal: controller.signal,
       });
