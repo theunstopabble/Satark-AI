@@ -102,19 +102,15 @@ coverage/
 *.temp
 .parcel-cache/
 
-# ============================================
 # 🎵 Audio test files (optional - large files)
-# ============================================
 *.mp3
 *.wav
 *.flac
 *.ogg
 !apps/engine/test_samples/
-
-cmd.txt
-apps/engine/tmp_model/
-apps/engine/temp_embed_*.mp3
-apps/engine/temp_audio_*.wav
+!apps/engine/test_samples/**
+!apps/web/public/game-audio/
+!apps/web/public/game-audio/**
 
 
 project_status.md 
@@ -125,10 +121,5 @@ extract_ppt.py
 
 test.png
 
-# 🎵 Audio test files (optional - large files)
-*.mp3
-*.wav
-*.flac
-*.ogg
-!apps/engine/test_samples/
-!apps/web/public/game-audio/
+cmd.txt
+
