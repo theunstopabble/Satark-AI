@@ -78,15 +78,15 @@ export const generateScanReport = async (
       ["Metric", "Value", "Description"],
       [
         "Image Integrity",
-        scan.features?.integrity !== undefined
-          ? scan.features.integrity
+        (scan.features as any)?.integrity !== undefined
+          ? (scan.features as any).integrity
           : "N/A",
         "Assessment of image authenticity.",
       ],
       [
         "Artifact Detection",
-        scan.features?.artifacts !== undefined
-          ? scan.features.artifacts
+        (scan.features as any)?.artifacts !== undefined
+          ? (scan.features as any).artifacts
           : "N/A",
         "Detection of visual artifacts or manipulations.",
       ],
