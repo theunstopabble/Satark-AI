@@ -67,10 +67,13 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-6d1fb45c'], (function (workbox) { 'use strict';
+define(['./workbox-638e5d2d'], (function (workbox) { 'use strict';
 
-  self.skipWaiting();
-  workbox.clientsClaim();
+  self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+      self.skipWaiting();
+    }
+  });
 
   /**
    * The precacheAndRoute() method efficiently caches and responds to
@@ -81,12 +84,15 @@ define(['./workbox-6d1fb45c'], (function (workbox) { 'use strict';
     "url": "registerSW.js",
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
-    "url": "index.html",
-    "revision": "0.uter8dnnmq4"
+    "url": "/index.html",
+    "revision": "0.g7car9qqec4"
   }], {});
   workbox.cleanupOutdatedCaches();
-  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
-    allowlist: [/^\/$/]
+  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
+    allowlist: [/^\/$/],
+    denylist: [/^\/__clerk/, /^\/\.well-known/]
   }));
+  workbox.registerRoute(/\/api\//, new workbox.NetworkOnly(), 'GET');
+  workbox.registerRoute(/clerk/, new workbox.NetworkOnly(), 'GET');
 
 }));

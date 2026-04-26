@@ -8,7 +8,7 @@ import {
 import { Route, Routes, useNavigate, Navigate, Link } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { useState, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 
 // ── All heavy dashboard components lazy loaded ──
@@ -62,7 +62,22 @@ function LoadingSpinner({ label = "Loading..." }: { label?: string }) {
 // ║  loading spinner dikhao.                                     ║
 // ╚══════════════════════════════════════════════════════════════╝
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { isLoaded } = useSession();
+  const { isLoaded, isSignedIn } = useSession();
+
+  // Sync auth state to localStorage so LandingNavbar can read it
+  // without importing Clerk SDK
+  useEffect(() => {
+    if (!isLoaded) return;
+    try {
+      if (isSignedIn) {
+        localStorage.setItem("satark_auth_flag", "true");
+      } else {
+        localStorage.removeItem("satark_auth_flag");
+      }
+    } catch {
+      // localStorage not available
+    }
+  }, [isLoaded, isSignedIn]);
 
   if (!isLoaded) {
     return <LoadingSpinner label="Verifying session..." />;
@@ -157,7 +172,7 @@ function ClerkRoutes() {
   return (
     <ClerkProvider
       publishableKey={PUBLISHABLE_KEY}
-      navigate={(to) => navigate(to)}
+      navigate={(to: string) => navigate(to)}
     >
       <Navbar />
 

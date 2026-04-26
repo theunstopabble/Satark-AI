@@ -35,11 +35,17 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/__clerk/, /^\/\.well-known/],
         runtimeCaching: [
           {
             urlPattern: /\/api\//,
             handler: "NetworkOnly",
             method: "GET",
+          },
+          {
+            // Ensure Clerk auth requests always bypass Service Worker
+            urlPattern: /clerk/,
+            handler: "NetworkOnly",
           },
         ],
       },
