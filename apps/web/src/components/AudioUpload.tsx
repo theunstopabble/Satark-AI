@@ -28,7 +28,7 @@ import { FakeHeatmap } from "./FakeHeatmap";
 import { generateScanReport } from "@/utils/pdfGenerator";
 
 export function AudioUpload() {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const { scanAudio, scanUpload } = useApiClient();
   const [mode, setMode] = useState<"url" | "file">("url");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -165,9 +165,10 @@ export function AudioUpload() {
   const suspiciousMetric = useMemo(() => {
     if (!mutation.data?.isDeepfake || !mutation.data?.features) return null;
     const { silence_ratio, zcr, mfcc_mean } = mutation.data.features;
-    if (silence_ratio > 0.4) return "silence_ratio";
-    if (zcr > 0.15) return "zcr";
-    if (mfcc_mean < -100) return "mfcc_mean";
+   if (silence_ratio !== undefined && silence_ratio > 0.4)
+     return "silence_ratio";
+   if (zcr !== undefined && zcr > 0.15) return "zcr";
+   if (mfcc_mean !== undefined && mfcc_mean < -100) return "mfcc_mean";
     return null;
   }, [mutation.data]);
 

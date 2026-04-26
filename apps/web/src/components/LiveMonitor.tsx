@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Mic, Activity, AlertTriangle, Save } from "lucide-react";
 import { useAuth } from "@clerk/clerk-react";
@@ -179,7 +179,7 @@ export function LiveMonitor() {
       controllerRef.current.abort();
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current.close().catch(() => { });
     }
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);

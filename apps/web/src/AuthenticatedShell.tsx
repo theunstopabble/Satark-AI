@@ -158,8 +158,6 @@ function ClerkRoutes() {
     <ClerkProvider
       publishableKey={PUBLISHABLE_KEY}
       navigate={(to) => navigate(to)}
-      // FIX: Sign out ke baad landing page pe bhejo, warna undefined behavior
-      afterSignOutUrl="/"
     >
       <Navbar />
 

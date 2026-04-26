@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useUser } from "@clerk/clerk-react";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -10,7 +9,6 @@ import {
 import { useApiClient } from "@/api/client";
 
 export function SpeakerIdentity() {
-  const { user } = useUser();
   const [tab, setTab] = useState<"verify" | "enroll">("verify");
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");

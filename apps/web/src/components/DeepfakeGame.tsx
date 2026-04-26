@@ -60,7 +60,7 @@ export function DeepfakeGame() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
   const [audioError, setAudioError] = useState(false);
-  const [audioDuration, setAudioDuration] = useState(0);
+  const [, setAudioDuration] = useState(0);
   const [audioProgress, setAudioProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(

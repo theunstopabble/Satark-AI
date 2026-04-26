@@ -2,7 +2,8 @@ import { AudioUploadType, ScanResultType } from "@repo/shared";
 import { useAuth } from "@clerk/clerk-react";
 
 export const useApiClient = () => {
-  const { getToken, userId } = useAuth();
+  const { getToken } = useAuth();
+
   const API_URL = (
     import.meta.env.VITE_API_URL || "http://localhost:3000"
   ).replace(/\/+$/, "");

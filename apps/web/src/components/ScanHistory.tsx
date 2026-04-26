@@ -87,7 +87,10 @@ export function ScanHistory() {
                       {/* ║  FIX: Fetch with auth header via blob URL    ║ */}
                       {/* ╚══════════════════════════════════════════════╝ */}
                       {scan.audioUrl.startsWith("uploaded://") && (
-                        <AudioPlayer scanId={scan.id} getToken={getToken} />
+                        <AudioPlayer
+                          scanId={Number(scan.id)}
+                          getToken={getToken}
+                        />
                       )}
                     </div>
                   </div>
