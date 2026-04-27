@@ -176,10 +176,10 @@ export function AudioUpload() {
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* Header Section */}
       <div className="text-center space-y-2">
-        <h1 className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+        <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
           New Analysis
         </h1>
-        <p className="text-muted-foreground text-lg">
+        <p className="text-muted-foreground text-sm sm:text-lg">
           Detect deepfakes with advanced spectral processing.
         </p>
       </div>
@@ -189,7 +189,7 @@ export function AudioUpload() {
           <Activity size={120} />
         </div>
 
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           {/* Tabs */}
           <div className="flex justify-center mb-8">
             <div className="flex space-x-2 p-1.5 bg-muted/50 rounded-xl border">
@@ -198,7 +198,7 @@ export function AudioUpload() {
                   setMode("url");
                   setFileError(null);
                 }}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   mode === "url"
                     ? "bg-background text-primary shadow-sm ring-1 ring-border"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -211,7 +211,7 @@ export function AudioUpload() {
                   setMode("file");
                   setFileError(null);
                 }}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 ${
                   mode === "file"
                     ? "bg-background text-primary shadow-sm ring-1 ring-border"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -266,7 +266,7 @@ export function AudioUpload() {
                   <label className="block text-sm font-medium mb-2 text-foreground/80">
                     Upload Audio File
                   </label>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-10 text-center hover:bg-muted/30 hover:border-primary/50 transition-all cursor-pointer relative group">
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-xl p-6 sm:p-10 text-center hover:bg-muted/30 hover:border-primary/50 transition-all cursor-pointer relative group">
                     <input
                       type="file"
                       accept="audio/*,video/*"
@@ -314,7 +314,7 @@ export function AudioUpload() {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-4 py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-primary/25 active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed transition-all flex justify-center items-center gap-3"
+              className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-4 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg hover:shadow-lg hover:shadow-primary/25 active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed transition-all flex justify-center items-center gap-3"
             >
               {mutation.isPending ? (
                 <>
@@ -355,7 +355,7 @@ export function AudioUpload() {
               </div>
             </div>
 
-            <div className="md:col-span-2 bg-card rounded-2xl border shadow-sm p-6 relative overflow-hidden">
+            <div className="md:col-span-2 bg-card rounded-2xl border shadow-sm p-4 sm:p-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-6 opacity-5">
                 <FileAudio size={120} />
               </div>
@@ -390,7 +390,7 @@ export function AudioUpload() {
 
               {/* Forensic Metrics */}
               <div className="flex flex-col gap-4 mb-6">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                   {featureStats.map((stat, i) => (
                     <div key={i} className="flex-1">
                       <div className="flex items-center justify-between mb-1">
@@ -496,7 +496,7 @@ export function AudioUpload() {
               )}
           </div>
 
-          <div className="flex justify-end gap-3 print:hidden pt-4 border-t">
+          <div className="flex flex-wrap justify-end gap-3 print:hidden pt-4 border-t">
             <button
               onClick={() => {
                 const blob = new Blob(

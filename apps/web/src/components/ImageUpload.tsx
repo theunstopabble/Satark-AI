@@ -72,22 +72,22 @@ export function ImageUpload() {
     <div className="space-y-8 animate-in fade-in duration-700">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+        <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
           Image Analysis
         </h1>
-        <p className="text-muted-foreground text-lg">
+        <p className="text-muted-foreground text-sm sm:text-lg">
           Detect AI-generated or deepfake images with our vision model.
         </p>
       </div>
 
       {/* Upload Card */}
       <div className="bg-card border rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300">
-        <div className="p-8 space-y-6">
+        <div className="p-4 sm:p-8 space-y-6">
           {/* Drop Zone */}
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
-            className="border-2 border-dashed border-muted rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+            className="border-2 border-dashed border-muted rounded-xl p-5 sm:p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
             onClick={() => document.getElementById("image-input")?.click()}
           >
             {preview ? (

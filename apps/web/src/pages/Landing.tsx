@@ -35,7 +35,7 @@ export function Landing() {
         .feature-card:hover { border-color: hsl(var(--primary) / 0.5); }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 text-foreground flex flex-col pt-16">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 text-foreground flex flex-col pt-14 sm:pt-16">
         {/* Hero Section */}
         <main className="flex-1 flex flex-col items-center justify-center text-center p-6 relative overflow-hidden">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
@@ -44,26 +44,26 @@ export function Landing() {
             <div className="inline-block px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-medium mb-4">
               {t("landing.hero.badge")}
             </div>
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/70">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/70">
               {t("landing.hero.headline1")} <br />
               <span className="text-primary">
                 {t("landing.hero.headline2")}
               </span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               {t("landing.hero.subheading")}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
               <Link
                 to="/dashboard"
-                className="px-8 py-4 bg-primary text-primary-foreground rounded-lg text-lg font-bold hover:scale-105 transition-transform shadow-xl shadow-primary/20 flex items-center gap-2"
+                className="px-6 sm:px-8 py-3 sm:py-4 bg-primary text-primary-foreground rounded-lg text-base sm:text-lg font-bold hover:scale-105 transition-transform shadow-xl shadow-primary/20 flex items-center justify-center gap-2"
               >
                 {t("landing.hero.cta1")} <Activity size={20} />
               </Link>
               <a
                 href="#features"
-                className="px-8 py-4 bg-card border hover:bg-muted text-foreground rounded-lg text-lg font-medium transition-colors"
+                className="px-6 sm:px-8 py-3 sm:py-4 bg-card border hover:bg-muted text-foreground rounded-lg text-base sm:text-lg font-medium transition-colors text-center"
               >
                 {t("landing.hero.cta2")}
               </a>
@@ -80,13 +80,13 @@ export function Landing() {
         </main>
 
         {/* Features Grid */}
-        <section id="features" className="py-24 bg-muted/30">
-          <div className="max-w-7xl mx-auto px-6">
-            <h2 className="text-3xl font-bold text-center mb-12 text-foreground">
+        <section id="features" className="py-12 sm:py-24 bg-muted/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12 text-foreground">
               {t("landing.features.title")}
             </h2>
             {/* // grid cols: 4 → 3 (2 rows of 3) */}
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8">
               {[
                 {
                   icon: <FileAudio className="text-blue-500" size={32} />,
@@ -123,12 +123,12 @@ export function Landing() {
               ].map((feature, i) => (
                 <div
                   key={i}
-                  className="feature-card p-8 bg-card rounded-xl border shadow-sm"
+                  className="feature-card p-5 sm:p-8 bg-card rounded-xl border shadow-sm"
                 >
                   <div className="mb-4 p-3 bg-background rounded-lg w-fit border">
                     {feature.icon}
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
+                  <h3 className="text-lg sm:text-xl font-bold mb-2">{feature.title}</h3>
                   <p className="text-muted-foreground">{feature.desc}</p>
                 </div>
               ))}
@@ -147,26 +147,26 @@ export function Landing() {
               <Users className="text-primary" size={24} />
               {t("landing.trust.title")}
             </div>
-            <div className="flex gap-8 mt-2">
+            <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mt-2 px-4">
               <div className="text-center">
-                <div className="text-3xl font-extrabold text-primary">
+                <div className="text-xl sm:text-3xl font-extrabold text-primary">
                   Wav2Vec2
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xs sm:text-sm text-muted-foreground">
                   ML Model Powered
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-extrabold text-primary">
+                <div className="text-xl sm:text-3xl font-extrabold text-primary">
                   NVIDIA
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xs sm:text-sm text-muted-foreground">
                   Vision AI Engine
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-extrabold text-primary">PWA</div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xl sm:text-3xl font-extrabold text-primary">PWA</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">
                   Offline Ready
                 </div>
               </div>

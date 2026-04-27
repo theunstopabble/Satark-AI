@@ -30,7 +30,7 @@ export function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm transition-all duration-300">
       <style>{mobileMenuStyles}</style>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 sm:h-20 flex items-center justify-between">
         <Link
           to="/"
           className="flex items-center gap-2 font-bold text-2xl hover:opacity-80 transition-opacity"
