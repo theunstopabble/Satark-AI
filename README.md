@@ -6,7 +6,7 @@
 
 <div align="center">
 
-[![Live App](https://img.shields.io/badge/Live%20App-satark--deepfake.vercel.app-0A0A0A?style=for-the-badge&logo=vercel)](https://satark-deepfake.vercel.app)
+[![Live App](https://img.shields.io/badge/Live%20App-0A0A0A?style=for-the-badge&logo=vercel)](https://satark-deepfake.vercel.app)
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-5A0FC8?style=for-the-badge&logo=pwa)](https://satark-deepfake.vercel.app)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org)
