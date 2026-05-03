@@ -528,9 +528,9 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 **Gautam Kumar** — Lead Developer
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-gautamkr62-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/gautamkr62/)
-[![GitHub](https://img.shields.io/badge/GitHub-theunstopabble-181717?style=for-the-badge&logo=github)](https://github.com/theunstopabble)
-[![Portfolio](https://img.shields.io/badge/Portfolio-gautam--kr.vercel.app-000000?style=for-the-badge&logo=vercel)](https://gautam-kr.vercel.app)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/gautamkr62/)
+[![GitHub](https://img.shields.io/badge/GitHub-%2324292e.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/theunstopabble)
+[![Portfolio](https://img.shields.io/badge/Portfolio-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white)](https://gautam-kr.vercel.app)
 
 ---
 
