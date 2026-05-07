@@ -193,6 +193,7 @@ app.post("/verify", async (c) => {
       await db.insert(scans).values({
         userId,
         audioUrl: "Speaker Verification (File Upload)",
+        scanType: "audio",
         isDeepfake: false,
         confidenceScore: bestMatch.score,
         analysisDetails: isMatch

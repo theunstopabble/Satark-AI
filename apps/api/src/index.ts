@@ -151,7 +151,7 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
     }
 
     const result = await response.json();
-    const scanId = await saveScanResult({ ...result, userId });
+    const scanId = await saveScanResult({ ...result, userId, scanType: "url" });
 
     return c.json({ ...result, id: scanId });
   } catch (error) {
@@ -411,7 +411,7 @@ app.post("/scan-image", async (c) => {
       return c.json(
         {
           error: "Scan Timeout",
-          details: "AI provider did not respond in 30s.",
+          details: "AI provider did not respond in 50s. Try again — first request may need model cold-start.",
         },
         504,
       );

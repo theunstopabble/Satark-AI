@@ -111,13 +111,14 @@ export function ScanHistory() {
                           : "bg-green-50 text-green-700 border-green-200"
                       }`}
                     >
-                      {scan.audioUrl?.includes("image_scan")
-                        ? scan.isDeepfake
-                          ? "Fake Image"
-                          : "Real Image"
-                        : scan.isDeepfake
-                          ? "Fake Audio"
-                          : "Real Audio"}
+                      {/* FIX: Use scanType field (added in DB schema). Fallback to audioUrl heuristic for legacy rows. */}
+                      {(() => {
+                        const type = scan.scanType || (scan.audioUrl?.includes("image_scan") ? "image" : "audio");
+                        if (type === "image") {
+                          return scan.isDeepfake ? "Fake Image" : "Real Image";
+                        }
+                        return scan.isDeepfake ? "Fake Audio" : "Real Audio";
+                      })()}
                     </span>
                   </div>
                 </div>

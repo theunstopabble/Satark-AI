@@ -111,9 +111,13 @@ export default {
     const requestId = generateRequestId();
     const corsHeaders = getCorsHeaders(request);
 
-    // Reject unknown origins on actual requests (preflight still returns 204)
+    // Reject only if Origin header is explicitly set to an unknown origin.
+    // Server-to-server requests (no Origin header) are allowed since CORS is
+    // a browser security mechanism, not applicable to backend-to-worker calls.
+    const hasOrigin = request.headers.has("Origin");
     if (
       request.method !== "OPTIONS" &&
+      hasOrigin &&
       !corsHeaders["Access-Control-Allow-Origin"]
     ) {
       return new Response(
@@ -254,27 +258,37 @@ export default {
         | { success: true; data: Array<{ label: string; score: number }> }
         | { success: false; status: number; body: string }
       > {
-        const ctrl = new AbortController();
-        const tId = setTimeout(() => ctrl.abort(), HF_TIMEOUT_MS);
-        try {
-          const res = await fetch(modelUrl, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${env.HF_API_TOKEN}`,
-              "Content-Type": mimeType,
-            },
-            body: imageBytes,
-            signal: ctrl.signal,
-          });
-          if (!res.ok) {
-            const txt = await res.text();
-            return { success: false, status: res.status, body: txt };
+        async function attempt(timeoutMs: number): Promise<Response> {
+          const ctrl = new AbortController();
+          const tId = setTimeout(() => ctrl.abort(), timeoutMs);
+          try {
+            return await fetch(modelUrl, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${env.HF_API_TOKEN}`,
+                "Content-Type": mimeType,
+              },
+              body: imageBytes,
+              signal: ctrl.signal,
+            });
+          } finally {
+            clearTimeout(tId);
           }
-          const json = (await res.json()) as Array<{ label: string; score: number }>;
-          return { success: true, data: json };
-        } finally {
-          clearTimeout(tId);
         }
+
+        // Attempt 1: standard timeout
+        let res = await attempt(HF_TIMEOUT_MS);
+        if (res.status === 503 || res.status === 504) {
+          console.log(`[${requestId}] ${label} model cold-start (503). Retrying in 8s...`);
+          await new Promise((r) => setTimeout(r, 8000));
+          res = await attempt(60000); // longer timeout for retry
+        }
+        if (!res.ok) {
+          const txt = await res.text();
+          return { success: false, status: res.status, body: txt };
+        }
+        const json = (await res.json()) as Array<{ label: string; score: number }>;
+        return { success: true, data: json };
       }
 
       // ── MODEL 1: Face Deepfake ──
