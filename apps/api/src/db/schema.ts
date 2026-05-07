@@ -16,10 +16,11 @@ export const scans = pgTable(
     id: serial("id").primaryKey(),
     userId: text("user_id").notNull(),
     audioUrl: text("audio_url").notNull(),
+    scanType: text("scan_type").default("audio"), // "audio" | "image" | "url"
     isDeepfake: boolean("is_deepfake"),
     confidenceScore: doublePrecision("confidence_score"),
     fileHash: text("file_hash"),
-    audioData: text("audio_data"), // Base64 encoded audio
+    audioData: text("audio_data"), // Base64 encoded audio (or image preview)
     analysisDetails: text("analysis_details"),
     createdAt: timestamp("created_at").defaultNow(),
     feedback: text("feedback"),
@@ -29,6 +30,7 @@ export const scans = pgTable(
       userIdIdx: index("scans_user_id_idx").on(table.userId),
       createdAtIdx: index("scans_created_at_idx").on(table.createdAt),
       fileHashIdx: index("scans_file_hash_idx").on(table.fileHash),
+      scanTypeIdx: index("scans_scan_type_idx").on(table.scanType),
     };
   },
 );

@@ -64,6 +64,10 @@ export function ImageUpload() {
     processFile(file);
   };
 
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
   const handleSubmit = () => {
     if (selectedFile) mutation.mutate(selectedFile);
   };
@@ -87,6 +91,7 @@ export function ImageUpload() {
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
+            onDragEnter={handleDragEnter}
             className="border-2 border-dashed border-muted rounded-xl p-5 sm:p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
             onClick={() => document.getElementById("image-input")?.click()}
           >
@@ -174,12 +179,19 @@ export function ImageUpload() {
             ) : (
               <ShieldCheck className="w-8 h-8 text-green-400" />
             )}
-            <div>
-              <h3 className="font-bold text-xl">
-                {mutation.data.isDeepfake
-                  ? "Deepfake Detected"
-                  : "Image Appears Real"}
-              </h3>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-xl">
+                  {mutation.data.isDeepfake
+                    ? "Deepfake Detected"
+                    : "Image Appears Real"}
+                </h3>
+                {(mutation.data as any).isDuplicate && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary uppercase tracking-wide">
+                    Cached
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">
                 {mutation.data.analysisDetails}
               </p>
@@ -188,6 +200,11 @@ export function ImageUpload() {
           <ConfidenceMeter
             score={mutation.data.confidenceScore}
             isDeepfake={mutation.data.isDeepfake}
+            label={
+              mutation.data.isDeepfake
+                ? "AI-GENERATED IMAGE"
+                : "AUTHENTIC IMAGE"
+            }
           />
         </motion.div>
       )}

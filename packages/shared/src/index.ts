@@ -31,6 +31,7 @@ export const ScanResultSchema = z.object({
   id: z.union([z.string(), z.number()]), // FIX: Accept both string and number (DB serial)
   userId: z.string(),
   audioUrl: z.string(),
+  scanType: z.enum(["audio", "image", "url"]).optional().default("audio"),
   isDeepfake: z.boolean(),
   confidenceScore: z.number().min(0).max(1),
   analysisDetails: z.string().optional(),

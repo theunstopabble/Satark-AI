@@ -5,6 +5,33 @@ import { eq, and } from "drizzle-orm";
 
 const app = new Hono();
 
+// ─── Speaker Route Rate Limiter ───────────────────────────────────────
+const speakerRateMap = new Map<string, { count: number; resetAt: number }>();
+const SPEAKER_RATE_LIMIT = 20; // per minute per user
+const SPEAKER_RATE_WINDOW_MS = 60_000;
+
+function speakerRateLimiter(userId: string): boolean {
+  const now = Date.now();
+  const entry = speakerRateMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    speakerRateMap.set(userId, { count: 1, resetAt: now + SPEAKER_RATE_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= SPEAKER_RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of speakerRateMap.entries()) {
+    if (now > val.resetAt) speakerRateMap.delete(key);
+  }
+}, 5 * 60_000);
+// ─────────────────────────────────────────────────────────────────────
+
+const MAX_SPEAKER_AUDIO_SIZE = 10 * 1024 * 1024; // 10MB
+
 // Helper for Cosine Similarity
 function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) return 0.0;
@@ -40,8 +67,21 @@ app.post("/enroll", async (c) => {
     if (!file || !(file instanceof File)) {
       return c.json({ error: "File required" }, 400);
     }
-    if (!name) {
+    if (file.size > MAX_SPEAKER_AUDIO_SIZE) {
+      return c.json(
+        {
+          error: "File too large",
+          details: `Max allowed is ${MAX_SPEAKER_AUDIO_SIZE / (1024 * 1024)}MB.`,
+        },
+        413,
+      );
+    }
+    if (!name || name.trim().length === 0) {
       return c.json({ error: "Name required" }, 400);
+    }
+
+    if (!speakerRateLimiter(userId)) {
+      return c.json({ error: "Rate limit exceeded" }, 429);
     }
 
     // 1. Send to Engine to get Embedding
@@ -85,6 +125,19 @@ app.post("/verify", async (c) => {
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "File required" }, 400);
+    }
+    if (file.size > MAX_SPEAKER_AUDIO_SIZE) {
+      return c.json(
+        {
+          error: "File too large",
+          details: `Max allowed is ${MAX_SPEAKER_AUDIO_SIZE / (1024 * 1024)}MB.`,
+        },
+        413,
+      );
+    }
+
+    if (!speakerRateLimiter(userId)) {
+      return c.json({ error: "Rate limit exceeded" }, 429);
     }
 
     // 1. Get Embedding

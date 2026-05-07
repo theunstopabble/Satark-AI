@@ -19,13 +19,19 @@ export const useApiClient = () => {
       const res = await fetch(input, { ...init, signal: controller.signal });
       clearTimeout(timeout);
       if (!res.ok) {
+        // FIX: Parse JSON safely — if body is HTML/plain text, fall back to text()
+        let errBody: any = null;
         try {
-          const err = await res.clone().json();
-          throw new Error(err.message || err.error || JSON.stringify(err));
-        } catch (e) {
-          if (e instanceof Error && e.message !== "Failed to fetch") throw e;
-          throw new Error((await res.text()) || `HTTP ${res.status}`);
+          errBody = await res.clone().json();
+        } catch {
+          errBody = null;
         }
+        if (errBody) {
+          throw new Error(
+            errBody.message || errBody.error || errBody.details || JSON.stringify(errBody),
+          );
+        }
+        throw new Error((await res.text()) || `HTTP ${res.status}`);
       }
       return res.json();
     } finally {
@@ -70,11 +76,16 @@ export const useApiClient = () => {
     const formData = new FormData();
     formData.append("file", file, file.name || "image.png");
 
-    return fetchWithTimeout<ScanResultType>(`${API_URL}/scan-image`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
+    // FIX: 60s timeout — backend waits 50s for HF cold-start + network overhead
+    return fetchWithTimeout<ScanResultType>(
+      `${API_URL}/scan-image`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+      60000,
+    );
   };
 
   // Get scans/history

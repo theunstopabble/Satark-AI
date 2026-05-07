@@ -13,8 +13,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
-    "turbo": "latest",
     "prettier": "^3.1.0",
+    "turbo": "latest",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
   }
 }

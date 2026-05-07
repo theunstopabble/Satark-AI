@@ -11,15 +11,13 @@ apps/web/nul
 .env.production
 .env.development
 *.env
+apps/api/.env
+apps/web/.env.local
 
 # Project-specific ignores
 SKILL.md
 sample_upload.mp3
 .agent/
-.env.*.local
-.env.production
-.env.development
-*.env
 
 # ============================================
 # 📦 Dependencies

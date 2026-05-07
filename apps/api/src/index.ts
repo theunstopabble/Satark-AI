@@ -7,7 +7,7 @@ import { db } from "./db";
 import { scans } from "./db/schema";
 import speakerRouter from "./routes/speaker";
 import { serve } from "@hono/node-server";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql, and } from "drizzle-orm";
 import { authMiddleware, requireAuth } from "./middleware/auth";
 import { clerkMiddleware } from "@hono/clerk-auth";
 import crypto from "node:crypto";
@@ -110,6 +110,7 @@ async function saveScanResult(result: any): Promise<number | null> {
       .values({
         userId: result.userId,
         audioUrl: result.audioUrl,
+        scanType: result.scanType ?? "audio",
         isDeepfake: result.isDeepfake,
         confidenceScore: result.confidenceScore,
         analysisDetails: result.analysisDetails,
@@ -133,7 +134,7 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
   // FIX: Use auth userId, not client-supplied
   const userId = c.get("userId") as string;
 
-  if (!rateLimiter(userId || data.userId || "anonymous", RATE_LIMITS.default)) {
+  if (!rateLimiter(userId, RATE_LIMITS.default)) {
     return c.json({ error: "Rate limit exceeded." }, 429);
   }
 
@@ -159,17 +160,31 @@ app.post("/scan", zValidator("json", AudioUploadSchema), async (c) => {
   }
 });
 
+// ─── Constants ────────────────────────────────────────────────────────
+const MAX_AUDIO_SIZE = 20 * 1024 * 1024; // 20MB — generous but bounded
+
 // --- 2. Upload Scan Route ---
 app.post("/scan-upload", async (c) => {
   try {
     const body = await c.req.parseBody();
     const file = body["file"] as File;
 
-    // FIX: Use auth userId
-    const userId = (c.get("userId") as string) || "anonymous";
+    // FIX: Use auth userId (middleware guarantees presence)
+    const userId = c.get("userId") as string;
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "File is required" }, 400);
+    }
+
+    // FIX: Enterprise file-size guard before memory allocation
+    if (file.size > MAX_AUDIO_SIZE) {
+      return c.json(
+        {
+          error: "File too large",
+          details: `Max allowed is ${MAX_AUDIO_SIZE / (1024 * 1024)}MB. Received ${(file.size / (1024 * 1024)).toFixed(1)}MB.`,
+        },
+        413,
+      );
     }
 
     if (!rateLimiter(userId, RATE_LIMITS.scanUpload)) {
@@ -185,9 +200,9 @@ app.post("/scan-upload", async (c) => {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // Check Cache
+    // FIX: CRITICAL — cache lookup MUST filter by userId to prevent data leakage
     const existingScan = await db.query.scans.findFirst({
-      where: eq(scans.fileHash, fileHash),
+      where: and(eq(scans.fileHash, fileHash), eq(scans.userId, userId)),
     });
     if (existingScan) {
       return c.json({
@@ -220,6 +235,7 @@ app.post("/scan-upload", async (c) => {
       ...result,
       userId,
       audioUrl: `uploaded://${file.name}`,
+      scanType: "audio",
       fileHash,
       audioData,
     });
@@ -231,137 +247,178 @@ app.post("/scan-upload", async (c) => {
   }
 });
 
+// ─── Constants ────────────────────────────────────────────────────────
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB — must match Cloudflare Worker limit
+
 // --- 3. Image Deepfake Scan Route (Cloud) ---
 app.post("/scan-image", async (c) => {
+  const apiUrl = process.env.IMAGE_API_URL;
+  const apiKey = process.env.IMAGE_API_KEY;
+
+  if (!apiUrl) {
+    return c.json(
+      { error: "Server Configuration Error: IMAGE_API_URL missing" },
+      500,
+    );
+  }
+
   try {
-    const apiUrl = process.env.IMAGE_API_URL;
-
-    if (!apiUrl) {
-      return c.json(
-        { error: "Server Configuration Error: IMAGE_API_URL missing" },
-        500,
-      );
-    }
-
     const body = await c.req.parseBody();
     const file = body["file"];
 
-    // FIX: Use auth userId
-    const userId = (c.get("userId") as string) || "anonymous";
+    // FIX: Use auth userId (middleware guarantees it; "anonymous" is dead code)
+    const userId = c.get("userId") as string;
 
     if (!file || !(file instanceof File)) {
       return c.json({ error: "Image file is required" }, 400);
     }
 
-    if (!rateLimiter(String(userId), RATE_LIMITS.default)) {
+    // FIX: Enterprise file-size guard BEFORE reading into memory
+    if (file.size > MAX_IMAGE_SIZE) {
+      return c.json(
+        {
+          error: "File too large",
+          details: `Max allowed is ${MAX_IMAGE_SIZE / (1024 * 1024)}MB. Received ${(file.size / (1024 * 1024)).toFixed(1)}MB.`,
+        },
+        413,
+      );
+    }
+
+    if (!rateLimiter(userId, RATE_LIMITS.scanUpload)) {
       return c.json({ error: "Rate limit exceeded" }, 429);
     }
 
-    const formData = new FormData();
-    formData.append("file", file, file.name || "image.png");
+    // FIX: SHA-256 image hash for cache deduplication
+    const arrayBuffer = await file.arrayBuffer();
+    const hashArray = Array.from(
+      new Uint8Array(await crypto.subtle.digest("SHA-256", arrayBuffer)),
+    );
+    const fileHash = hashArray
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    // FIX: CRITICAL — cache lookup MUST filter by userId to prevent data leakage
+    const existingScan = await db.query.scans.findFirst({
+      where: and(eq(scans.fileHash, fileHash), eq(scans.userId, userId)),
+    });
+    if (existingScan) {
+      return c.json({
+        ...existingScan,
+        isDuplicate: true,
+        message: "Loaded from cache",
+      });
+    }
+
+    // Re-build FormData because Hono/Node may consume the stream on parseBody
+    const forwardForm = new FormData();
+    forwardForm.append(
+      "file",
+      new Blob([arrayBuffer], { type: file.type || "image/jpeg" }),
+      file.name || "image.jpg",
+    );
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 50000); // 50s for HF cold-start
 
+    let extRes: Response | undefined;
     try {
-      const extRes = await fetch(apiUrl, {
+      extRes = await fetch(apiUrl, {
         method: "POST",
-        body: formData,
+        body: forwardForm,
         signal: controller.signal,
+        headers: apiKey
+          ? { Authorization: `Bearer ${apiKey}` }
+          : undefined,
       });
+    } finally {
       clearTimeout(timeoutId);
+    }
 
-      if (!extRes.ok) {
-        const errorText = await extRes.text();
-        console.error(`External API Rejected: ${extRes.status} - ${errorText}`);
-        return c.json(
-          {
-            error: "Analysis Unavailable",
-            details: `Status: ${extRes.status}`,
-          },
-          502,
-        );
-      }
-
-      const data = await extRes.json();
-
-      if (
-        data.details?.toLowerCase().includes("updating") ||
-        data.details?.toLowerCase().includes("loading") ||
-        (data.confidenceScore === 0 &&
-          !data.isDeepfake &&
-          data.details?.includes("Unknown"))
-      ) {
-        return c.json(
-          {
-            error: "Model Loading",
-            details:
-              data.details ||
-              "Analysis Model is currently updating. Please scan again in 15 seconds.",
-            retryAfter: 15,
-          },
-          503,
-        );
-      }
-
-      const isDeepfake = !!(
-        data.is_deepfake ||
-        data.is_fake ||
-        data.fake ||
-        data.prediction === "fake" ||
-        data.isDeepfake
+    if (!extRes.ok) {
+      const errorText = await extRes.text();
+      console.error(
+        `External API Rejected: ${extRes.status} - ${errorText.slice(0, 500)}`,
       );
-      const confidence = Math.abs(
-        Number(
-          data.confidenceScore ??
-            data.score ??
-            data.confidence ??
-            data.probability ??
-            0,
-        ),
-      );
-
-      const mappedResult = {
-        userId: String(userId),
-        audioUrl: `image_scan:${file.name}`,
-        isDeepfake,
-        confidenceScore: Math.min(confidence, 1.0),
-        analysisDetails:
-          data.details ||
-          data.message ||
-          data.reason ||
-          "Image verification complete",
-        features: {},
-        createdAt: new Date().toISOString(),
-      };
-
-      const savedId = await saveScanResult(mappedResult);
-
-      return c.json({ ...mappedResult, id: savedId ?? Date.now() });
-    } catch (err: any) {
-      clearTimeout(timeoutId);
-      if (err?.name === "AbortError") {
-        return c.json(
-          {
-            error: "Scan Timeout",
-            details: "AI provider did not respond in 30s.",
-          },
-          504,
-        );
-      }
-      console.error(`Network Crash: ${err?.message || err}`);
       return c.json(
-        { error: "Service Busy", details: String(err?.message || err) },
-        500,
+        {
+          error: "Analysis Unavailable",
+          details: `Upstream returned HTTP ${extRes.status}.`,
+        },
+        502,
       );
     }
-  } catch (error: any) {
-    console.error("Critical Scan Error:", error?.message || error);
+
+    // FIX: Safe JSON parse — upstream may return HTML on gateway errors
+    let data: any;
+    const responseText = await extRes.text();
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseErr) {
+      console.error(
+        "Upstream returned non-JSON:",
+        responseText.slice(0, 200),
+      );
+      return c.json(
+        {
+          error: "Unexpected API response",
+          details: "Upstream did not return valid JSON.",
+        },
+        502,
+      );
+    }
+
+    // FIX: Map Cloudflare Worker response exactly (no legacy field guessing)
+    const rawIsDeepfake = typeof data.isDeepfake === "boolean" ? data.isDeepfake : false;
+    const rawConfidence =
+      typeof data.confidenceScore === "number"
+        ? Math.max(0, Math.min(1, data.confidenceScore))
+        : 0;
+    const details =
+      typeof data.details === "string"
+        ? data.details
+        : "Image verification complete";
+
+    // FIX: Confidence calibration — LLM vision models are unreliable below 0.6
+    // Enterprise rule: low-confidence results are treated as uncertain (default safe)
+    const CONFIDENCE_THRESHOLD = 0.6;
+    const isDeepfake = rawConfidence >= CONFIDENCE_THRESHOLD ? rawIsDeepfake : false;
+    const confidence = rawConfidence;
+
+    if (rawConfidence < CONFIDENCE_THRESHOLD) {
+      console.warn(
+        `[scan-image] Low confidence (${rawConfidence.toFixed(2)}) for user ${userId}. ` +
+          `Raw deepfake=${rawIsDeepfake}, defaulted to SAFE.`,
+      );
+    }
+
+    const mappedResult = {
+      userId: String(userId),
+      audioUrl: `image_scan:${file.name}`,
+      scanType: "image" as const,
+      isDeepfake,
+      confidenceScore: confidence,
+      analysisDetails: details,
+      fileHash,
+      features: {},
+      createdAt: new Date().toISOString(),
+    };
+
+    const savedId = await saveScanResult(mappedResult);
+
+    return c.json({ ...mappedResult, id: savedId ?? Date.now() });
+  } catch (err: any) {
+    if (err?.name === "AbortError") {
+      return c.json(
+        {
+          error: "Scan Timeout",
+          details: "AI provider did not respond in 30s.",
+        },
+        504,
+      );
+    }
+    console.error(`Image Scan Crash: ${err?.message || err}`);
     return c.json(
-      {
-        error: "Internal Server Error",
-        details: String(error?.message || error),
-      },
+      { error: "Service Busy", details: String(err?.message || err) },
       500,
     );
   }
@@ -422,7 +479,24 @@ app.get("/scans", async (c) => {
 app.post("/scans/:id/feedback", async (c) => {
   const id = c.req.param("id");
   const userId = c.get("userId") as string;
-  const { feedback } = await c.req.json();
+
+  // FIX: Validate and sanitize feedback payload
+  let feedback: string;
+  try {
+    const body = await c.req.json();
+    if (typeof body.feedback !== "string") {
+      return c.json({ error: "Feedback must be a string" }, 400);
+    }
+    feedback = body.feedback.trim();
+    if (feedback.length === 0) {
+      return c.json({ error: "Feedback cannot be empty" }, 400);
+    }
+    if (feedback.length > 500) {
+      return c.json({ error: "Feedback exceeds 500 characters" }, 400);
+    }
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
 
   // FIX: Verify scan belongs to user before allowing feedback
   try {

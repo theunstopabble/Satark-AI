@@ -1,0 +1,6 @@
+name = "satark-image-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-04-01"
+
+# Secrets to set via wrangler secret put:
+# HF_API_TOKEN = "<your-huggingface-token>"  # Get free at https://huggingface.co/settings/tokens
