@@ -82,12 +82,13 @@ export function Footer() {
         <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>© {currentYear} Satark AI. All rights reserved.</p>
           <div className="flex items-center gap-1">
-            <span>Developed by</span>
+            <span>Built by</span>
             <a
-              href="https://www.linkedin.com/in/gautamkr62/"
+              href="https://gautam-kr.vercel.app"
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener"
               className="font-bold text-primary hover:underline hover:text-primary/80 transition-colors"
+              title="Gautam Kumar — Full-Stack Developer & AI Engineer"
             >
               Gautam Kumar
             </a>
