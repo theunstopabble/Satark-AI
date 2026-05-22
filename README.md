@@ -544,3 +544,14 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
   <strong>Built with ❤️ in India 🇮🇳</strong><br/>
   <sub>Satark-AI — Because the truth still matters.</sub>
 </div>
+
+---
+
+## 🌐 More Projects by Gautam Kumar
+
+| Project | Description | Link |
+|---------|-------------|------|
+| **Portfolio** | Personal portfolio & developer profile | [gautam-kr.vercel.app](https://gautam-kr.vercel.app) |
+| **InterviewMinds** | Enterprise AI mock interview platform | [interviewminds.vercel.app](https://interviewminds.vercel.app) |
+| **SwadKart** | Multi-vendor food delivery platform with AI chatbot | [swadkart.vercel.app](https://swadkart.vercel.app) |
+| **TexFolio** | AI-powered LaTeX resume builder with RBAC | [texfolio.vercel.app](https://texfolio.vercel.app) |
