@@ -156,6 +156,23 @@ satark-ai/
 
 ---
 
+## 📚 Documentation
+
+Complete technical documentation for the Satark-AI platform:
+
+| Document | Description |
+|:---------|:------------|
+| [`docs/AI_DISCOVERABILITY_FRAMEWORKS.md`](docs/AI_DISCOVERABILITY_FRAMEWORKS.md) | AI discoverability & search optimization (AEO, GEO, LLMO, AISEO, E-E-A-T, SEO) |
+| [`docs/API.md`](docs/API.md) | Complete REST API reference (20+ endpoints across 3 services) |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design, service map, request flows, C4 diagrams |
+| [`docs/DB_SCHEMA.md`](docs/DB_SCHEMA.md) | PostgreSQL schema with field-level documentation (Drizzle ORM) |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Production deployment guide (Vercel + Render + Docker) |
+| [`docs/EDGE_CASES.md`](docs/EDGE_CASES.md) | Error handling, graceful degradation, failure modes |
+| [`docs/TECH_STACK.md`](docs/TECH_STACK.md) | Complete technology inventory (40+ packages) |
+| [`docs/WORKFLOW.md`](docs/WORKFLOW.md) | Development workflow, testing strategy, CI/CD pipeline |
+
+---
+
 ## 🧠 AI Models & Algorithms
 
 ### Deepfake Detection Pipeline (`detect.py`)
