@@ -21,6 +21,7 @@
     "@types/bun": "latest",
     "@types/pg": "^8.16.0",
     "drizzle-kit": "^0.31.10",
-    "tsx": "^4.21.0"
+    "esbuild": "0.28.1",
+    "tsx": "^4.22.4"
   }
 }

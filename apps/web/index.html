@@ -42,6 +42,93 @@
     "codeRepository": "https://github.com/theunstopabble/Satark-AI"
   }
   </script>
+
+  <!-- FAQPage Structured Data: Targets featured snippets + People Also Ask -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is Satark-AI?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Satark-AI is a production-grade deepfake detection and speaker verification platform. It uses Wav2Vec2 transformers for audio forensics, NVIDIA NIM Vision AI for image deepfake detection, and ECAPA-TDNN voice biometrics for speaker identity verification."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does Satark-AI detect deepfakes?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Satark-AI analyzes spectral patterns (MFCC, ZCR, Spectral Rolloff) and uses a Wav2Vec2 transformer model fine-tuned on real and synthetic speech to detect AI-generated audio. For images, it uses dual Hugging Face models — a face deepfake detector and an AI-image detector."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is Satark-AI free to use?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, Satark-AI is completely free to use. You can upload audio files, scan images, verify speaker identities, and generate forensic PDF reports without any cost."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What types of media can Satark-AI analyze?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Satark-AI can analyze audio files (MP3, WAV, etc.) for deepfake detection, images for AI-generated content detection, and live microphone audio for real-time deepfake monitoring. It also supports speaker identity verification using voice biometrics."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How accurate is Satark-AI's deepfake detection?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Satark-AI uses state-of-the-art machine learning models including Wav2Vec2 (95M parameters) for audio and NVIDIA NIM Vision (Llama 3.2-90B) for images. Accuracy depends on the input quality, but the platform provides detailed confidence scores with every analysis."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- HowTo Structured Data: Step-by-step for "How to detect a deepfake" -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to Detect a Deepfake with Satark-AI",
+    "description": "Use Satark-AI to detect AI-generated audio, images, and verify speaker identities in a few simple steps.",
+    "step": [
+      {
+        "@type": "HowToStep",
+        "position": 1,
+        "name": "Upload or Record Media",
+        "text": "Upload an audio file, paste an audio URL, upload an image, or use the live microphone to record audio in real-time."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 2,
+        "name": "Run AI Analysis",
+        "text": "Click 'Run Diagnostics' to process your media through Wav2Vec2 spectral analysis, NVIDIA NIM Vision AI, or ECAPA-TDNN voice biometrics."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 3,
+        "name": "Review Results",
+        "text": "View the detailed analysis report with confidence scores, spectral charts, and a clear real or deepfake classification."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 4,
+        "name": "Export Report",
+        "text": "Generate a forensic PDF certificate of the analysis results for documentation, legal evidence, or sharing with your team."
+      }
+    ]
+  }
+  </script>
+
   <!-- Open Graph for Social Sharing -->
   <meta property="og:title" content="Satark-AI | Deepfake Detector" />
   <meta property="og:description"

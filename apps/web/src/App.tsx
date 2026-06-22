@@ -3,6 +3,9 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { Landing } from "./pages/Landing";
+import { Privacy } from "./pages/Privacy";
+import { Terms } from "./pages/Terms";
+import { About } from "./pages/About";
 import { LandingNavbar } from "@/components/LandingNavbar";
 import { Footer } from "@/components/Footer";
 import { Suspense, lazy, Component, type ReactNode } from "react";
@@ -94,8 +97,11 @@ function App() {
         <LanguageProvider>
           <BrowserRouter>
             <Routes>
-              {/* PUBLIC route - zero Clerk dependency */}
+              {/* PUBLIC routes - zero Clerk dependency */}
               <Route path="/" element={<LandingPageShell />} />
+              <Route path="/privacy" element={<><LandingNavbar /><Privacy /><Footer /></>} />
+              <Route path="/terms" element={<><LandingNavbar /><Terms /><Footer /></>} />
+              <Route path="/about" element={<><LandingNavbar /><About /><Footer /></>} />
 
               {/* ALL auth routes - Clerk loads lazily only when user navigates here */}
               <Route
