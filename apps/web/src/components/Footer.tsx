@@ -58,13 +58,19 @@ export function Footer() {
             <h3 className="font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link to="/privacy" className="hover:text-primary transition">Privacy Policy</Link>
+                <Link to="/privacy" className="hover:text-primary transition">
+                  Privacy Policy
+                </Link>
               </li>
               <li>
-                <Link to="/terms" className="hover:text-primary transition">Terms of Service</Link>
+                <Link to="/terms" className="hover:text-primary transition">
+                  Terms of Service
+                </Link>
               </li>
               <li>
-                <Link to="/about" className="hover:text-primary transition">About</Link>
+                <Link to="/about" className="hover:text-primary transition">
+                  About
+                </Link>
               </li>
             </ul>
           </div>
@@ -104,7 +110,8 @@ export function Footer() {
               target="_blank"
               rel="noopener"
               className="font-bold text-primary hover:underline hover:text-primary/80 transition-colors"
-              title="Gautam Kumar — Full-Stack Developer & AI Engineer"
+              title="Gautam Kumar — Full-Stack Developer | Solo-shipped 4 SaaS products | AI integration
+"
             >
               Gautam Kumar
             </a>
