@@ -230,7 +230,7 @@ E-E-A-T is not a direct ranking factor but a framework Google's quality raters u
 
 | Signal                      | Location                              | Details                                                                    |
 | --------------------------- | ------------------------------------- | -------------------------------------------------------------------------- | ---------------------------- | -------------- |
-| Creator profile in JSON-LD  | `apps/web/index.html:24-34`           | Named individual with job title: "Full-Stack Developer                     | Solo-shipped 4 SaaS products | AI integration |
+| Creator profile in JSON-LD  | `apps/web/index.html:24-34`           | Named individual with job title: "Full-Stack Developer                     | Solo-shipped 4 SaaS Products | AI Integration |
 | "                           |
 | LinkedIn profile linked     | `apps/web/index.html:31`              | Professional profile with endorsements and experience                      |
 | GitHub portfolio linked     | `apps/web/index.html:30`              | Multiple AI/ML projects demonstrating domain expertise                     |
