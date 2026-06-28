@@ -28,12 +28,16 @@ jobs:
         run: echo "⚠️  RENDER_ENGINE_DEPLOY_HOOK not set — skipping deploy"
 
   deploy-worker:
-    name: Deploy Worker → Render
+    name: Deploy Worker → Cloudflare
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render Deploy
-        if: ${{ secrets.RENDER_WORKER_DEPLOY_HOOK != '' }}
-        run: curl -X POST "${{ secrets.RENDER_WORKER_DEPLOY_HOOK }}"
-      - name: Skip (no hook configured)
-        if: ${{ secrets.RENDER_WORKER_DEPLOY_HOOK == '' }}
-        run: echo "⚠️  RENDER_WORKER_DEPLOY_HOOK not set — skipping deploy"
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: apps/worker
+          command: deploy
+      - name: Skip (no token configured)
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN == '' }}
+        run: echo "⚠️  CLOUDFLARE_API_TOKEN not set — skipping deploy"
