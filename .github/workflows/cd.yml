@@ -9,35 +9,46 @@ jobs:
     name: Deploy API → Render
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render Deploy
-        if: ${{ secrets.RENDER_API_DEPLOY_HOOK != '' }}
-        run: curl -X POST "${{ secrets.RENDER_API_DEPLOY_HOOK }}"
-      - name: Skip (no hook configured)
-        if: ${{ secrets.RENDER_API_DEPLOY_HOOK == '' }}
-        run: echo "⚠️  RENDER_API_DEPLOY_HOOK not set — skipping deploy"
+      - name: Deploy API
+        run: |
+          HOOK="${{ secrets.RENDER_API_DEPLOY_HOOK }}"
+          if [ -n "$HOOK" ]; then
+            curl -X POST "$HOOK"
+          else
+            echo "RENDER_API_DEPLOY_HOOK not set — skipping"
+          fi
 
   deploy-engine:
     name: Deploy Engine → Render
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render Deploy
-        if: ${{ secrets.RENDER_ENGINE_DEPLOY_HOOK != '' }}
-        run: curl -X POST "${{ secrets.RENDER_ENGINE_DEPLOY_HOOK }}"
-      - name: Skip (no hook configured)
-        if: ${{ secrets.RENDER_ENGINE_DEPLOY_HOOK == '' }}
-        run: echo "⚠️  RENDER_ENGINE_DEPLOY_HOOK not set — skipping deploy"
+      - name: Deploy Engine
+        run: |
+          HOOK="${{ secrets.RENDER_ENGINE_DEPLOY_HOOK }}"
+          if [ -n "$HOOK" ]; then
+            curl -X POST "$HOOK"
+          else
+            echo "RENDER_ENGINE_DEPLOY_HOOK not set — skipping"
+          fi
 
   deploy-worker:
     name: Deploy Worker → Cloudflare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: cloudflare/wrangler-action@v3
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+      - uses: actions/setup-node@v4
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: apps/worker
-          command: deploy
-      - name: Skip (no token configured)
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN == '' }}
-        run: echo "⚠️  CLOUDFLARE_API_TOKEN not set — skipping deploy"
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        working-directory: apps/worker
+      - name: Deploy Worker
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            npx wrangler deploy
+          else
+            echo "CLOUDFLARE_API_TOKEN not set — skipping"
+          fi
+        working-directory: apps/worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
