@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   ClerkProvider,
   SignedIn,
@@ -10,6 +11,15 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useState, useEffect, lazy, Suspense } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+    },
+  },
+});
 
 // ── All heavy dashboard components lazy loaded ──
 const ImageUpload = lazy(() =>
@@ -170,6 +180,7 @@ function ClerkRoutes() {
   }
 
   return (
+    <QueryClientProvider client={queryClient}>
     <ClerkProvider
       publishableKey={PUBLISHABLE_KEY}
       navigate={(to: string) => navigate(to)}
@@ -253,6 +264,7 @@ function ClerkRoutes() {
 
       <Footer />
     </ClerkProvider>
+    </QueryClientProvider>
   );
 }
 

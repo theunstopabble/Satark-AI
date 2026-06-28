@@ -1,4 +1,3 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/context/LanguageContext";
@@ -17,15 +16,6 @@ import { Analytics } from "@vercel/analytics/react";
  */
 
 const AuthenticatedShell = lazy(() => import("./AuthenticatedShell"));
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      retry: 1,
-    },
-  },
-});
 
 // ── FIX: Error Boundary for lazy-loaded route chunks ──
 class RouteErrorBoundary extends Component<
@@ -92,34 +82,32 @@ function LoadingSpinner() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="satark-ui-theme">
-        <LanguageProvider>
-          <BrowserRouter>
-            <Routes>
-              {/* PUBLIC routes - zero Clerk dependency */}
-              <Route path="/" element={<LandingPageShell />} />
-              <Route path="/privacy" element={<><LandingNavbar /><Privacy /><Footer /></>} />
-              <Route path="/terms" element={<><LandingNavbar /><Terms /><Footer /></>} />
-              <Route path="/about" element={<><LandingNavbar /><About /><Footer /></>} />
+    <ThemeProvider defaultTheme="light" storageKey="satark-ui-theme">
+      <LanguageProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* PUBLIC routes - zero Clerk dependency */}
+            <Route path="/" element={<LandingPageShell />} />
+            <Route path="/privacy" element={<><LandingNavbar /><Privacy /><Footer /></>} />
+            <Route path="/terms" element={<><LandingNavbar /><Terms /><Footer /></>} />
+            <Route path="/about" element={<><LandingNavbar /><About /><Footer /></>} />
 
-              {/* ALL auth routes - Clerk loads lazily only when user navigates here */}
-              <Route
-                path="/*"
-                element={
-                  <RouteErrorBoundary>
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <AuthenticatedShell />
-                    </Suspense>
-                  </RouteErrorBoundary>
-                }
-              />
-            </Routes>
-          </BrowserRouter>
-          <Analytics />
-        </LanguageProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+            {/* ALL auth routes - Clerk loads lazily only when user navigates here */}
+            <Route
+              path="/*"
+              element={
+                <RouteErrorBoundary>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <AuthenticatedShell />
+                  </Suspense>
+                </RouteErrorBoundary>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+        <Analytics />
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 

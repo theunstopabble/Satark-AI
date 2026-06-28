@@ -1,0 +1,19 @@
+# Satark-AI: Deepfake Detection & Speaker Verification Platform
+
+## Docs
+- Overview: https://satark-deepfake.vercel.app/
+- Privacy Policy: https://satark-deepfake.vercel.app/privacy
+- Terms of Service: https://satark-deepfake.vercel.app/terms
+- About: https://satark-deepfake.vercel.app/about
+- GitHub: https://github.com/theunstopabble/Satark-AI
+
+## Features
+- Audio deepfake detection via Wav2Vec2 + MFCC spectral analysis
+- Image deepfake detection via NVIDIA NIM Vision AI (Llama 3.2-90B)
+- Speaker identity verification via ECAPA-TDNN voice biometrics
+- Live microphone deepfake monitoring
+- Forensic PDF report generation
+- PWA offline support
+
+## Structure
+Satark-AI is a Turborepo monorepo with 4 services: web (React/Vite), api (FastAPI Python), engine (Node.js/Hono), worker (background jobs).

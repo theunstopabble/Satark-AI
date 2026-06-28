@@ -92,7 +92,6 @@ export function About() {
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     Full-Stack Developer | Solo-shipped 4 SaaS Products | AI Integration
-                    integration
                   </p>
                 </div>
               </div>
