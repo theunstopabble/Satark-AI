@@ -9,19 +9,31 @@ jobs:
     name: Deploy API → Render
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          curl -X POST "${{ secrets.RENDER_API_DEPLOY_HOOK }}"
+      - name: Trigger Render Deploy
+        if: ${{ secrets.RENDER_API_DEPLOY_HOOK != '' }}
+        run: curl -X POST "${{ secrets.RENDER_API_DEPLOY_HOOK }}"
+      - name: Skip (no hook configured)
+        if: ${{ secrets.RENDER_API_DEPLOY_HOOK == '' }}
+        run: echo "⚠️  RENDER_API_DEPLOY_HOOK not set — skipping deploy"
 
   deploy-engine:
     name: Deploy Engine → Render
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          curl -X POST "${{ secrets.RENDER_ENGINE_DEPLOY_HOOK }}"
+      - name: Trigger Render Deploy
+        if: ${{ secrets.RENDER_ENGINE_DEPLOY_HOOK != '' }}
+        run: curl -X POST "${{ secrets.RENDER_ENGINE_DEPLOY_HOOK }}"
+      - name: Skip (no hook configured)
+        if: ${{ secrets.RENDER_ENGINE_DEPLOY_HOOK == '' }}
+        run: echo "⚠️  RENDER_ENGINE_DEPLOY_HOOK not set — skipping deploy"
 
   deploy-worker:
     name: Deploy Worker → Render
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          curl -X POST "${{ secrets.RENDER_WORKER_DEPLOY_HOOK }}"
+      - name: Trigger Render Deploy
+        if: ${{ secrets.RENDER_WORKER_DEPLOY_HOOK != '' }}
+        run: curl -X POST "${{ secrets.RENDER_WORKER_DEPLOY_HOOK }}"
+      - name: Skip (no hook configured)
+        if: ${{ secrets.RENDER_WORKER_DEPLOY_HOOK == '' }}
+        run: echo "⚠️  RENDER_WORKER_DEPLOY_HOOK not set — skipping deploy"
