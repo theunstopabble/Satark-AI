@@ -1,0 +1,27 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-api:
+    name: Deploy API → Render
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -X POST "${{ secrets.RENDER_API_DEPLOY_HOOK }}"
+
+  deploy-engine:
+    name: Deploy Engine → Render
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -X POST "${{ secrets.RENDER_ENGINE_DEPLOY_HOOK }}"
+
+  deploy-worker:
+    name: Deploy Worker → Render
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -X POST "${{ secrets.RENDER_WORKER_DEPLOY_HOOK }}"
