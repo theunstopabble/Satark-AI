@@ -559,7 +559,7 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## 👨‍💻 Author
 
-**Gautam Kumar** — Lead Developer
+**Gautam Kumar** — Full-Stack Developer | Solo-shipped 4 SaaS Products | AI Integration
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/gautamkr62/)
 [![GitHub](https://img.shields.io/badge/GitHub-%2324292e.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/theunstopabble)
