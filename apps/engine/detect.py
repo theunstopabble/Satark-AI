@@ -1,10 +1,5 @@
 import os
-import torch
 import uuid
-import httpx
-import librosa
-import numpy as np
-import soundfile as sf
 import asyncio
 import logging
 from datetime import datetime
@@ -15,20 +10,17 @@ from schemas import AudioUpload, ScanResult
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Directories
 TEMP_DIR = "/tmp/satark_audio"
 os.makedirs(TEMP_DIR, exist_ok=True)
 
-# Configuration
 MODEL_NAME = "garystafford/wav2vec2-deepfake-voice-detector"
 DEVICE = "cpu"
 
-# Singleton Pattern for PyTorch Model
 _registry: dict = {}
 
 
 def _load_audio_model():
-    """Loads Wav2Vec2 model if not already in memory."""
+    import torch
     if "_feature_extractor" in _registry and "_model" in _registry:
         return _registry["_feature_extractor"], _registry["_model"]
 
@@ -51,18 +43,11 @@ def _load_audio_model():
     return _registry.get("_feature_extractor"), _registry.get("_model")
 
 
-# ╔══════════════════════════════════════════════════════════════╗
-# ║  NEW: Wav2Vec2 Model-Based Prediction                       ║
-# ║                                                              ║
-# ║  OLD CODE: _load_audio_model() was defined but NEVER CALLED. ║
-# ║  Analysis was purely heuristic (ZCR, rolloff, silence).      ║
-# ║  The actual ML model was completely ignored.                  ║
-# ║                                                              ║
-# ║  FIX: Run audio through Wav2Vec2 model for real prediction,  ║
-# ║       then combine with heuristic features for composite.    ║
-# ╚══════════════════════════════════════════════════════════════╝
 def _model_predict(path: str) -> Optional[Tuple[bool, float]]:
-    """Runs Wav2Vec2 model inference on audio file."""
+    import torch
+    import librosa
+    import numpy as np
+
     feature_extractor, model = _load_audio_model()
 
     if feature_extractor is None or model is None:
@@ -70,15 +55,12 @@ def _model_predict(path: str) -> Optional[Tuple[bool, float]]:
         return None
 
     try:
-        # Load audio at 16kHz (Wav2Vec2 expected sample rate)
         y, sr = librosa.load(path, sr=16000)
 
-        # Limit to 30 seconds to prevent OOM on long files
         max_samples = 16000 * 30
         if len(y) > max_samples:
             y = y[:max_samples]
 
-        # Run through feature extractor + model
         inputs = feature_extractor(
             y, sampling_rate=16000, return_tensors="pt", padding=True
         )
@@ -88,7 +70,6 @@ def _model_predict(path: str) -> Optional[Tuple[bool, float]]:
             outputs = model(**inputs)
             logits = outputs.logits
             probs = torch.softmax(logits, dim=-1)
-            # Assuming label 1 = deepfake, label 0 = real
             deepfake_prob = float(probs[0][1])
 
         is_deepfake = deepfake_prob > 0.5
@@ -100,7 +81,7 @@ def _model_predict(path: str) -> Optional[Tuple[bool, float]]:
 
 
 async def download_audio(url: str) -> str:
-    """Downloads audio file from URL to temp storage."""
+    import httpx
     ext = os.path.splitext(url)[1].split("?")[0]
     if not ext or len(ext) > 5:
         ext = ".mp3"
@@ -122,7 +103,9 @@ async def download_audio(url: str) -> str:
 
 
 def extract_features(path: str) -> Optional[dict]:
-    """Extracts spectral and temporal features from audio file."""
+    import librosa
+    import numpy as np
+
     try:
         y, sr = librosa.load(path, sr=22050)
 
@@ -161,9 +144,11 @@ def extract_features(path: str) -> Optional[dict]:
 
 
 def analyze_segments(
-    y: np.ndarray, sr: int, chunk_duration: float = 0.5
+    y, sr: int, chunk_duration: float = 0.5
 ) -> List[Dict]:
-    """Breaks audio into chunks and scores each for anomalies."""
+    import librosa
+    import numpy as np
+
     segments = []
     chunk_samples = int(chunk_duration * sr)
     total_samples = len(y)
@@ -199,16 +184,9 @@ def analyze_segments(
 
 
 def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
-    """
-    Performs comprehensive deepfake analysis using:
-    1. Wav2Vec2 ML model prediction (primary)
-    2. Heuristic feature analysis (secondary/composite)
-    3. Combined scoring for final verdict
-    """
     try:
         features = extract_features(path)
 
-        # ── Step 1: ML Model Prediction ──
         model_result = _model_predict(path)
         model_is_deepfake = None
         model_confidence = None
@@ -218,7 +196,6 @@ def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
                 f"ML Model: deepfake={model_is_deepfake}, confidence={model_confidence:.3f}"
             )
 
-        # ── Step 2: Heuristic Analysis ──
         heuristic_confidence = 0.0
         is_deepfake = False
         confidence = 0.0
@@ -237,19 +214,15 @@ def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
                 0.4 * silence_risk + 0.3 * zcr_risk + 0.3 * rolloff_risk
             )
 
-        # ── Step 3: Combine ML + Heuristic ──
         if model_confidence is not None:
-            # ML model available: weight 70% ML, 30% heuristic
             confidence = 0.7 * model_confidence + 0.3 * heuristic_confidence
             is_deepfake = confidence > 0.5
             source_label = "ML+Heuristic"
         else:
-            # No ML model: 100% heuristic
             confidence = heuristic_confidence
             is_deepfake = confidence > 0.5
             source_label = "Heuristic only"
 
-        # Build details string
         reasons = []
         if features:
             silence = features.get("silence_ratio", 0.0)
@@ -301,7 +274,6 @@ def analyze_file_path(path: str, user_id: str, source: str) -> ScanResult:
 
 
 async def analyze_audio(data: AudioUpload) -> ScanResult:
-    """Main entry point for URL based scanning."""
     path = await download_audio(data.audioUrl)
     try:
         loop = asyncio.get_running_loop()

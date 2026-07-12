@@ -11,23 +11,10 @@ logger = logging.getLogger(__name__)
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from schemas import AudioUpload, ScanResult
-from detect import analyze_audio, analyze_file_path, TEMP_DIR
-
-# Initialize Application
-app = FastAPI(title="Satark-AI Engine")
-
-
-# FIX: @app.on_event("startup") is deprecated in FastAPI 0.109+
-# Use lifespan context manager instead
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Startup/Shutdown lifecycle.
-    Warmup is disabled intentionally to save RAM (OOM Prevention).
-    Models will load lazily on the first actual request.
-    """
     logger.info("Engine started. Lazy loading enabled.")
     yield
     logger.info("Engine shutting down.")
@@ -35,14 +22,15 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Satark-AI Engine", lifespan=lifespan)
 
 
+@app.get("/health")
 @app.get("/")
-def home():
-    return {"status": "AI Engine Running", "framework": "FastAPI"}
+def health():
+    return {"status": "ok", "service": "Satark-AI Engine Startup Check"}
 
 
 @app.post("/scan", response_model=ScanResult)
 async def scan_audio(data: AudioUpload):
-    """Endpoint to scan audio provided via URL."""
+    from detect import analyze_audio
     try:
         result = await analyze_audio(data)
         return result
@@ -56,7 +44,7 @@ async def scan_upload(
     file: UploadFile = File(...),
     userId: str = Form(...),
 ):
-    """Endpoint to scan uploaded audio/video files."""
+    from detect import analyze_file_path, TEMP_DIR
     safe_filename = (
         f"{uuid.uuid4().hex}_{os.path.basename(file.filename)}"
         if file.filename
@@ -83,15 +71,13 @@ async def scan_upload(
 
 @app.post("/analyze")
 async def analyze_audio_endpoint(file: UploadFile = File(...)):
-    """
-    Specialized endpoint for complex video/audio analysis involving moviepy fallback.
-    """
-    # FIX: Initialize variables BEFORE try block to avoid NameError in finally
     temp_filename = None
     extracted_audio_path = None
     is_video = False
 
     try:
+        from detect import analyze_file_path, TEMP_DIR
+
         is_video = (
             file.content_type.startswith("video/")
             if getattr(file, "content_type", None)
@@ -104,13 +90,11 @@ async def analyze_audio_endpoint(file: UploadFile = File(...)):
         )
         temp_filename = os.path.join(TEMP_DIR, safe_filename)
 
-        # Save original file
         with open(temp_filename, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
         audio_path = temp_filename
 
-        # If Video, extract audio track
         if is_video:
             try:
                 from moviepy.editor import VideoFileClip
@@ -134,24 +118,12 @@ async def analyze_audio_endpoint(file: UploadFile = File(...)):
                     detail=f"Failed to extract audio from video: {str(video_err)}",
                 )
 
-        # ╔════════════════════════════════════════════════════════════╗
-        # ║  CRITICAL FIX:                                           ║
-        # ║  OLD CODE: await loop.run_in_executor(None, analyze_audio, audio_path) ║
-        # ║                                                          ║
-        # ║  PROBLEM 1: analyze_audio() expects AudioUpload object,  ║
-        # ║             not a string path → TypeError on every call  ║
-        # ║  PROBLEM 2: analyze_audio() is async, but run_in_executor║
-        # ║             cannot run coroutines → silent failure        ║
-        # ║                                                          ║
-        # ║  FIX: Use analyze_file_path() which takes a string path  ║
-        # ║       and is a sync function (works with executor)        ║
-        # ╚════════════════════════════════════════════════════════════╝
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
             analyze_file_path,
             audio_path,
-            "anonymous",  # userId — /analyze endpoint doesn't accept userId
+            "anonymous",
             f"upload://{safe_filename}",
         )
 
@@ -164,7 +136,6 @@ async def analyze_audio_endpoint(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
     finally:
-        # FIX: All variables are guaranteed to be defined (initialized above)
         if temp_filename and os.path.exists(temp_filename):
             os.remove(temp_filename)
         if is_video and extracted_audio_path and os.path.exists(extracted_audio_path):
@@ -173,8 +144,8 @@ async def analyze_audio_endpoint(file: UploadFile = File(...)):
 
 @app.post("/embed")
 async def embed_audio_endpoint(file: UploadFile = File(...)):
-    """Generates voice embedding vector for Speaker Identity verification."""
     from speaker import get_embedding
+    from detect import TEMP_DIR
 
     temp_filename = None
     try:
