@@ -565,6 +565,8 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 [![GitHub](https://img.shields.io/badge/GitHub-%2324292e.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/theunstopabble)
 [![Portfolio](https://img.shields.io/badge/Portfolio-%23000000.svg?style=for-the-badge&logo=vercel&logoColor=white)](https://gautam-kr.vercel.app)
 
+📍 From Sitamarhi, Bihar · Currently in Jaipur, Rajasthan
+
 ---
 
 ## 📄 License
