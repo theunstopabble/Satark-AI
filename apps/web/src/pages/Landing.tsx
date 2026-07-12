@@ -158,10 +158,10 @@ export function Landing() {
               </div>
               <div className="text-center">
                 <div className="text-xl sm:text-3xl font-extrabold text-primary">
-                  NVIDIA
+                  Hugging Face
                 </div>
                 <div className="text-xs sm:text-sm text-muted-foreground">
-                  Vision AI Engine
+                  Deepfake Detection
                 </div>
               </div>
               <div className="text-center">
