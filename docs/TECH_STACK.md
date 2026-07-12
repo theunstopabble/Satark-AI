@@ -18,8 +18,8 @@ Complete technology inventory for the Satark-AI deepfake detection platform.
 └─────────────────────────────────────────────────────────────────┘
 │  EDGE                │  INFRA              │  SHARED               │
 │  Cloudflare Workers  │  Docker Compose     │  Zod Schemas          │
-│  NVIDIA NIM API      │  GitHub Actions     │  Turborepo            │
-│  Llama 3.2-90B       │  Vercel + Render    │  TypeScript Types     │
+│  Hugging Face API    │  GitHub Actions     │  Turborepo            │
+│  Deepfake Models     │  Vercel + Render    │  TypeScript Types     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -118,7 +118,8 @@ Complete technology inventory for the Satark-AI deepfake detection platform.
 |-------|-------------|------------|---------|
 | `garystafford/wav2vec2-deepfake-voice-detector` | Wav2Vec2ForSequenceClassification | ~95M | Audio deepfake detection |
 | `speechbrain/spkrec-ecapa-voxceleb` | ECAPA-TDNN | ~6M | Speaker embedding (192-dim) |
-| `meta/llama-3.2-90b-vision-instruct` | Llama 3.2 Vision | 90B | Image deepfake detection (via NVIDIA NIM) |
+| `prithivMLmods/deepfake-detector-model-v1` | HF Deepfake | — | Face deepfake detection (via Hugging Face) |
+| `umm-maybe/ai-image-detector` | HF AI-Image | — | General AI-image detection (via Hugging Face) |
 
 ### System Dependencies (Docker)
 
@@ -134,13 +135,13 @@ Complete technology inventory for the Satark-AI deepfake detection platform.
 | Technology | Purpose |
 |-----------|---------|
 | Cloudflare Workers (V8 isolate) | Serverless edge compute |
-| NVIDIA NIM API | Vision-language model inference |
+| Hugging Face Inference API | Image classification (deepfake + AI-image detection) |
 | AbortController | Request timeout management |
 | Web Crypto API | (Available if needed for hashing) |
 
 ### Why Cloudflare Workers for Image Detection?
 
-- **API key isolation:** NVIDIA key stored in Cloudflare Secrets, never exposed to frontend
+- **API key isolation:** Hugging Face token stored in Cloudflare Secrets, never exposed to frontend
 - **Edge latency:** Runs close to user, reduces round-trip time
 - **No cold start:** V8 isolates start in <5ms (vs Render's 30–60s)
 - **Independent scaling:** Image pipeline doesn't compete with audio engine for resources
@@ -219,7 +220,7 @@ Consumed by both `apps/api` and `apps/web` for end-to-end type safety.
 | Rate limiting | In-memory Map with TTL |
 | CORS | Strict origin whitelist (no wildcard) |
 | Container security | Non-root user, no-new-privileges |
-| Secret management | Cloudflare Worker Secrets (NVIDIA key) |
+| Secret management | Cloudflare Worker Secrets (HF token) |
 
 ---
 

@@ -161,7 +161,7 @@ Upload an audio file for deepfake analysis. Supports SHA-256 deduplication.
 
 ### `POST /scan-image`
 
-Upload an image for deepfake detection via the Cloudflare Worker → NVIDIA NIM pipeline.
+Upload an image for deepfake detection via the Cloudflare Worker → Hugging Face Inference API pipeline.
 
 **Auth:** ✅ Required
 

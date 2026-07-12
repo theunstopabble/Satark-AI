@@ -51,8 +51,8 @@ export function About() {
               </li>
               <li>
                 <strong>Image Detection:</strong> Dual Hugging Face models —
-                face deepfake detector + AI-image classifier powered by NVIDIA
-                NIM (Llama 3.2-90B Vision)
+                face deepfake detector (prithivMLmods/deepfake-detector-model-v1)
+                + AI-image classifier (umm-maybe/ai-image-detector)
               </li>
               <li>
                 <strong>Speaker Verification:</strong> SpeechBrain ECAPA-TDNN

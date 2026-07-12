@@ -265,19 +265,19 @@ User                    Frontend                 API Gateway          AI Engine
 ### 2. Image Deepfake Scan
 
 ```
-User                    Frontend              Cloudflare Worker      NVIDIA NIM
+User                    Frontend              Cloudflare Worker      Hugging Face API
  │                         │                         │                    │
  │── Upload image ────────▶│                         │                    │
- │                         │── Convert to base64     │                    │
+ │                         │── Convert to binary     │                    │
  │                         │── POST (FormData) ─────▶│                    │
  │                         │                         │── Validate origin  │
  │                         │                         │── Check size ≤5MB  │
- │                         │                         │── Encode base64    │
- │                         │                         │── POST /chat ─────▶│
- │                         │                         │                    │── Vision
- │                         │                         │                    │   analysis
+ │                         │                         │── Forward image    │
+ │                         │                         │── POST inference ─▶│
+ │                         │                         │                    │── Model
+ │                         │                         │                    │   inference
  │                         │                         │◀── Response ───────│
- │                         │                         │── Parse JSON       │
+ │                         │                         │── Parse labels     │
  │                         │◀── { isDeepfake, ... } ─│                    │
  │                         │                         │                    │
  │◀── Show verdict ────────│                         │                    │

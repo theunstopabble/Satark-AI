@@ -1,8 +1,8 @@
 """
 Image Deepfake Detection Logic.
 
-Image detection has been migrated to the Cloudflare Worker
-which proxies to NVIDIA NIM Vision API (Llama 3.2 90B).
+Image detection is handled by the Cloudflare Worker
+which proxies to the Hugging Face Inference API (prithivMLmods/deepfake-detector-model-v1 + umm-maybe/ai-image-detector).
 
 This module is intentionally empty.
 See: Cloudflare Worker for image analysis endpoints.

@@ -180,10 +180,10 @@ cd cloudflare-worker
 wrangler deploy
 ```
 
-4. Set the NVIDIA API key as a secret:
+4. Set the Hugging Face API token as a secret:
 ```bash
-wrangler secret put NVIDIA_API_KEY
-# Paste your NVIDIA NIM API key when prompted
+wrangler secret put HF_API_TOKEN
+# Paste your Hugging Face API token when prompted (get one at https://huggingface.co/settings/tokens)
 ```
 
 ### Worker Configuration
@@ -191,7 +191,7 @@ wrangler secret put NVIDIA_API_KEY
 The worker handles:
 - CORS origin whitelist (`satark-deepfake.vercel.app`, `localhost:5173`, `localhost:3000`)
 - File size enforcement (5 MB, double-checked)
-- Base64 encoding of images for NVIDIA NIM
+- Forwarding image binary to Hugging Face Inference API
 - 30-second timeout via `AbortController`
 - Robust JSON parsing (strips markdown fences, clamps scores)
 
@@ -282,5 +282,5 @@ Services start at:
 | `CORS error` in browser | Origin not in whitelist | Add origin to `ALLOWED_ORIGINS` env var |
 | `Unauthorized` on all routes | Clerk keys mismatch | Ensure `CLERK_SECRET_KEY` matches the Clerk app |
 | `DB connection timeout` | Wrong `DATABASE_URL` or SSL issue | Verify connection string, ensure `?sslmode=require` |
-| Image scan returns 504 | NVIDIA NIM cold start | Retry after 30s. First request to NIM can be slow. |
+| Image scan returns 504 | Hugging Face cold start | Retry after 30s. First request to HF can be slow. |
 | `File too large` | Exceeds size limit | Audio: 20MB, Image: 5MB, Speaker: 10MB |

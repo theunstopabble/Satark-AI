@@ -16,7 +16,7 @@ satark-ai/
 │   └── engine/            → FastAPI + Python 3.11 (AI Engine)
 ├── packages/
 │   └── shared/            → Zod schemas + TypeScript types
-├── cloudflare-worker/     → satark-image-proxy (NVIDIA NIM proxy)
+├── cloudflare-worker/     → satark-image-proxy (Hugging Face proxy)
 ├── docker-compose.yml     → Local multi-service orchestration
 ├── turbo.json             → Turborepo pipeline config
 └── package.json           → Root workspace config
@@ -31,7 +31,7 @@ satark-ai/
 | `apps/web` | React 18 + Vite | UI, PWA shell, client-side routing | 5173 | Vercel |
 | `apps/api` | Node.js 20 + Hono | Auth, DB, orchestration, rate limiting | 3000 | Render |
 | `apps/engine` | Python 3.11 + FastAPI | Audio deepfake detection, speaker embeddings | 8000 | Render |
-| `cloudflare-worker` | Cloudflare Workers (V8) | Image proxy → NVIDIA NIM API | Edge | Cloudflare |
+| `cloudflare-worker` | Cloudflare Workers (V8) | Image proxy → Hugging Face API | Edge | Cloudflare |
 
 ---
 
@@ -61,9 +61,9 @@ satark-ai/
            │ HTTP (FormData)                           │ HTTPS
            ▼                                           ▼
 ┌────────────────────────┐              ┌─────────────────────────────┐
-│    FASTAPI AI ENGINE   │              │      NVIDIA NIM API         │
-│    (Python 3.11)       │              │  meta/llama-3.2-90b-vision  │
-│                        │              │  -instruct                  │
+│    FASTAPI AI ENGINE   │              │    HUGGING FACE API        │
+│    (Python 3.11)       │              │  prithivMLmods/deepfake-    │
+│                        │              │  detector-model-v1          │
 │  • Wav2Vec2 inference  │              │                             │
 │  • Spectral analysis   │              │  • Spatial artifact detect  │
 │  • ECAPA-TDNN embed    │              │  • Texture inconsistency    │
@@ -149,17 +149,16 @@ Browser                API Gateway              AI Engine              PostgreSQ
 ### Image Deepfake Scan
 
 ```
-Browser                         Cloudflare Worker           NVIDIA NIM API
+Browser                         Cloudflare Worker           Hugging Face API
   │                                    │                         │
   │── POST (multipart/form-data) ─────▶│                         │
   │                                    │── Validate origin       │
   │                                    │── Check size (≤5MB)     │
-  │                                    │── ArrayBuffer→Base64    │
-  │                                    │── POST /chat/completions▶│
-  │                                    │   (Data URI + prompt)    │
-  │                                    │                         │── Vision analysis
+  │                                    │── Forward image binary  │
+  │                                    │── POST (HF Inference) ─▶│
+  │                                    │                         │── Model inference
   │                                    │◀── JSON response ───────│
-  │                                    │── extractJSON()          │
+  │                                    │── Parse labels/scores   │
   │                                    │── Clamp score [0,1]     │
   │◀── { isDeepfake, score, details } ─│                         │
 ```
@@ -229,8 +228,8 @@ Browser                         Cloudflare Worker           NVIDIA NIM API
 │  TRUST BOUNDARY: Edge (Cloudflare)                                │
 │                                                                   │
 │  ┌─────────────────────┐    ┌────────────────────┐              │
-│  │  Cloudflare Worker  │───▶│  NVIDIA NIM API    │              │
-│  │  (origin whitelist) │    │  (API key in       │              │
+│  │  Cloudflare Worker  │───▶│  Hugging Face API  │              │
+│  │  (origin whitelist) │    │  (API token in     │              │
 │  │  (size enforcement) │    │   Worker Secrets)  │              │
 │  └─────────────────────┘    └────────────────────┘              │
 └──────────────────────────────────────────────────────────────────┘

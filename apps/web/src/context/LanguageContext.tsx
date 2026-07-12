@@ -131,8 +131,8 @@ const translations: Translations = {
     hi: "इमेज स्कैन",
   },
   "landing.features.image.desc": {
-    en: "Detect AI-generated images via NVIDIA NIM Vision (90B).",
-    hi: "NVIDIA NIM Vision से AI-जनित छवियों का पता लगाएं।",
+    en: "Detect AI-generated images via Hugging Face deepfake models.",
+    hi: "Hugging Face मॉडल से AI-जनित छवियों का पता लगाएं।",
   },
 
   // Landing - Trust

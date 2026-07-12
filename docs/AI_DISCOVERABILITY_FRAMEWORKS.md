@@ -123,7 +123,7 @@ GEO is an emerging field focused on making content "citation-worthy" for LLM-gen
 | JSON-LD Entity Definitions      | `apps/web/index.html:14-44, 46-94, 96-126` | WebApplication, FAQPage, HowTo — all provide structured entity data for LLM consumption                 |
 | Author Authority Signals        | `apps/web/index.html:24-34`                | `sameAs` linking to GitHub, LinkedIn, Portfolio — verifiable identity for LLMs                          |
 | Clear Brand Positioning         | `apps/web/index.html:21`, `README.md`      | "Defending Truth in the Age of Generative AI" — concise, quotable mission statement                     |
-| Structured Service Descriptions | `apps/web/index.html:21`                   | Detailed description with technology names (Wav2Vec2, NVIDIA NIM, ECAPA-TDNN) — entities LLMs recognize |
+| Structured Service Descriptions | `apps/web/index.html:21`                   | Detailed description with technology names (Wav2Vec2, Hugging Face, ECAPA-TDNN) — entities LLMs recognize |
 | Created About Page              | `apps/web/src/pages/About.tsx`             | Dedicated page with mission, technology, creator bio — rich reference content for LLMs                  |
 | Free Pricing Signal             | `apps/web/index.html:40`                   | `offers.price: "0"` — LLMs often cite free alternatives in recommendations                              |
 
@@ -156,7 +156,7 @@ LLMO overlaps significantly with GEO but focuses more on the technical structure
 | JSON-LD Structured Data (3 schemas) | `apps/web/index.html`                                   | WebApplication, FAQPage, HowTo — LLMs preferentially extract entity data from JSON-LD       |
 | Semantic HTML5                      | `apps/web/index.html`, `apps/web/src/pages/Landing.tsx` | `nav`, `main`, `h1`-`h3`, `section`, `article` patterns help LLMs parse content structure   |
 | Clean Code / Fast Load              | Vite build output                                       | Minimal HTML/CSS/JS overhead means LLM crawlers spend less time parsing and more on content |
-| Entity-Rich Technology Descriptions | `apps/web/index.html:21`                                | Specific named entities: "Wav2Vec2", "MFCC", "ECAPA-TDNN", "NVIDIA NIM", "PyTorch"          |
+| Entity-Rich Technology Descriptions | `apps/web/index.html:21`                                | Specific named entities: "Wav2Vec2", "MFCC", "ECAPA-TDNN", "Hugging Face", "PyTorch"          |
 | Author-GitHub-Project Triad         | `apps/web/index.html:24-42`                             | Verifiable connection between person, code repository, and deployed application             |
 | Privacy / Terms / About Pages       | `apps/web/src/pages/`                                   | Legal and informational pages provide comprehensive context about the platform              |
 
@@ -223,7 +223,7 @@ E-E-A-T is not a direct ranking factor but a framework Google's quality raters u
 | ------------------------ | --------------------------------------------- | ------------------------------------------------------------------------ |
 | Working deployed product | `https://satark-deepfake.vercel.app`          | Real, functional deepfake detection platform — not a concept or mockup   |
 | Real user workflows      | `apps/web/src/`                               | Complete authentication, file upload, live monitoring, report generation |
-| Production ML models     | `apps/engine/`                                | Wav2Vec2, ECAPA-TDNN, NVIDIA NIM — real inference, not simulated         |
+| Production ML models     | `apps/engine/`, Cloudflare Worker             | Wav2Vec2, ECAPA-TDNN, Hugging Face models — real inference, not simulated |
 | GitHub activity          | `https://github.com/theunstopabble/Satark-AI` | Active development, commits, issues, documented codebase                 |
 
 #### Expertise ✅ Strong

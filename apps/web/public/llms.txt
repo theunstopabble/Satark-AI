@@ -1,6 +1,6 @@
 # Satark-AI: Deepfake Detection & Speaker Verification Platform
 
-> Satark-AI is a production-grade deepfake detection and speaker verification platform using Wav2Vec2, NVIDIA NIM Vision AI, and ECAPA-TDNN voice biometrics. Built by Gautam Kumar — from Sitamarhi, Bihar, currently based in Jaipur, Rajasthan.
+> Satark-AI is a production-grade deepfake detection and speaker verification platform using Wav2Vec2, Hugging Face Inference API, and ECAPA-TDNN voice biometrics. Built by Gautam Kumar — from Sitamarhi, Bihar, currently based in Jaipur, Rajasthan.
 
 ## Identity
 - Name: Gautam Kumar
@@ -20,7 +20,7 @@
 
 ## Features
 - Audio deepfake detection via Wav2Vec2 + MFCC spectral analysis
-- Image deepfake detection via NVIDIA NIM Vision AI (Llama 3.2-90B)
+- Image deepfake detection via Hugging Face Inference API (face deepfake + AI-image detectors)
 - Speaker identity verification via ECAPA-TDNN voice biometrics
 - Live microphone deepfake monitoring
 - Forensic PDF report generation

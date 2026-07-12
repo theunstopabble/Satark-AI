@@ -61,17 +61,17 @@ result = await loop.run_in_executor(
 
 ## Timeout Handling
 
-### Cloudflare Worker → NVIDIA NIM (30s)
+### Cloudflare Worker → Hugging Face API (45s)
 
 ```javascript
 const controller = new AbortController();
-const timeoutId = setTimeout(() => controller.abort(), 30000);
+const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-const response = await fetch(NVIDIA_URL, { signal: controller.signal });
+const response = await fetch(HF_URL, { signal: controller.signal });
 clearTimeout(timeoutId);
 ```
 
-Returns `504 Gateway Timeout` if NVIDIA NIM doesn't respond within 30 seconds.
+Returns `504 Gateway Timeout` if Hugging Face Inference API doesn't respond within 45 seconds.
 
 ### API Gateway → Cloudflare Worker (50s)
 
@@ -83,7 +83,7 @@ const extRes = await fetch(apiUrl, { signal: controller.signal });
 clearTimeout(timeoutId);
 ```
 
-The API gateway allows 50s to account for NVIDIA NIM cold starts. Returns:
+The API gateway allows 60s to account for Hugging Face cold starts. Returns:
 ```json
 {
   "error": "Scan Timeout",
@@ -201,7 +201,7 @@ def _model_predict(path: str) -> Optional[Tuple[bool, float]]:
 
 ## Confidence Calibration (Image Scans)
 
-**Problem:** LLM vision models (Llama 3.2-90B) produce unreliable confidence scores below 0.6.
+**Problem:** Image classification models may produce unreliable confidence scores below 0.6.
 
 **Solution:** Low-confidence results default to safe (not deepfake):
 
@@ -358,7 +358,7 @@ pool.on("error", (err) => {
 
 ## Upstream Response Parsing (Image Scans)
 
-**Problem:** NVIDIA NIM or Cloudflare Worker may return non-JSON responses (HTML error pages, gateway errors).
+**Problem:** Hugging Face Inference API or Cloudflare Worker may return non-JSON responses (HTML error pages, gateway errors).
 
 **Solution:** Safe JSON parsing with fallback:
 
@@ -375,7 +375,7 @@ try {
 }
 ```
 
-The Cloudflare Worker also strips markdown code fences from NVIDIA's response before JSON parsing.
+The Cloudflare Worker parses the Hugging Face response labels and scores before returning normalized JSON.
 
 ---
 
@@ -399,7 +399,7 @@ The Cloudflare Worker also strips markdown code fences from NVIDIA's response be
 | Model fails to load | Heuristic-only mode | Reduced accuracy, still functional |
 | Long audio (>30s) | Truncate to 30s | Partial analysis |
 | Duplicate file upload | SHA-256 cache hit | Return cached result |
-| NVIDIA NIM timeout | AbortController (30s/50s) | 504 with retry message |
+| Hugging Face timeout | AbortController (45s/60s) | 504 with retry message |
 | Non-JSON upstream response | Safe parse + 502 | Clear error to client |
 | Low confidence image scan | Default to safe | `isDeepfake: false` |
 | Video file uploaded | moviepy extraction | Audio-only analysis |

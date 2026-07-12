@@ -18,7 +18,7 @@
     "name": "Satark-AI",
     "alternateName": "Satark AI Deepfake Detector",
     "url": "https://satark-deepfake.vercel.app",
-    "description": "Production-grade deepfake detection and speaker verification platform. Detects synthetic audio via Wav2Vec2 + MFCC forensics, deepfake images via NVIDIA NIM (Llama 3.2-90B Vision), and verifies speaker identity using ECAPA-TDNN voice biometrics. Built as a Turborepo microservices monorepo with React, FastAPI, Hono, PostgreSQL, and PyTorch.",
+    "description": "Production-grade deepfake detection and speaker verification platform. Detects synthetic audio via Wav2Vec2 + MFCC forensics, deepfake images via Hugging Face Inference API (face deepfake + AI-image detectors), and verifies speaker identity using ECAPA-TDNN voice biometrics. Built as a Turborepo microservices monorepo with React, FastAPI, Hono, PostgreSQL, and PyTorch.",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Web",
       "author": {
@@ -59,7 +59,7 @@
         "name": "What is Satark-AI?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Satark-AI is a production-grade deepfake detection and speaker verification platform. It uses Wav2Vec2 transformers for audio forensics, NVIDIA NIM Vision AI for image deepfake detection, and ECAPA-TDNN voice biometrics for speaker identity verification."
+          "text": "Satark-AI is a production-grade deepfake detection and speaker verification platform. It uses Wav2Vec2 transformers for audio forensics, Hugging Face Inference API for image deepfake detection, and ECAPA-TDNN voice biometrics for speaker identity verification."
         }
       },
       {
@@ -91,7 +91,7 @@
         "name": "How accurate is Satark-AI's deepfake detection?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Satark-AI uses state-of-the-art machine learning models including Wav2Vec2 (95M parameters) for audio and NVIDIA NIM Vision (Llama 3.2-90B) for images. Accuracy depends on the input quality, but the platform provides detailed confidence scores with every analysis."
+          "text": "Satark-AI uses state-of-the-art machine learning models including Wav2Vec2 (95M parameters) for audio and Hugging Face Inference API (face deepfake + AI-image detectors) for images. Accuracy depends on the input quality, but the platform provides detailed confidence scores with every analysis."
         }
       }
     ]
@@ -116,7 +116,7 @@
         "@type": "HowToStep",
         "position": 2,
         "name": "Run AI Analysis",
-        "text": "Click 'Run Diagnostics' to process your media through Wav2Vec2 spectral analysis, NVIDIA NIM Vision AI, or ECAPA-TDNN voice biometrics."
+        "text": "Click 'Run Diagnostics' to process your media through Wav2Vec2 spectral analysis, Hugging Face Inference API, or ECAPA-TDNN voice biometrics."
       },
       {
         "@type": "HowToStep",

@@ -13,7 +13,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.2-EE4C2C?style=for-the-badge&logo=pytorch)](https://pytorch.org)
 [![SpeechBrain](https://img.shields.io/badge/SpeechBrain-1.0-FFD700?style=for-the-badge)](https://speechbrain.github.io)
-[![NVIDIA NIM](https://img.shields.io/badge/NVIDIA%20NIM-Llama%203.2%2090B-76B900?style=for-the-badge&logo=nvidia)](https://www.nvidia.com/en-us/ai/)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Inference%20API-FFD21E?style=for-the-badge&logo=huggingface)](https://huggingface.co)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare)](https://workers.cloudflare.com)
 [![Turborepo](https://img.shields.io/badge/Turborepo-Monorepo-EF4444?style=for-the-badge&logo=turborepo)](https://turbo.build)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com)
@@ -27,7 +27,7 @@
 
 👉 **[Open App → satark-deepfake.vercel.app](https://satark-deepfake.vercel.app/)**
 
-**Satark-AI** is a production-grade, full-stack **deepfake detection and speaker verification platform**. Built as a scalable microservices monorepo, it combines advanced audio forensics (MFCC, Spectral Analysis, Zero Crossing Rate), multimodal vision AI via **NVIDIA NIM** (Llama 3.2-90B Vision), and deep learning speaker biometrics (ECAPA-TDNN) to identify synthetic media and verify speaker identities in real time — across **audio, video, and image** inputs.
+**Satark-AI** is a production-grade, full-stack **deepfake detection and speaker verification platform**. Built as a scalable microservices monorepo, it combines advanced audio forensics (MFCC, Spectral Analysis, Zero Crossing Rate), image deepfake detection via **Hugging Face Inference API**, and deep learning speaker biometrics (ECAPA-TDNN) to identify synthetic media and verify speaker identities in real time — across **audio, video, and image** inputs.
 
 ---
 
@@ -54,17 +54,17 @@
 - **Confidence Scoring**: 4-decimal precision confidence score returned per scan.
 - **Smart Deduplication**: SHA-256 file hashing prevents redundant re-processing of identical files.
 
-### 🖼️ Deepfake Image Detection — Powered by NVIDIA NIM
+### 🖼️ Deepfake Image Detection — Powered by Hugging Face Inference API
 
 Image analysis runs on an entirely separate, serverless pipeline — **independent of the Python engine**.
 
-- **Model**: `meta/llama-3.2-90b-vision-instruct` via **NVIDIA NIM API** — a 90B multimodal vision-language model analyzing spatial artifacts, blending edges, texture inconsistencies, asymmetric features, and lighting anomalies.
-- **Cloudflare Worker Proxy**: A dedicated Cloudflare Worker (`satark-image-proxy`) sits between the frontend and NVIDIA's API — handling CORS, secret management, size enforcement, and timeout control.
-- **Input Formats**: Supports `multipart/form-data` file upload or raw binary body. Images are converted to base64 Data URI client-side and forwarded to NVIDIA NIM.
+- **Models**: `prithivMLmods/deepfake-detector-model-v1` (face deepfake) + `umm-maybe/ai-image-detector` (general AI-image) via **Hugging Face Inference API** — specialized models analyzing facial artifacts and AI-generation patterns.
+- **Cloudflare Worker Proxy**: A dedicated Cloudflare Worker (`satark-image-proxy`) sits between the frontend and Hugging Face's API — handling CORS, secret management, size enforcement, and timeout control.
+- **Input Formats**: Supports `multipart/form-data` file upload or raw binary body. Images are forwarded to Hugging Face Inference API as binary.
 - **5MB Size Limit**: Enforced both via `content-length` header (pre-read) and actual `byteLength` post-read — double-layer enforcement.
-- **30s Timeout**: `AbortController` cancels hung NVIDIA requests after 30 seconds, returning `504` gracefully.
+- **30s Timeout**: `AbortController` cancels hung Hugging Face requests after 30 seconds, returning `504` gracefully.
 - **Output Schema**: `{ isDeepfake: boolean, confidenceScore: float (0–1), details: string }` — normalized and validated before returning to client.
-- **Robust JSON Parsing**: Strips markdown code fences, extracts first valid `{ }` block, clamps `confidenceScore` to `[0, 1]`, falls back gracefully if NVIDIA returns unexpected format.
+- **Robust JSON Parsing**: Normalizes response, clamps `confidenceScore` to `[0, 1]`, falls back gracefully if API returns unexpected format.
 - **CORS Whitelisting**: Strict origin whitelist (`satark-deepfake.vercel.app`, `localhost:5173`, `localhost:3000`) — no wildcard `*`.
 
 ### 🆔 Voice Biometrics — Speaker Identity
@@ -116,7 +116,7 @@ satark-ai/
 │   └── engine/       → FastAPI + Python (AI Engine — Audio/Speaker)
 ├── packages/
 │   └── shared/       → Shared Zod schemas & TypeScript types
-├── cloudflare-worker/ → satark-image-proxy (NVIDIA NIM image proxy)
+├── cloudflare-worker/ → satark-image-proxy (Hugging Face image proxy)
 ├── docker-compose.yml
 └── turbo.json
 ```
@@ -128,7 +128,7 @@ satark-ai/
 | `apps/web`          | React 18 + Vite         | User interface, PWA shell          | 5173 |
 | `apps/api`          | Node.js + Hono          | Auth, DB, orchestration            | 3000 |
 | `apps/engine`       | Python 3.11 + FastAPI   | Audio deepfake + speaker inference | 8000 |
-| `cloudflare-worker` | Cloudflare Workers (V8) | Image deepfake proxy → NVIDIA NIM  | Edge |
+| `cloudflare-worker` | Cloudflare Workers (V8) | Image deepfake proxy → Hugging Face API  | Edge |
 
 ### Request Flow
 
@@ -147,9 +147,9 @@ satark-ai/
                         └──────┬───────┘              │
                                │                      ▼
                                ▼              ┌──────────────────┐
-                        ┌──────────────┐      │  NVIDIA NIM API  │
-                        │ FastAPI      │      │  Llama 3.2-90B   │
-                        │ AI Engine    │      │  Vision Instruct │
+                        ┌──────────────┐      │  Hugging Face    │
+                         │ FastAPI      │      │  Inference API   │
+                         │ AI Engine    │      │  Deepfake Models │
                         │ (Python)     │      └──────────────────┘
                         └──────┬───────┘
                                │
@@ -208,7 +208,7 @@ Complete technical documentation for the Satark-AI platform:
 | Request intake   | Cloudflare Worker     | Accepts `multipart/form-data` or raw binary                                |
 | Size enforcement | Worker (double-check) | Pre-read via `content-length`, post-read via `byteLength` — 5MB cap        |
 | Image encoding   | Worker                | `ArrayBuffer → Base64 → Data URI`                                          |
-| Vision inference | NVIDIA NIM API        | `meta/llama-3.2-90b-vision-instruct` analyzes artifacts, blending, texture |
+| Vision inference | Hugging Face API      | `prithivMLmods/deepfake-detector-model-v1` + `umm-maybe/ai-image-detector` analyze artifacts |
 | Response parsing | `extractJSON()`       | Strips markdown fences, extracts `{}`, clamps score to `[0,1]`             |
 | Timeout control  | `AbortController`     | 30s hard timeout → 504 response                                            |
 | Output           | Normalized JSON       | `{ isDeepfake, confidenceScore, details }`                                 |
@@ -235,7 +235,7 @@ src/
 │   ├── FeatureChart.tsx     → Per-feature forensic breakdown chart
 │   ├── FeedbackWidget.tsx   → User feedback submission UI
 │   ├── Footer.tsx
-│   ├── ImageUpload.tsx      → Image deepfake upload → Cloudflare Worker → NVIDIA NIM
+│   ├── ImageUpload.tsx      → Image deepfake upload → Cloudflare Worker → Hugging Face API
 │   ├── InstallPWA.tsx       → PWA install prompt handler
 │   ├── LandingNavbar.tsx    → Public landing page navigation
 │   ├── language-toggle.tsx  → i18n language switcher
@@ -523,7 +523,7 @@ Services will start at:
 | Connection pool      | pg Pool                  | Max 20 connections, 5s timeout, graceful error recovery                        |
 | Image proxy CORS     | Origin whitelist         | Worker rejects requests from unlisted origins — no wildcard `*`                |
 | Image size limit     | Double-layer check       | Enforced via `content-length` header + actual `byteLength` post-read (5MB cap) |
-| NVIDIA key isolation | Cloudflare Secrets       | `NVIDIA_API_KEY` never exposed to frontend — stored in Worker environment only |
+| HF key isolation | Cloudflare Secrets       | `HF_API_TOKEN` never exposed to frontend — stored in Worker environment only |
 
 ---
 
@@ -539,9 +539,9 @@ Services will start at:
 | `ALLOWED_ORIGINS`            | api               | ✅       | CORS allowed origins (comma-separated)               |
 | `ENGINE_URL`                 | api               | ✅       | FastAPI engine base URL                              |
 | `IMAGE_API_URL`              | api               | ✅       | Cloudflare Worker URL for image deepfake proxy       |
-| `NVIDIA_API_KEY`             | cloudflare-worker | ✅       | NVIDIA NIM API key — set as Cloudflare Worker Secret |
+| `HF_API_TOKEN`               | cloudflare-worker | ✅       | Hugging Face API token — set as Cloudflare Worker Secret |
 
-> **Note on `NVIDIA_API_KEY`**: This is stored via `wrangler secret put NVIDIA_API_KEY` and is **never** in source code or `.env` files. It lives exclusively in Cloudflare's encrypted secret store.
+> **Note on `HF_API_TOKEN`**: This is stored via `wrangler secret put HF_API_TOKEN` and is **never** in source code or `.env` files. It lives exclusively in Cloudflare's encrypted secret store. Get one free at https://huggingface.co/settings/tokens
 
 ---
 
