@@ -27,7 +27,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.50.0",
     "react-is": "^19.2.5",
-    "react-router-dom": "^6.21.3",
+    "react-router-dom": "^6.30.5",
     "recharts": "^3.7.0",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
