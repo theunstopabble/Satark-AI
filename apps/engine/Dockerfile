@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Install CPU-only torch and torchaudio first, then all other requirements
-RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
+# (versions MUST match requirements.txt — pip will otherwise "upgrade" then downgrade)
+RUN pip install --no-cache-dir torch==2.13.0 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy ONLY application code (not corrupted files)
