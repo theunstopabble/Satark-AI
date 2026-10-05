@@ -8,10 +8,23 @@ import uvicorn
 
 logger = logging.getLogger(__name__)
 
-from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form, Header, Depends
 from fastapi.responses import JSONResponse
 from schemas import AudioUpload, ScanResult
 from contextlib import asynccontextmanager
+
+ENGINE_API_KEY = os.environ.get("ENGINE_API_KEY")
+
+
+async def verify_internal_api_key(x_api_key: str = Header(default=None)):
+    """Reject requests that do not present the shared internal API key.
+
+    This prevents the engine from being called directly, bypassing the
+    gateway's Clerk authentication, when it is reachable on the network.
+    """
+    if not ENGINE_API_KEY or x_api_key != ENGINE_API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,7 +41,7 @@ def health():
     return {"status": "ok", "service": "Satark-AI Engine Startup Check"}
 
 
-@app.post("/scan", response_model=ScanResult)
+@app.post("/scan", response_model=ScanResult, dependencies=[Depends(verify_internal_api_key)])
 async def scan_audio(data: AudioUpload):
     from detect import analyze_audio
     try:
@@ -39,7 +52,7 @@ async def scan_audio(data: AudioUpload):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/scan-upload", response_model=ScanResult)
+@app.post("/scan-upload", response_model=ScanResult, dependencies=[Depends(verify_internal_api_key)])
 async def scan_upload(
     file: UploadFile = File(...),
     userId: str = Form(...),
@@ -69,7 +82,7 @@ async def scan_upload(
             os.remove(file_path)
 
 
-@app.post("/analyze")
+@app.post("/analyze", dependencies=[Depends(verify_internal_api_key)])
 async def analyze_audio_endpoint(file: UploadFile = File(...)):
     temp_filename = None
     extracted_audio_path = None
@@ -142,7 +155,7 @@ async def analyze_audio_endpoint(file: UploadFile = File(...)):
             os.remove(extracted_audio_path)
 
 
-@app.post("/embed")
+@app.post("/embed", dependencies=[Depends(verify_internal_api_key)])
 async def embed_audio_endpoint(file: UploadFile = File(...)):
     from speaker import get_embedding
     from detect import TEMP_DIR
